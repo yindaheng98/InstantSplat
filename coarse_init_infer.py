@@ -97,4 +97,6 @@ if __name__ == '__main__':
     storePly(os.path.join(output_colmap_path, "points3D.ply"), pts_4_3dgs, color_4_3dgs)
     pts_4_3dgs_all = np.array(pts3d).reshape(-1, 3)
     np.save(output_colmap_path + "/pts_4_3dgs_all.npy", pts_4_3dgs_all)
+    color_4_3dgs_all = (np.array(imgs).reshape(-1, 3) * 255.0).astype(np.uint8)
+    storePly(os.path.join(output_colmap_path, "pts_4_3dgs_all.ply"), pts_4_3dgs_all, color_4_3dgs_all)
     np.save(output_colmap_path + "/focal.npy", np.array(focals.cpu()))
