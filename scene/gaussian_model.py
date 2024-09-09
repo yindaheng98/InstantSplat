@@ -20,6 +20,43 @@ from utils.sh_utils import RGB2SH
 from simple_knn._C import distCUDA2
 from utils.graphics_utils import BasicPointCloud
 from utils.general_utils import strip_symmetric, build_scaling_rotation
+from scipy.spatial.transform import Rotation as R
+from utils.pose_utils import rotation2quad, get_tensor_from_camera
+from utils.graphics_utils import getWorld2View2
+
+def quaternion_to_rotation_matrix(quaternion):
+    """
+    Convert a quaternion to a rotation matrix.
+
+    Parameters:
+    - quaternion: A tensor of shape (..., 4) representing quaternions.
+
+    Returns:
+    - A tensor of shape (..., 3, 3) representing rotation matrices.
+    """
+    # Ensure quaternion is of float type for computation
+    quaternion = quaternion.float()
+
+    # Normalize the quaternion to unit length
+    quaternion = quaternion / quaternion.norm(p=2, dim=-1, keepdim=True)
+
+    # Extract components
+    w, x, y, z = quaternion[..., 0], quaternion[..., 1], quaternion[..., 2], quaternion[..., 3]
+
+    # Compute rotation matrix components
+    xx, yy, zz = x * x, y * y, z * z
+    xy, xz, yz = x * y, x * z, y * z
+    xw, yw, zw = x * w, y * w, z * w
+
+    # Assemble the rotation matrix
+    R = torch.stack([
+        torch.stack([1 - 2 * (yy + zz),     2 * (xy - zw),     2 * (xz + yw)], dim=-1),
+        torch.stack([    2 * (xy + zw), 1 - 2 * (xx + zz),     2 * (yz - xw)], dim=-1),
+        torch.stack([    2 * (xz - yw),     2 * (yz + xw), 1 - 2 * (xx + yy)], dim=-1)
+    ], dim=-2)
+
+    return R
+
 
 class GaussianModel:
 
@@ -72,6 +109,7 @@ class GaussianModel:
             self.denom,
             self.optimizer.state_dict(),
             self.spatial_lr_scale,
+            self.P,
         )
     
     def restore(self, model_args, training_args):
@@ -86,7 +124,8 @@ class GaussianModel:
         xyz_gradient_accum, 
         denom,
         opt_dict, 
-        self.spatial_lr_scale) = model_args
+        self.spatial_lr_scale,
+        self.P) = model_args
         self.training_setup(training_args)
         self.xyz_gradient_accum = xyz_gradient_accum
         self.denom = denom
@@ -103,7 +142,24 @@ class GaussianModel:
     @property
     def get_xyz(self):
         return self._xyz
-    
+
+    def init_RT_seq(self, cam_list):
+        poses =[]
+        for cam in cam_list[1.0]:
+            p = get_tensor_from_camera(cam.world_view_transform.transpose(0, 1)) # R T -> quat t
+            poses.append(p)
+        poses = torch.stack(poses)
+        self.P = poses.cuda().requires_grad_(True)
+
+
+    def get_RT(self, idx):
+        pose = self.P[idx]
+        return pose
+
+    def get_RT_test(self, idx):
+        pose = self.test_P[idx]
+        return pose
+
     @property
     def get_features(self):
         features_dc = self._features_dc
@@ -160,19 +216,36 @@ class GaussianModel:
             {'params': [self._rotation], 'lr': training_args.rotation_lr, "name": "rotation"}
         ]
 
+        l_cam = [{'params': [self.P],'lr': training_args.rotation_lr*0.1, "name": "pose"},]
+        # l_cam = [{'params': [self.P],'lr': training_args.rotation_lr, "name": "pose"},]
+
+        l += l_cam
+
         self.optimizer = torch.optim.Adam(l, lr=0.0, eps=1e-15)
         self.xyz_scheduler_args = get_expon_lr_func(lr_init=training_args.position_lr_init*self.spatial_lr_scale,
                                                     lr_final=training_args.position_lr_final*self.spatial_lr_scale,
                                                     lr_delay_mult=training_args.position_lr_delay_mult,
                                                     max_steps=training_args.position_lr_max_steps)
+        self.cam_scheduler_args = get_expon_lr_func(
+                                                    # lr_init=0,
+                                                    # lr_final=0,
+                                                    lr_init=training_args.rotation_lr*0.1,
+                                                    lr_final=training_args.rotation_lr*0.001,
+                                                    # lr_init=training_args.position_lr_init*self.spatial_lr_scale*10,
+                                                    # lr_final=training_args.position_lr_final*self.spatial_lr_scale*10,
+                                                    lr_delay_mult=training_args.position_lr_delay_mult,
+                                                    max_steps=1000)
 
     def update_learning_rate(self, iteration):
         ''' Learning rate scheduling per step '''
         for param_group in self.optimizer.param_groups:
+            if param_group["name"] == "pose":
+                lr = self.cam_scheduler_args(iteration)
+                # print("pose learning rate", iteration, lr)
+                param_group['lr'] = lr
             if param_group["name"] == "xyz":
                 lr = self.xyz_scheduler_args(iteration)
                 param_group['lr'] = lr
-                return lr
 
     def construct_list_of_attributes(self):
         l = ['x', 'y', 'z', 'nx', 'ny', 'nz']

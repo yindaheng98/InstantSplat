@@ -41,6 +41,8 @@ class SceneInfo(NamedTuple):
     test_cameras: list
     nerf_normalization: dict
     ply_path: str
+    train_poses: list
+    test_poses: list
 
 def getNerfppNorm(cam_info):
     def get_center_and_diag(cam_centers):
@@ -65,23 +67,29 @@ def getNerfppNorm(cam_info):
 
     return {"translate": translate, "radius": radius}
 
-def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
+def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder, eval):
     cam_infos = []
+    poses=[]
     for idx, key in enumerate(cam_extrinsics):
         sys.stdout.write('\r')
         # the exact output you're looking for:
         sys.stdout.write("Reading camera {}/{}".format(idx+1, len(cam_extrinsics)))
         sys.stdout.flush()
 
-        extr = cam_extrinsics[key]
-        intr = cam_intrinsics[extr.camera_id]
+        if eval:
+            extr = cam_extrinsics[key]
+            intr = cam_intrinsics[1]
+            uid = idx+1
+        else:
+            extr = cam_extrinsics[key]
+            intr = cam_intrinsics[extr.camera_id]
+            uid = intr.id
         height = intr.height
         width = intr.width
-
-        uid = intr.id
         R = np.transpose(qvec2rotmat(extr.qvec))
         T = np.array(extr.tvec)
-
+        pose =  np.vstack((np.hstack((R, T.reshape(3,-1))),np.array([[0, 0, 0, 1]])))
+        poses.append(pose)
         if intr.model=="SIMPLE_PINHOLE":
             focal_length_x = intr.params[0]
             FovY = focal2fov(focal_length_x, height)
@@ -94,7 +102,12 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
         else:
             assert False, "Colmap camera model not handled: only undistorted datasets (PINHOLE or SIMPLE_PINHOLE cameras) supported!"
 
-        image_path = os.path.join(images_folder, os.path.basename(extr.name))
+        if eval:
+            tmp = os.path.dirname(os.path.dirname(os.path.join(images_folder)))
+            all_images_folder = os.path.join(tmp, 'images')
+            image_path = os.path.join(all_images_folder, os.path.basename(extr.name))
+        else:
+            image_path = os.path.join(images_folder, os.path.basename(extr.name))
         image_name = os.path.basename(image_path).split(".")[0]
         image = Image.open(image_path)
 
@@ -102,7 +115,7 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
                               image_path=image_path, image_name=image_name, width=width, height=height)
         cam_infos.append(cam_info)
     sys.stdout.write('\n')
-    return cam_infos
+    return cam_infos, poses
 
 def fetchPly(path):
     plydata = PlyData.read(path)
@@ -129,28 +142,43 @@ def storePly(path, xyz, rgb):
     ply_data = PlyData([vertex_element])
     ply_data.write(path)
 
-def readColmapSceneInfo(path, images, eval, llffhold=8):
-    try:
-        cameras_extrinsic_file = os.path.join(path, "sparse/0", "images.bin")
-        cameras_intrinsic_file = os.path.join(path, "sparse/0", "cameras.bin")
-        cam_extrinsics = read_extrinsics_binary(cameras_extrinsic_file)
-        cam_intrinsics = read_intrinsics_binary(cameras_intrinsic_file)
-    except:
-        cameras_extrinsic_file = os.path.join(path, "sparse/0", "images.txt")
-        cameras_intrinsic_file = os.path.join(path, "sparse/0", "cameras.txt")
-        cam_extrinsics = read_extrinsics_text(cameras_extrinsic_file)
-        cam_intrinsics = read_intrinsics_text(cameras_intrinsic_file)
+def readColmapSceneInfo(path, images, eval):
+    # try:
+    #     cameras_extrinsic_file = os.path.join(path, "sparse/0", "images.bin")
+    #     cameras_intrinsic_file = os.path.join(path, "sparse/0", "cameras.bin")
+    #     cam_extrinsics = read_extrinsics_binary(cameras_extrinsic_file)
+    #     cam_intrinsics = read_intrinsics_binary(cameras_intrinsic_file)
+    # except:
+
+    ##### For initializing test pose using PCD_Registration
+    cameras_extrinsic_file = os.path.join(path, "sparse/0", "images.txt")
+    cameras_intrinsic_file = os.path.join(path, "sparse/0", "cameras.txt")
+    cam_extrinsics = read_extrinsics_text(cameras_extrinsic_file)
+    cam_intrinsics = read_intrinsics_text(cameras_intrinsic_file)
 
     reading_dir = "images" if images == None else images
-    cam_infos_unsorted = readColmapCameras(cam_extrinsics=cam_extrinsics, cam_intrinsics=cam_intrinsics, images_folder=os.path.join(path, reading_dir))
+    cam_infos_unsorted, poses = readColmapCameras(cam_extrinsics=cam_extrinsics, cam_intrinsics=cam_intrinsics, images_folder=os.path.join(path, reading_dir), eval=eval)
+    sorting_indices = sorted(range(len(cam_infos_unsorted)), key=lambda x: cam_infos_unsorted[x].image_name)
+    cam_infos = [cam_infos_unsorted[i] for i in sorting_indices]
+    sorted_poses = [poses[i] for i in sorting_indices]
     cam_infos = sorted(cam_infos_unsorted.copy(), key = lambda x : x.image_name)
 
     if eval:
-        train_cam_infos = [c for idx, c in enumerate(cam_infos) if idx % llffhold != 0]
-        test_cam_infos = [c for idx, c in enumerate(cam_infos) if idx % llffhold == 0]
+        # train_cam_infos = [c for idx, c in enumerate(cam_infos) if (idx+1) % llffhold != 0]
+        # test_cam_infos = [c for idx, c in enumerate(cam_infos) if (idx+1) % llffhold == 0]
+        # train_poses = [c for idx, c in enumerate(sorted_poses) if (idx+1) % llffhold != 0]
+        # test_poses = [c for idx, c in enumerate(sorted_poses) if (idx+1) % llffhold == 0]
+
+        train_cam_infos = cam_infos
+        test_cam_infos = cam_infos
+        train_poses = sorted_poses
+        test_poses = sorted_poses
+
     else:
         train_cam_infos = cam_infos
         test_cam_infos = []
+        train_poses = sorted_poses
+        test_poses = []
 
     nerf_normalization = getNerfppNorm(train_cam_infos)
 
@@ -173,7 +201,9 @@ def readColmapSceneInfo(path, images, eval, llffhold=8):
                            train_cameras=train_cam_infos,
                            test_cameras=test_cam_infos,
                            nerf_normalization=nerf_normalization,
-                           ply_path=ply_path)
+                           ply_path=ply_path,
+                           train_poses=train_poses,
+                           test_poses=test_poses)
     return scene_info
 
 def readCamerasFromTransforms(path, transformsfile, white_background, extension=".png"):
