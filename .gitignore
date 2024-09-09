@@ -1,6 +1,7 @@
 *.pyc
 .vscode/*
 !.vscode/settings.json
+!.vscode/launch.json
 output
 build
 diff_rasterization/diff_rast.egg-info
