@@ -8,3 +8,7 @@ diff_rasterization/diff_rast.egg-info
 diff_rasterization/dist
 tensorboard_3d
 screenshots
+data/*
+!data/TT/Family/3_views/images/
+!data/TT/Family/24_views/images/
+!data/sora/santorini/3_views/images/
