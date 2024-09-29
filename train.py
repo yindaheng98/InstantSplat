@@ -3,7 +3,7 @@
 # GRAPHDECO research group, https://team.inria.fr/graphdeco
 # All rights reserved.
 #
-# This software is free for non-commercial, research and evaluation use 
+# This software is free for non-commercial, research and evaluation use
 # under the terms of the LICENSE.md file.
 #
 # For inquiries contact  george.drettakis@inria.fr
@@ -13,26 +13,20 @@ import os
 import torch
 from random import randint
 from utils.loss_utils import l1_loss, ssim
-from gaussian_renderer import render, network_gui
+from gaussian_renderer import render
 import sys
 from scene import Scene, GaussianModel
 from utils.general_utils import safe_state
-import uuid
 from tqdm import tqdm
-from utils.image_utils import psnr
 from argparse import ArgumentParser, Namespace
 from arguments import ModelParams, PipelineParams, OptimizationParams
-try:
-    from torch.utils.tensorboard import SummaryWriter
-    TENSORBOARD_FOUND = True
-except ImportError:
-    TENSORBOARD_FOUND = False
 from time import perf_counter
 import numpy as np
 from utils.pose_utils import get_camera_from_tensor
 
-def save_pose(path, quat_pose, train_cams, llffhold=2):
-    output_poses=[]
+
+def save_pose(path, quat_pose, train_cams):
+    output_poses = []
     index_colmap = [cam.colmap_id for cam in train_cams]
     for quat_t in quat_pose:
         w2c = get_camera_from_tensor(quat_t)
@@ -40,8 +34,8 @@ def save_pose(path, quat_pose, train_cams, llffhold=2):
     colmap_poses = []
     for i in range(len(index_colmap)):
         ind = index_colmap.index(i+1)
-        bb=output_poses[ind]
-        bb = bb#.inverse()
+        bb = output_poses[ind]
+        bb = bb  # .inverse()
         colmap_poses.append(bb)
     colmap_poses = torch.stack(colmap_poses).detach().cpu().numpy()
     np.save(path, colmap_poses)
@@ -62,8 +56,8 @@ def training(dataset, opt, pipe, checkpoint, optim_pose):
     bg_color = [1, 1, 1] if dataset.white_background else [0, 0, 0]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
 
-    iter_start = torch.cuda.Event(enable_timing = True)
-    iter_end = torch.cuda.Event(enable_timing = True)
+    iter_start = torch.cuda.Event(enable_timing=True)
+    iter_end = torch.cuda.Event(enable_timing=True)
 
     viewpoint_stack = None
     ema_loss_for_log = 0.0
@@ -71,7 +65,7 @@ def training(dataset, opt, pipe, checkpoint, optim_pose):
     first_iter += 1
 
     start = perf_counter()
-    for iteration in range(first_iter, opt.iterations + 1):        
+    for iteration in range(first_iter, opt.iterations + 1):
 
         iter_start.record()
 
@@ -129,13 +123,14 @@ def training(dataset, opt, pipe, checkpoint, optim_pose):
         scene.save(iteration)
         save_pose(scene.model_path + 'pose' + f"/pose_{iteration}.npy", gaussians.P, train_cams_init)
 
-def prepare_output_and_logger(args):    
-        
+
+def prepare_output_and_logger(args):
     # Set up output folder
     print("Output folder: {}".format(args.model_path))
-    os.makedirs(args.model_path, exist_ok = True)
+    os.makedirs(args.model_path, exist_ok=True)
     with open(os.path.join(args.model_path, "cfg_args"), 'w') as cfg_log_f:
         cfg_log_f.write(str(Namespace(**vars(args))))
+
 
 if __name__ == "__main__":
     # Set up command line argument parser
@@ -145,10 +140,10 @@ if __name__ == "__main__":
     pp = PipelineParams(parser)
     parser.add_argument('--detect_anomaly', action='store_true', default=False)
     parser.add_argument("--quiet", action="store_true")
-    parser.add_argument("--start_checkpoint", type=str, default = None)
+    parser.add_argument("--start_checkpoint", type=str, default=None)
     parser.add_argument("--optim_pose", action="store_true")
     args = parser.parse_args(sys.argv[1:])
-    
+
     print("Optimizing " + args.model_path)
 
     # Initialize system state (RNG)
