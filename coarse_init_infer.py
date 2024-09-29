@@ -5,10 +5,6 @@ import numpy as np
 import argparse
 import time
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-os.sys.path.append(os.path.abspath(os.path.join(BASE_DIR, "submodules", "dust3r")))
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
-
 from dust3r.inference import inference
 from dust3r.model import AsymmetricCroCo3DStereo
 from dust3r.utils.device import to_numpy
