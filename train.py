@@ -104,6 +104,13 @@ def training(dataset, opt, pipe, checkpoint, optim_pose):
         dataset=new_dataset,
         opacity_lr=0.05,
         camera_position_lr_init=0.0001/colmap_compute_scene_extent(new_dataset),
+        camera_position_lr_final=0.000001/colmap_compute_scene_extent(new_dataset),
+        camera_position_lr_delay_mult=0.01,
+        camera_position_lr_max_steps=1000,
+        camera_rotation_lr_init=0.0001,
+        camera_rotation_lr_final=0.000001,
+        camera_rotation_lr_delay_mult=0.01,
+        camera_rotation_lr_max_steps=1000,
     )
     compute_difference_optimizer(gaussians.optimizer, trainer.optimizer)
     bg_color = [1, 1, 1] if dataset.white_background else [0, 0, 0]
