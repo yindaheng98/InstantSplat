@@ -16,6 +16,9 @@ from utils.loss_utils import l1_loss, ssim
 from gaussian_renderer import render
 import sys
 from scene import Scene, GaussianModel
+from gaussian_splatting import CameraTrainableGaussianModel
+from gaussian_splatting.dataset.colmap import ColmapTrainableCameraDataset, colmap_compute_scene_extent
+from gaussian_splatting.trainer import CameraTrainer
 from utils.general_utils import safe_state
 from tqdm import tqdm
 from argparse import ArgumentParser, Namespace
@@ -23,6 +26,29 @@ from arguments import ModelParams, PipelineParams, OptimizationParams
 from time import perf_counter
 import numpy as np
 from utils.pose_utils import get_camera_from_tensor
+
+
+def compute_difference(gaussians: GaussianModel, new_gaussians: CameraTrainableGaussianModel):
+    with torch.no_grad():
+        diff_xyz = torch.abs(gaussians._xyz - new_gaussians._xyz).max().item()
+        diff_features_dc = torch.abs(gaussians._features_dc - new_gaussians._features_dc).max().item()
+        diff_features_rest = torch.abs(gaussians._features_rest - new_gaussians._features_rest).max().item()
+        diff_scaling = torch.abs(gaussians._scaling - new_gaussians._scaling).max().item()
+        diff_rotation = torch.abs(gaussians._rotation - new_gaussians._rotation).max().item()
+        diff_opacity = torch.abs(gaussians._opacity - new_gaussians._opacity).max().item()
+        print("Differences params: ", diff_xyz, diff_features_dc, diff_features_rest, diff_scaling, diff_rotation, diff_opacity)
+
+
+def compute_difference_optimizer(optimizer: torch.optim.Optimizer, new_optimizer: torch.optim.Optimizer):
+    res = {}
+    with torch.no_grad():
+        for param_group in optimizer.param_groups:
+            for new_param_group in new_optimizer.param_groups:
+                if param_group['name'] == new_param_group['name'] and param_group['name'] in ["xyz", "f_dc", "f_rest", "opacity", "scaling", "rotation"]:
+                    res[param_group['name']] = param_group['lr'] - new_param_group['lr']
+                elif param_group['name'] == "pose" and new_param_group['name'] in ["quaternions", "Ts"]:
+                    res[new_param_group['name']] = param_group['lr'] - new_param_group['lr']
+        print("Differences params: ", res)
 
 
 def save_pose(path, quat_pose, train_cams):
@@ -41,6 +67,16 @@ def save_pose(path, quat_pose, train_cams):
     np.save(path, colmap_poses)
 
 
+def init_from_ply(gaussian: GaussianModel, path):
+    import numpy as np
+    from plyfile import PlyData
+    plydata = PlyData.read(path)
+    vertices = plydata['vertex']
+    xyz = np.vstack([vertices['x'], vertices['y'], vertices['z']]).T
+    rgb = np.vstack([vertices['red'], vertices['green'], vertices['blue']]).T
+    gaussian.create_from_pcd(torch.from_numpy(xyz), torch.from_numpy(rgb / 255.0))
+
+
 def training(dataset, opt, pipe, checkpoint, optim_pose):
     first_iter = 0
     prepare_output_and_logger(dataset)
@@ -53,6 +89,19 @@ def training(dataset, opt, pipe, checkpoint, optim_pose):
     train_cams_init = scene.getTrainCameras().copy()
     os.makedirs(scene.model_path + 'pose', exist_ok=True)
     save_pose(scene.model_path + 'pose' + "/pose_org.npy", gaussians.P, train_cams_init)
+
+    new_gaussians = CameraTrainableGaussianModel(dataset.sh_degree).to('cuda')
+    init_from_ply(new_gaussians, os.path.join(dataset.source_path, "sparse/0", "points3D.ply"))
+    compute_difference(gaussians, new_gaussians)
+    new_dataset = (ColmapTrainableCameraDataset(dataset.source_path)).to('cuda')
+    trainer = CameraTrainer(
+        gaussians,
+        scene_extent=colmap_compute_scene_extent(new_dataset),
+        dataset=new_dataset,
+        opacity_lr=0.05,
+        camera_position_lr_init=0.0001/colmap_compute_scene_extent(new_dataset),
+    )
+    compute_difference_optimizer(gaussians.optimizer, trainer.optimizer)
     bg_color = [1, 1, 1] if dataset.white_background else [0, 0, 0]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
 
