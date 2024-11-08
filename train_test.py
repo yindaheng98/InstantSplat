@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 from gaussian_splatting import GaussianModel, CameraTrainableGaussianModel
 from gaussian_splatting.dataset import TrainableCameraDataset
 from gaussian_splatting.utils import psnr
-from gaussian_splatting.dataset.colmap import colmap_init, ColmapTrainableCameraDataset, colmap_compute_scene_extent
+from gaussian_splatting.dataset.colmap import ColmapTrainableCameraDataset, colmap_compute_scene_extent
 from gaussian_splatting.trainer import CameraTrainer
 
 parser = ArgumentParser()
@@ -52,8 +52,21 @@ def read_config(config_path: str):
         return json.load(f)
 
 
+default_configs = dict(
+    opacity_lr=0.05,
+    camera_position_lr_init=0.01,
+    camera_position_lr_final=0.0001,
+    camera_position_lr_delay_mult=0.01,
+    camera_position_lr_max_steps=1000,
+    camera_rotation_lr_init=0.0001,
+    camera_rotation_lr_final=0.000001,
+    camera_rotation_lr_delay_mult=0.01,
+    camera_rotation_lr_max_steps=1000,
+)
+
+
 def main(sh_degree: int, source: str, destination: str, iteration: int, device: str, args):
-    configs = {} if args.config is None else read_config(args.config)
+    configs = default_configs if args.config is None else read_config(args.config)
     dataset, gaussians, trainer = init_gaussians(
         sh_degree=sh_degree, source=source, device=device,
         load_ply=args.load_ply, load_camera=args.load_camera, configs=configs)

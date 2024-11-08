@@ -30,7 +30,8 @@
                 "--iter",
                 "1000",
                 "--optim_pose"
-            ]
+            ],
+            "justMyCode": false
         },
         {
             "name": "train_test",
