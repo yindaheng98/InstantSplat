@@ -33,6 +33,22 @@
             ]
         },
         {
+            "name": "train_test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "train_test.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-s",
+                "data/sora/santorini/3_views",
+                "-d",
+                "output/infer/sora/santorini/3_views_1000Iter_1xPoseLR",
+                "-i",
+                "1000",
+            ],
+            "justMyCode": false
+        },
+        {
             "name": "render",
             "type": "debugpy",
             "request": "launch",
