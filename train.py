@@ -28,6 +28,10 @@ import numpy as np
 from utils.pose_utils import get_camera_from_tensor
 
 
+# def print(*args, **kwargs):
+#     pass
+
+
 def compute_difference(gaussians: GaussianModel, new_gaussians: CameraTrainableGaussianModel):
     with torch.no_grad():
         diff_xyz = torch.abs(gaussians._xyz - new_gaussians._xyz).max().item()
@@ -95,7 +99,7 @@ def training(dataset, opt, pipe, checkpoint, optim_pose):
     compute_difference(gaussians, new_gaussians)
     new_dataset = (ColmapTrainableCameraDataset(dataset.source_path)).to('cuda')
     trainer = CameraTrainer(
-        gaussians,
+        new_gaussians,
         scene_extent=colmap_compute_scene_extent(new_dataset),
         dataset=new_dataset,
         opacity_lr=0.05,
@@ -109,7 +113,9 @@ def training(dataset, opt, pipe, checkpoint, optim_pose):
     iter_end = torch.cuda.Event(enable_timing=True)
 
     viewpoint_stack = None
+    idx_stack = None
     ema_loss_for_log = 0.0
+    new_ema_loss_for_log = 0.0
     progress_bar = tqdm(range(first_iter, opt.iterations), desc="Training progress")
     first_iter += 1
 
@@ -130,7 +136,10 @@ def training(dataset, opt, pipe, checkpoint, optim_pose):
         # Pick a random Camera
         if not viewpoint_stack:
             viewpoint_stack = scene.getTrainCameras().copy()
-        viewpoint_cam = viewpoint_stack.pop(randint(0, len(viewpoint_stack)-1))
+            idx_stack = list(range(len(viewpoint_stack)))
+        k = randint(0, len(viewpoint_stack) - 1)
+        viewpoint_cam = viewpoint_stack.pop(k)
+        idx = idx_stack.pop(k)
         pose = gaussians.get_RT(viewpoint_cam.uid)
 
         bg = torch.rand((3), device="cuda") if opt.random_background else background
@@ -147,13 +156,17 @@ def training(dataset, opt, pipe, checkpoint, optim_pose):
         gaussians.optimizer.step()
         gaussians.optimizer.zero_grad(set_to_none=True)
 
+        new_loss, _ = trainer.step(new_dataset[idx])
+        compute_difference_optimizer(gaussians.optimizer, trainer.optimizer)
+
         iter_end.record()
 
         with torch.no_grad():
             # Progress bar
             ema_loss_for_log = 0.4 * loss.item() + 0.6 * ema_loss_for_log
+            new_ema_loss_for_log = 0.4 * new_loss.item() + 0.6 * new_ema_loss_for_log
             if iteration % 10 == 0:
-                progress_bar.set_postfix({"Loss": f"{ema_loss_for_log:.{7}f}"})
+                progress_bar.set_postfix({"Loss": f"{ema_loss_for_log:.{7}f}", "new Loss": f"{new_ema_loss_for_log:.{7}f}"})
                 progress_bar.update(10)
             if iteration == opt.iterations:
                 progress_bar.close()
