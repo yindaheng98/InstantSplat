@@ -1,7 +1,4 @@
 {
-    // 使用 IntelliSense 了解相关属性。 
-    // 悬停以查看现有属性的描述。
-    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
@@ -31,6 +28,24 @@
                 "1000",
             ],
             "justMyCode": false
+        },
+        {
+            "name": "render",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "render.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "-s",
+                "data/sora/santorini/3_views",
+                "-d",
+                "output/infer/sora/santorini/3_views_1000Iter_1xPoseLR",
+                "-i",
+                "1000",
+                "--load_camera",
+                "output/infer/sora/santorini/3_views_1000Iter_1xPoseLR/cameras.json",
+            ]
         },
     ]
 }
