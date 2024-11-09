@@ -25,23 +25,6 @@
             "args": [
                 "-s",
                 "data/sora/santorini/3_views",
-                "-m",
-                "output/infer/sora/santorini/3_views_1000Iter_1xPoseLR",
-                "--iter",
-                "1000",
-                "--optim_pose"
-            ],
-            "justMyCode": false
-        },
-        {
-            "name": "train_test",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "train_test.py",
-            "console": "integratedTerminal",
-            "args": [
-                "-s",
-                "data/sora/santorini/3_views",
                 "-d",
                 "output/infer/sora/santorini/3_views_1000Iter_1xPoseLR",
                 "-i",
@@ -55,14 +38,17 @@
             "request": "launch",
             "program": "render.py",
             "console": "integratedTerminal",
+            "justMyCode": false,
             "args": [
-                "--iteration",
-                "1000",
                 "-s",
                 "data/sora/santorini/3_views",
-                "-m",
-                "output/infer/sora/santorini/3_views_1000Iter_1xPoseLR"
+                "-d",
+                "output/infer/sora/santorini/3_views_1000Iter_1xPoseLR",
+                "-i",
+                "1000",
+                "--load_camera",
+                "output/infer/sora/santorini/3_views_1000Iter_1xPoseLR/cameras.json",
             ]
-        }
+        },
     ]
 }
