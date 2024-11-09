@@ -17,6 +17,7 @@ InstantSplat supports 3D-GS, 2D-GS, and Mip-Splatting.
 
 - [Table of Contents](#table-of-contents)
 - [Free-view Rendering](#free-view-rendering)
+- [TODO List](#todo-list)
 - [Get Started](#get-started)
   - [Installation](#installation)
   - [Usage](#usage)
@@ -39,11 +40,8 @@ https://github.com/zhiwenfan/zhiwenfan.github.io/assets/34684115/748ae0de-8186-4
 ```bash
 git clone --recursive https://github.com/NVlabs/InstantSplat.git
 cd InstantSplat
-git submodule update --init --recursive
-cd submodules/dust3r/
 mkdir -p checkpoints/
 wget https://download.europe.naverlabs.com/ComputerVision/DUSt3R/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth -P checkpoints/
-cd ../../
 ```
 
 2. Create the environment (or use pre-built docker), here we show an example using conda.
@@ -51,19 +49,8 @@ cd ../../
 conda create -n instantsplat python=3.11 cmake=3.14.0
 conda activate instantsplat
 conda install pytorch torchvision pytorch-cuda=12.1 -c pytorch -c nvidia  # use the correct version of cuda for your system
-pip install -r requirements.txt
-pip install submodules/simple-knn
-# modify the rasterizer
-vim submodules/diff-gaussian-rasterization/cuda_rasterizer/auxiliary.h
-'p_view.z <= 0.2f' -> 'p_view.z <= 0.001f' # line 154
-pip install submodules/diff-gaussian-rasterization
-```
-
-3. Optional but highly suggested, compile the cuda kernels for RoPE (as in CroCo v2).
-```bash
-# DUST3R relies on RoPE positional embeddings for which you can compile some cuda kernels for faster runtime.
-cd submodules/dust3r/croco/models/curope/
-python setup.py build_ext --inplace
+pip install https://github.com/yindaheng98/gaussian-splatting.git@master
+pip install git+https://github.com/yindaheng98/dust3r.git@main
 ```
 
 Alternative: use the pre-built docker image: pytorch/pytorch:2.1.2-cuda11.8-cudnn8-devel

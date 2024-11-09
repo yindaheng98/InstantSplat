@@ -12,6 +12,7 @@ data/*
 !data/TT/Family/3_views/images/
 !data/TT/Family/24_views/images/
 !data/sora/santorini/3_views/images/
+checkpoints
 
 *.dist-info
 # Byte-compiled / optimized / DLL files

@@ -17,7 +17,7 @@ def get_args_parser():
     parser.add_argument("--img_base_path", type=str, default="data/sora/santorini/3_views")
 
     parser.add_argument("--image_size", type=int, default=512, choices=[512, 224], help="image size")
-    parser.add_argument("--model_path", type=str, default="submodules/dust3r/checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth", help="path to the model weights")
+    parser.add_argument("--model_path", type=str, default="checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth", help="path to the model weights")
     parser.add_argument("--device", type=str, default='cuda', help="pytorch device")
 
     parser.add_argument("--batch_size", type=int, default=1)
