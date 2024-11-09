@@ -54,8 +54,8 @@ def read_config(config_path: str):
 
 default_configs = dict(
     opacity_lr=0.05,
-    camera_position_lr_init=0.01,
-    camera_position_lr_final=0.0001,
+    camera_position_lr_init=0.001,
+    camera_position_lr_final=0.00001,
     camera_position_lr_delay_mult=0.01,
     camera_position_lr_max_steps=1000,
     camera_rotation_lr_init=0.0001,
