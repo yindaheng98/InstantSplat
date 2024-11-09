@@ -19,8 +19,6 @@ class InitializedPointCloud(NamedTuple):
 
 
 class AbstractInitializer(ABC):
-    def __init__(self):
-        super().__init__()
 
     @abstractmethod
     def __call__(self, image_path_list: List[str]) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
