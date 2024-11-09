@@ -10,6 +10,7 @@ from dust3r.utils.device import to_numpy
 from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
 from instant_splat.utils.dust3r_utils import compute_global_alignment, load_images, storePly, save_colmap_cameras, save_colmap_images
+from instant_splat.initializer.dust3r import Dust3rInitializer
 
 
 def get_args_parser():
@@ -39,6 +40,8 @@ if __name__ == '__main__':
     train_img_list = sorted(os.listdir(img_folder_path))
     images, ori_size = load_images(img_folder_path, size=512)
     print("ori_size", ori_size)
+    initializer = Dust3rInitializer(args.model_path, args.batch_size, args.niter, args.schedule, args.lr, args.focal_avg, args.device)
+    initialized_point_cloud, initialized_cameras = initializer(image_path_list=[os.path.join(img_folder_path, path) for path in train_img_list])
 
     model = AsymmetricCroCo3DStereo.from_pretrained(args.model_path).to(device)
     start_time = time.time()

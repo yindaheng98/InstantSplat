@@ -10,7 +10,7 @@ from .abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 from .utils import load_images, focal2fov
 
 
-class Dust3rInitializer(NamedTuple, AbstractInitializer):
+class Dust3rInitializerParameter(NamedTuple):
     model_path: str
     batch_size: int = 1
     niter: int = 300
@@ -18,6 +18,9 @@ class Dust3rInitializer(NamedTuple, AbstractInitializer):
     lr: float = 0.01
     focal_avg: bool = True
     device: torch.device = 'cuda'
+
+
+class Dust3rInitializer(AbstractInitializer, Dust3rInitializerParameter):
 
     def __call__(args, image_path_list):
         device = args.device
@@ -30,10 +33,10 @@ class Dust3rInitializer(NamedTuple, AbstractInitializer):
         loss = compute_global_alignment(scene=scene, init="mst", niter=args.niter, schedule=args.schedule, lr=args.lr, focal_avg=args.focal_avg)
         scene = scene.clean_pointcloud()
 
-        imgs = to_numpy(scene.imgs)
+        imgs = [torch.from_numpy(img).to(device) for img in scene.imgs]
         focals = scene.get_focals()
         poses = scene.get_im_poses()
-        pts3d = to_numpy(scene.get_pts3d())
+        pts3d = scene.get_pts3d()
         scene.min_conf_thr = float(scene.conf_trf(torch.tensor(1.0)))
         confidence_masks = scene.get_masks()
         intrinsics = scene.get_intrinsics()
