@@ -14,14 +14,9 @@ from torch import cuda
 from torch.utils.cpp_extension import CUDAExtension, BuildExtension
 import os
 
-package_dir = {
-    'instant_splat': 'instant_splat',
-    'instant_splat.utils': 'instant_splat/utils',
-    'instant_splat.dust3r': 'submodules/dust3r/dust3r',
-    'instant_splat.croco.models': 'submodules/dust3r/croco/models',
-    'instant_splat.croco.models.curope': 'submodules/dust3r/croco/models/curope',
-}
-package_dust3r = ["instant_splat." + package for package in find_packages(where='submodules/dust3r')]
+packages = ['instant_splat', 'instant_splat.utils']
+packages_dust3r = ['dust3r'] + ["dust3r." + package for package in find_packages(where="submodules/dust3r/dust3r")]
+packages_croco = ['croco', 'croco.utils', 'croco.models', 'croco.models.curope']
 
 
 cxx_compiler_flags = []
@@ -42,12 +37,16 @@ if os.name == 'nt':
     nvcc_compiler_flags.append("-allow-unsupported-compiler")
 
 setup(
-    name="gaussian_splatting",
-    packages=[key for key in package_dir] + package_dust3r,
-    package_dir=package_dir,
+    name="instant_splat",
+    packages=packages + packages_dust3r + packages_croco,
+    package_dir={
+        'instant_splat': 'instant_splat',
+        'dust3r': 'submodules/dust3r/dust3r',
+        'croco': 'submodules/dust3r/croco',
+    },
     ext_modules=[
         CUDAExtension(
-            name='instant_splat.croco.models.curope.curope',
+            name='croco.models.curope.curope',
             sources=[
                 "submodules/dust3r/croco/models/curope/curope.cpp",
                 "submodules/dust3r/croco/models/curope/kernels.cu",
