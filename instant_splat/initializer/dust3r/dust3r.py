@@ -1,16 +1,51 @@
-from typing import NamedTuple
+import os
+import math
+from typing import List, NamedTuple
+import cv2
+import numpy as np
+import PIL.Image
+from PIL.ImageOps import exif_transpose
 import torch
+import torchvision.transforms as tvf
 from dust3r.inference import inference
 from dust3r.model import AsymmetricCroCo3DStereo
 from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
-from .alignment import compute_global_alignment
-from .utils import load_images, focal2fov
+from dust3r.utils.image import _resize_pil_image
 from instant_splat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
+
+from .alignment import compute_global_alignment
+
+
+def load_images(img_path_list: List[str], size: int = None):
+    """ open and convert all images in a list or folder to proper input format for DUSt3R"""
+    imgs, sizes = [], []
+    for path in img_path_list:
+        img = exif_transpose(PIL.Image.open(os.path.join(path))).convert('RGB')
+        sizes.append(img.size)
+        W1, H1 = img.size
+        img = _resize_pil_image(img, size)
+        W, H = img.size
+        W2 = W//16*16
+        H2 = H//16*16
+        img = np.array(img)
+        img = cv2.resize(img, (W2, H2), interpolation=cv2.INTER_LINEAR)
+        img = PIL.Image.fromarray(img)
+
+        print(f' - adding {path} with resolution {W1}x{H1} --> {W2}x{H2}')
+        ImgNorm = tvf.Compose([tvf.ToTensor(), tvf.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        imgs.append(dict(img=ImgNorm(img)[None], true_shape=np.int32(
+            [img.size[::-1]]), idx=len(imgs), instance=str(len(imgs))))
+
+    return imgs, sizes
+
+
+def focal2fov(focal, pixels):
+    return 2*math.atan(pixels/(2*focal))
 
 
 class Dust3rInitializer(NamedTuple):
-    model_path: str
+    model_path: str = "checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth"
     batch_size: int = 1
     niter: int = 300
     schedule: str = 'linear'

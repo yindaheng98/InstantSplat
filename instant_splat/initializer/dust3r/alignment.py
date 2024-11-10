@@ -84,7 +84,7 @@ def init_minimum_spanning_tree(scene, focal_avg=False, known_focal=None, **kw):
     return init_from_pts3d(scene, pts3d, im_focals, im_poses)
 
 
-@torch.cuda.amp.autocast(enabled=False)
+@torch.amp.autocast('cuda', enabled=False)
 def compute_global_alignment(scene, init=None, niter_PnP=10, focal_avg=False, known_focal=None, **kw):
     if init is None:
         pass
