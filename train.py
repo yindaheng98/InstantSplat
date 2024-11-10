@@ -4,11 +4,12 @@ import random
 import torch
 from tqdm import tqdm
 from argparse import ArgumentParser
-from gaussian_splatting import GaussianModel, CameraTrainableGaussianModel
+from gaussian_splatting import CameraTrainableGaussianModel
 from gaussian_splatting.dataset import TrainableCameraDataset
 from gaussian_splatting.utils import psnr
 from gaussian_splatting.dataset.colmap import ColmapTrainableCameraDataset, colmap_compute_scene_extent
 from gaussian_splatting.trainer import CameraTrainer
+from instant_splat.initializer import Dust3rInitializer, TrainableInitializedCameraDataset
 
 parser = ArgumentParser()
 parser.add_argument("--sh_degree", default=3, type=int)
@@ -21,21 +22,32 @@ parser.add_argument("--save_iterations", nargs="+", type=int, default=[7000, 300
 parser.add_argument("--device", default="cuda", type=str)
 parser.add_argument("--config", default=None, type=str)
 
-
-def init_from_ply(gaussian: GaussianModel, path):
-    import numpy as np
-    from plyfile import PlyData
-    plydata = PlyData.read(path)
-    vertices = plydata['vertex']
-    xyz = np.vstack([vertices['x'], vertices['y'], vertices['z']]).T
-    rgb = np.vstack([vertices['red'], vertices['green'], vertices['blue']]).T
-    gaussian.create_from_pcd(torch.from_numpy(xyz), torch.from_numpy(rgb / 255.0))
+parser.add_argument("--init", action="store_true")
+parser.add_argument("--init_config", default=None, type=str)
 
 
-def init_gaussians(sh_degree: int, source: str, device: str, load_ply: str = None, load_camera: str = None, configs={}):
+def init_gaussians(sh_degree: int, source: str, device: str, load_ply: str = None, load_camera: str = None, configs={}, init=False, init_configs={}):
     gaussians = CameraTrainableGaussianModel(sh_degree).to(device)
-    gaussians.load_ply(load_ply) if load_ply else init_from_ply(gaussians, os.path.join(source, "sparse/0", "points3D.ply"))
-    dataset = (TrainableCameraDataset.from_json(load_camera) if load_camera else ColmapTrainableCameraDataset(source)).to(device)
+    if load_ply:  # load a trained model
+        gaussians.load_ply(load_ply)
+        dataset = (TrainableCameraDataset.from_json(load_camera) if load_camera else ColmapTrainableCameraDataset(source)).to(device)
+    elif init:  # init by dust3r
+        image_folder = os.path.join(source, "images")
+        image_path_list = [os.path.join(image_folder, file) for file in sorted(os.listdir(image_folder))]
+        initializer = Dust3rInitializer(**init_configs).to(device)
+        initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
+        dataset = TrainableInitializedCameraDataset(initialized_cameras).to(device)
+        gaussians.create_from_pcd(initialized_point_cloud.points, initialized_point_cloud.colors)
+    else:  # create_from_pcd
+        import numpy as np
+        from plyfile import PlyData
+        plydata = PlyData.read(load_ply)
+        vertices = plydata['vertex']
+        xyz = np.vstack([vertices['x'], vertices['y'], vertices['z']]).T
+        rgb = np.vstack([vertices['red'], vertices['green'], vertices['blue']]).T
+        gaussians.create_from_pcd(torch.from_numpy(xyz), torch.from_numpy(rgb / 255.0))
+        dataset = (TrainableCameraDataset.from_json(load_camera) if load_camera else ColmapTrainableCameraDataset(source)).to(device)
+
     trainer = CameraTrainer(
         gaussians,
         scene_extent=colmap_compute_scene_extent(dataset),
@@ -68,9 +80,11 @@ default_configs = dict(
 def main(sh_degree: int, source: str, destination: str, iteration: int, device: str, args):
     os.makedirs(destination, exist_ok=True)
     configs = default_configs if args.config is None else read_config(args.config)
+    init_configs = {} if args.init_config is None else read_config(args.init_config)
     dataset, gaussians, trainer = init_gaussians(
         sh_degree=sh_degree, source=source, device=device,
-        load_ply=args.load_ply, load_camera=args.load_camera, configs=configs)
+        load_ply=args.load_ply, load_camera=args.load_camera, configs=configs,
+        init=args.init, init_configs=init_configs)
     dataset.save_cameras(os.path.join(destination, "cameras_orig.json"))
 
     pbar = tqdm(range(1, iteration+1))

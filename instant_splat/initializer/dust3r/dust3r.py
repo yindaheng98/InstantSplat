@@ -78,8 +78,8 @@ class Dust3rInitializer(AbstractInitializer):
 
         imgs = [torch.from_numpy(img).to(device) for img in scene.imgs]
         focals = scene.get_focals()
-        poses = torch.linalg.inv(scene.get_im_poses())
-        pts3d = scene.get_pts3d()
+        poses = torch.linalg.inv(scene.get_im_poses().detach())
+        pts3d = [p.detach() for p in scene.get_pts3d()]
         scene.min_conf_thr = float(scene.conf_trf(torch.tensor(1.0)))
         confidence_masks = scene.get_masks()
         intrinsics = scene.get_intrinsics()

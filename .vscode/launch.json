@@ -37,6 +37,7 @@
                 "output/infer/sora/santorini/3_views_1000Iter_1xPoseLR",
                 "-i",
                 "1000",
+                "--init"
             ],
             "justMyCode": false
         },
