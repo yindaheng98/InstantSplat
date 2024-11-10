@@ -63,6 +63,7 @@ class Dust3rInitializer(AbstractInitializer):
     def to(self, device):
         self.device = device
         self.model = self.model.to(device)
+        return self
 
     def __call__(args, image_path_list):
         device = args.device

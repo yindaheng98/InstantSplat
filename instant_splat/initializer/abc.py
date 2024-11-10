@@ -50,8 +50,8 @@ class InitializedPointCloud(InitializedPointCloud):
 class AbstractInitializer(ABC):
 
     @abstractmethod
-    def to(self, device: torch.device):
-        pass
+    def to(self, device: torch.device) -> 'AbstractInitializer':
+        return self
 
     @abstractmethod
     def __call__(self, image_path_list: List[str]) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
