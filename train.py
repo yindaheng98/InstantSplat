@@ -41,7 +41,7 @@ def init_gaussians(sh_degree: int, source: str, device: str, load_ply: str = Non
     else:  # create_from_pcd
         import numpy as np
         from plyfile import PlyData
-        plydata = PlyData.read(load_ply)
+        plydata = PlyData.read(os.path.join(source, "sparse/0", "points3D.ply"))
         vertices = plydata['vertex']
         xyz = np.vstack([vertices['x'], vertices['y'], vertices['z']]).T
         rgb = np.vstack([vertices['red'], vertices['green'], vertices['blue']]).T

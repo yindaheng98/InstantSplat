@@ -41,9 +41,10 @@ python train.py -s data/sora/santorini/3_views -d output/sora/santorini/3_views 
 python render.py -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --load_camera output/sora/santorini/3_views/cameras.json
 ```
 
-(Optional) Initialize coarse point and save as a Colmap workspace
+(Optional) Initialize coarse point and save as a Colmap workspace than jointly train 3DGS & cameras
 ```shell
 python initialize.py -d data/sora/santorini/3_views
+python train.py -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000
 ```
 
 ## Usage

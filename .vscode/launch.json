@@ -30,6 +30,22 @@
             "justMyCode": false
         },
         {
+            "name": "train initialized",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "train.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-s",
+                "data/sora/santorini/3_views",
+                "-d",
+                "output/sora/santorini/3_views",
+                "-i",
+                "1000",
+            ],
+            "justMyCode": false
+        },
+        {
             "name": "render",
             "type": "debugpy",
             "request": "launch",
