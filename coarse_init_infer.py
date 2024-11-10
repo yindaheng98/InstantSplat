@@ -10,7 +10,8 @@ from dust3r.utils.device import to_numpy
 from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
 from instant_splat.utils.dust3r_utils import compute_global_alignment, load_images, storePly, save_colmap_cameras, save_colmap_images
-from instant_splat.initializer.dust3r import Dust3rInitializer
+from instant_splat.initializer import Dust3rInitializer, InitializedCameraDataset
+from gaussian_splatting.dataset.colmap import ColmapCameraDataset
 
 
 def get_args_parser():
@@ -80,3 +81,14 @@ if __name__ == '__main__':
     storePly(os.path.join(output_colmap_path, "points3D_all.ply"), pts_4_3dgs_all, color_4_3dgs_all)
     np.save(os.path.join(output_colmap_path, "focal.npy"), np.array(focals.cpu()))
     np.save(os.path.join(output_colmap_path, "confidence_masks.npy"), np.array(confidence_masks))
+    
+    dataset1 = InitializedCameraDataset(initialized_cameras)
+    dataset2 = ColmapCameraDataset(args.img_base_path)
+    for cam1, cam2 in zip(dataset1, dataset2):
+        print(cam1.image_height - cam2.image_height)
+        print(cam1.image_width - cam2.image_width)
+        print(cam1.FoVx - cam2.FoVx)
+        print(cam1.FoVy - cam2.FoVy)
+        print(cam1.R - cam2.R)
+        print(cam1.T - cam2.T)
+    pass
