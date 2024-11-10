@@ -74,6 +74,7 @@ if __name__ == '__main__':
     color_4_3dgs = np.concatenate([p[m] for p, m in zip(imgs, confidence_masks)])
     color_4_3dgs = (color_4_3dgs * 255.0).astype(np.uint8)
     storePly(os.path.join(output_colmap_path, "points3D.ply"), pts_4_3dgs, color_4_3dgs)
+    initialized_point_cloud.save_ply(os.path.join(output_colmap_path, "points3D_test.ply"))
     pts_4_3dgs_all = np.array(pts3d).reshape(-1, 3)
     color_4_3dgs_all = (np.array(imgs).reshape(-1, 3) * 255.0).astype(np.uint8)
     storePly(os.path.join(output_colmap_path, "points3D_all.ply"), pts_4_3dgs_all, color_4_3dgs_all)
