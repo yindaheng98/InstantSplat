@@ -7,8 +7,8 @@ from argparse import ArgumentParser
 from gaussian_splatting import CameraTrainableGaussianModel
 from gaussian_splatting.dataset import TrainableCameraDataset
 from gaussian_splatting.utils import psnr
-from gaussian_splatting.dataset.colmap import ColmapTrainableCameraDataset, colmap_compute_scene_extent
-from gaussian_splatting.trainer import CameraTrainer
+from gaussian_splatting.dataset.colmap import ColmapTrainableCameraDataset
+from instant_splat.trainer import Trainer
 from instant_splat.initializer import Dust3rInitializer, TrainableInitializedCameraDataset
 
 parser = ArgumentParser()
@@ -48,9 +48,9 @@ def init_gaussians(sh_degree: int, source: str, device: str, load_ply: str = Non
         gaussians.create_from_pcd(torch.from_numpy(xyz), torch.from_numpy(rgb / 255.0))
         dataset = (TrainableCameraDataset.from_json(load_camera) if load_camera else ColmapTrainableCameraDataset(source)).to(device)
 
-    trainer = CameraTrainer(
+    trainer = Trainer(
         gaussians,
-        scene_extent=colmap_compute_scene_extent(dataset),
+        scene_extent=dataset.scene_extent(),
         dataset=dataset,
         **configs
     )
@@ -64,22 +64,9 @@ def read_config(config_path: str):
         return json.load(f)
 
 
-default_configs = dict(
-    opacity_lr=0.05,
-    camera_position_lr_init=0.001,
-    camera_position_lr_final=0.00001,
-    camera_position_lr_delay_mult=0.01,
-    camera_position_lr_max_steps=1000,
-    camera_rotation_lr_init=0.0001,
-    camera_rotation_lr_final=0.000001,
-    camera_rotation_lr_delay_mult=0.01,
-    camera_rotation_lr_max_steps=1000,
-)
-
-
 def main(sh_degree: int, source: str, destination: str, iteration: int, device: str, args):
     os.makedirs(destination, exist_ok=True)
-    configs = default_configs if args.config is None else read_config(args.config)
+    configs = {} if args.config is None else read_config(args.config)
     init_configs = {} if args.init_config is None else read_config(args.init_config)
     dataset, gaussians, trainer = init_gaussians(
         sh_degree=sh_degree, source=source, device=device,

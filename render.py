@@ -4,13 +4,11 @@ from tqdm import tqdm
 from os import makedirs
 import torchvision
 from argparse import ArgumentParser
-from gaussian_splatting import GaussianModel, CameraTrainableGaussianModel
+from gaussian_splatting import CameraTrainableGaussianModel
 from gaussian_splatting.dataset import TrainableCameraDataset
 from gaussian_splatting.dataset.colmap import ColmapTrainableCameraDataset
 from gaussian_splatting.utils import psnr
 from lpipsPyTorch import lpips
-from gaussian_splatting.dataset import JSONCameraDataset
-from gaussian_splatting.dataset.colmap import ColmapCameraDataset
 
 parser = ArgumentParser()
 parser.add_argument("--sh_degree", default=3, type=int)
