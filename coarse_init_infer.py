@@ -159,4 +159,5 @@ if __name__ == '__main__':
         print(cam1.FoVy - cam2.FoVy)
         print(cam1.R - cam2.R)
         print(cam1.T - cam2.T)
-    pass
+    os.makedirs(os.path.join(args.img_base_path, "sparse/1"), exist_ok=True)
+    dataset1.save_colmap_cameras(os.path.join(args.img_base_path, "sparse/1"))
