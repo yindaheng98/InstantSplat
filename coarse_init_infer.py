@@ -3,15 +3,83 @@ import torch
 import numpy as np
 import argparse
 import time
+import cv2
+from dust3r.utils.image import _resize_pil_image
+import PIL.Image
+from PIL.ImageOps import exif_transpose
+from plyfile import PlyData, PlyElement
+import torchvision.transforms as tvf
 
 from dust3r.inference import inference
 from dust3r.model import AsymmetricCroCo3DStereo
 from dust3r.utils.device import to_numpy
 from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
-from instant_splat.initializer.dust3r.dust3r_utils import compute_global_alignment, load_images, storePly, save_colmap_cameras, save_colmap_images
+from instant_splat.initializer.utils import save_colmap_cameras, save_colmap_images
+from instant_splat.initializer.dust3r.dust3r_utils import compute_global_alignment
 from instant_splat.initializer import Dust3rInitializer, InitializedCameraDataset
 from gaussian_splatting.dataset.colmap import ColmapCameraDataset
+
+
+def load_images(folder_or_list, size, square_ok=False):
+    """ open and convert all images in a list or folder to proper input format for DUSt3R
+    """
+    if isinstance(folder_or_list, str):
+        print(f'>> Loading images from {folder_or_list}')
+        root, folder_content = folder_or_list, sorted(os.listdir(folder_or_list))
+
+    elif isinstance(folder_or_list, list):
+        print(f'>> Loading a list of {len(folder_or_list)} images')
+        root, folder_content = '', folder_or_list
+
+    else:
+        raise ValueError(f'bad {folder_or_list=} ({type(folder_or_list)})')
+
+    imgs = []
+    for path in folder_content:
+        if not path.endswith(('.jpg', '.jpeg', '.png', '.JPG')):
+            continue
+        img = exif_transpose(PIL.Image.open(os.path.join(root, path))).convert('RGB')
+        W1, H1 = img.size
+        if size == 224:
+            # resize short side to 224 (then crop)1
+            img = _resize_pil_image(img, round(size * max(W1/H1, H1/W1)))
+        else:
+            # resize long side to 512
+            img = _resize_pil_image(img, size)
+        W, H = img.size
+        W2 = W//16*16
+        H2 = H//16*16
+        img = np.array(img)
+        img = cv2.resize(img, (W2, H2), interpolation=cv2.INTER_LINEAR)
+        img = PIL.Image.fromarray(img)
+
+        print(f' - adding {path} with resolution {W1}x{H1} --> {W2}x{H2}')
+        ImgNorm = tvf.Compose([tvf.ToTensor(), tvf.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        imgs.append(dict(img=ImgNorm(img)[None], true_shape=np.int32(
+            [img.size[::-1]]), idx=len(imgs), instance=str(len(imgs))))
+
+    assert imgs, 'no images foud at '+root
+    print(f' (Found {len(imgs)} images)')
+    return imgs, (W1, H1)
+
+
+def storePly(path, xyz, rgb):
+    # Define the dtype for the structured array
+    dtype = [('x', 'f4'), ('y', 'f4'), ('z', 'f4'),
+             ('nx', 'f4'), ('ny', 'f4'), ('nz', 'f4'),
+             ('red', 'u1'), ('green', 'u1'), ('blue', 'u1')]
+
+    normals = np.zeros_like(xyz)
+
+    elements = np.empty(xyz.shape[0], dtype=dtype)
+    attributes = np.concatenate((xyz, normals, rgb), axis=1)
+    elements[:] = list(map(tuple, attributes))
+
+    # Create the PlyData object and write to file
+    vertex_element = PlyElement.describe(elements, 'vertex')
+    ply_data = PlyData([vertex_element])
+    ply_data.write(path)
 
 
 def get_args_parser():
@@ -81,7 +149,7 @@ if __name__ == '__main__':
     storePly(os.path.join(output_colmap_path, "points3D_all.ply"), pts_4_3dgs_all, color_4_3dgs_all)
     np.save(os.path.join(output_colmap_path, "focal.npy"), np.array(focals.cpu()))
     np.save(os.path.join(output_colmap_path, "confidence_masks.npy"), np.array(confidence_masks))
-    
+
     dataset1 = InitializedCameraDataset(initialized_cameras)
     dataset2 = ColmapCameraDataset(args.img_base_path)
     for cam1, cam2 in zip(dataset1, dataset2):
