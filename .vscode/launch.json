@@ -2,18 +2,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "coarse_init_infer",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "coarse_init_infer.py",
-            "console": "integratedTerminal",
-            "args": [
-                "--img_base_path",
-                "data/sora/santorini/3_views",
-                "--focal_avg"
-            ]
-        },
-        {
             "name": "initialize",
             "type": "debugpy",
             "request": "launch",
