@@ -34,7 +34,7 @@ class Dust3rInitializer(AbstractInitializer, Dust3rInitializer):
 
         imgs = [torch.from_numpy(img).to(device) for img in scene.imgs]
         focals = scene.get_focals()
-        poses = scene.get_im_poses()
+        poses = torch.linalg.inv(scene.get_im_poses())
         pts3d = scene.get_pts3d()
         scene.min_conf_thr = float(scene.conf_trf(torch.tensor(1.0)))
         confidence_masks = scene.get_masks()
@@ -48,7 +48,7 @@ class Dust3rInitializer(AbstractInitializer, Dust3rInitializer):
                 image_width=ori_sizes[i][0], image_height=ori_sizes[i][1],
                 FoVx=focal2fov(intrinsics[i][0, 0], intrinsics[i][0, 2]*2),
                 FoVy=focal2fov(intrinsics[i][1, 1], intrinsics[i][1, 2]*2),
-                R=poses[i][:3, :3], T=torch.linalg.inv(poses)[i][:3, 3],
+                R=poses[i][:3, :3], T=poses[i][:3, 3],
                 image_path=image_path_list[i]
             )
             for i in range(len(image_path_list))
