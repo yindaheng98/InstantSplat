@@ -1,6 +1,6 @@
 import os
 import math
-from typing import List, NamedTuple
+from typing import List
 import cv2
 import numpy as np
 import PIL.Image
@@ -44,22 +44,30 @@ def focal2fov(focal, pixels):
     return 2*math.atan(pixels/(2*focal))
 
 
-class Dust3rInitializer(NamedTuple):
-    model_path: str = "checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth"
-    batch_size: int = 1
-    niter: int = 300
-    schedule: str = 'linear'
-    lr: float = 0.01
-    focal_avg: bool = True
-    device: torch.device = 'cuda'
+class Dust3rInitializer(AbstractInitializer):
+    def __init__(self,
+                 model_path: str = "checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth",
+                 batch_size: int = 1,
+                 niter: int = 300,
+                 schedule: str = 'linear',
+                 lr: float = 0.01,
+                 focal_avg: bool = True):
+        self.batch_size = batch_size
+        self.niter = niter
+        self.schedule = schedule
+        self.lr = lr
+        self.focal_avg = focal_avg
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = AsymmetricCroCo3DStereo.from_pretrained(model_path).to(self.device)
 
-
-class Dust3rInitializer(AbstractInitializer, Dust3rInitializer):
+    def to(self, device):
+        self.device = device
+        self.model = self.model.to(device)
 
     def __call__(args, image_path_list):
         device = args.device
         images, ori_sizes = load_images(image_path_list, size=512)
-        model = AsymmetricCroCo3DStereo.from_pretrained(args.model_path).to(device)
+        model = args.model
         #######################################################################################################################################
         pairs = make_pairs(images, scene_graph='complete', prefilter=None, symmetrize=True)
         output = inference(pairs, model, device, batch_size=args.batch_size)
