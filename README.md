@@ -1,3 +1,54 @@
+# packaged InstantSplat
+
+This repo is the **refactored python training and inference code for [InstantSplat](https://github.com/NVlabs/InstantSplat)**.
+Forked from commit [2c5006d41894d06464da53d5495300860f432872](https://github.com/NVlabs/InstantSplat/tree/2c5006d41894d06464da53d5495300860f432872).
+We **refactored the original code following the standard Python package structure**, while **keeping the algorithms used in the code identical to the original version**.
+## Install
+
+### Requirements
+
+Install Pytorch and torchvision following the official guideline: [pytorch.org](https://pytorch.org/)
+
+Install Pillow, numpy and tqdm
+```sh
+pip install Pillow numpy tqdm
+pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master
+```
+
+### Local Install
+
+```shell
+git clone https://github.com/yindaheng98/InstantSplat --recursive
+cd InstantSplat
+pip install --target . --upgrade .
+```
+
+### Pip Install
+
+```shell
+pip install --upgrade git+https://github.com/yindaheng98/InstantSplat.git@main
+```
+
+## Running
+
+1. Initialize coarse point cloud and jointly train 3DGS & cameras
+```shell
+python train.py -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --init
+```
+
+2. Render it
+```shell
+python render.py -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --load_camera output/sora/santorini/3_views/cameras.json
+```
+
+(Optional) Initialize coarse point and save as a Colmap workspace
+```shell
+python initialize.py -d data/sora/santorini/3_views
+```
+
+## Usage
+
+**See [initialize.py](initialize.py), [train.py](train.py) and [render.py](render.py) for full example.**
 
 <h2 align="center"> <a href="https://arxiv.org/abs/2403.20309">InstantSplat: Sparse-view SfM-free <a href="https://arxiv.org/abs/2403.20309"> Gaussian Splatting in Seconds </a>
 
@@ -13,18 +64,6 @@ InstantSplat supports 3D-GS, 2D-GS, and Mip-Splatting.
 </div>
 <br>
 
-## Table of Contents
-
-- [Table of Contents](#table-of-contents)
-- [Free-view Rendering](#free-view-rendering)
-- [TODO List](#todo-list)
-- [Get Started](#get-started)
-  - [Installation](#installation)
-  - [Usage](#usage)
-- [Acknowledgement](#acknowledgement)
-- [Citation](#citation)
-
-
 ## Free-view Rendering
 https://github.com/zhiwenfan/zhiwenfan.github.io/assets/34684115/748ae0de-8186-477a-bab3-3bed80362ad7
 
@@ -32,50 +71,6 @@ https://github.com/zhiwenfan/zhiwenfan.github.io/assets/34684115/748ae0de-8186-4
 - [ ] Confidence-aware Point Cloud Downsampling
 - [ ] Support 2D-GS
 - [ ] Support Mip-Splatting
-
-## Get Started
-
-### Installation
-1. Clone InstantSplat and download pre-trained model.
-```bash
-git clone --recursive https://github.com/NVlabs/InstantSplat.git
-cd InstantSplat
-git submodule update --init --recursive
-cd submodules/dust3r/
-mkdir -p checkpoints/
-wget https://download.europe.naverlabs.com/ComputerVision/DUSt3R/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth -P checkpoints/
-cd ../../
-```
-
-2. Create the environment (or use pre-built docker), here we show an example using conda.
-```bash
-conda create -n instantsplat python=3.11 cmake=3.14.0
-conda activate instantsplat
-conda install pytorch torchvision pytorch-cuda=12.1 -c pytorch -c nvidia  # use the correct version of cuda for your system
-pip install --target . --upgrade .
-```
-
-Alternative: use the pre-built docker image: pytorch/pytorch:2.1.2-cuda11.8-cudnn8-devel
-```
-docker pull dockerzhiwen/instantsplat_public:2.0
-```
-if docker failed to produce reasonable results, try Installation step again within the docker.
-
-### Usage
-1. Data preparation (Our pre-processed data: [link](https://drive.google.com/file/d/1Z17tIgufz7-eZ-W0md_jUlxq89CD1e5s/view))
-```bash
-  cd <data_path>
-  # then do whatever data preparation
-```
-
-2. Command
-```bash
-  # InstantSplat train and output video (no GT reference, render by interpolation) using the following command.
-  bash scripts/run_train_infer.sh
-
-  # InstantSplat train and evaluate (with GT reference) using the following command.
-  bash scripts/run_train_eval.sh
-```
 
 ## Acknowledgement
 

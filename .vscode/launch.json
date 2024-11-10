@@ -22,7 +22,7 @@
                 "-s",
                 "data/sora/santorini/3_views",
                 "-d",
-                "output/infer/sora/santorini/3_views_1000Iter_1xPoseLR",
+                "output/sora/santorini/3_views",
                 "-i",
                 "1000",
                 "--init"
@@ -40,11 +40,11 @@
                 "-s",
                 "data/sora/santorini/3_views",
                 "-d",
-                "output/infer/sora/santorini/3_views_1000Iter_1xPoseLR",
+                "output/sora/santorini/3_views",
                 "-i",
                 "1000",
                 "--load_camera",
-                "output/infer/sora/santorini/3_views_1000Iter_1xPoseLR/cameras.json",
+                "output/sora/santorini/3_views/cameras.json",
             ]
         },
     ]
