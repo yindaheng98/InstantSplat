@@ -50,6 +50,8 @@ python initialize.py -d data/sora/santorini/3_views
 
 **See [initialize.py](initialize.py), [train.py](train.py) and [render.py](render.py) for full example.**
 
+Also check [yindaheng98/gaussian-splatting](https://github.com/yindaheng98/gaussian-splatting) for more detail of training process.
+
 <h2 align="center"> <a href="https://arxiv.org/abs/2403.20309">InstantSplat: Sparse-view SfM-free <a href="https://arxiv.org/abs/2403.20309"> Gaussian Splatting in Seconds </a>
 
 <h5 align="center">
