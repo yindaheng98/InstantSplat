@@ -13,8 +13,8 @@ data/*
 !data/TT/Family/24_views/images/
 !data/sora/santorini/3_views/images/
 checkpoints
-croco
-dust3r
+/croco
+/dust3r
 
 *.dist-info
 # Byte-compiled / optimized / DLL files

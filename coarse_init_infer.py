@@ -9,7 +9,7 @@ from dust3r.model import AsymmetricCroCo3DStereo
 from dust3r.utils.device import to_numpy
 from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
-from instant_splat.utils.dust3r_utils import compute_global_alignment, load_images, storePly, save_colmap_cameras, save_colmap_images
+from instant_splat.initializer.dust3r.dust3r_utils import compute_global_alignment, load_images, storePly, save_colmap_cameras, save_colmap_images
 from instant_splat.initializer import Dust3rInitializer, InitializedCameraDataset
 from gaussian_splatting.dataset.colmap import ColmapCameraDataset
 

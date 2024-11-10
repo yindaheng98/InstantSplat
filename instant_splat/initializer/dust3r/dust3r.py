@@ -4,9 +4,9 @@ from dust3r.inference import inference
 from dust3r.model import AsymmetricCroCo3DStereo
 from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
-from instant_splat.utils.dust3r_utils import compute_global_alignment
-from .abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
-from .utils import load_images, focal2fov
+from .dust3r_utils import compute_global_alignment
+from instant_splat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
+from instant_splat.initializer.utils import load_images, focal2fov
 
 
 class Dust3rInitializer(NamedTuple):
