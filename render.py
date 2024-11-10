@@ -24,7 +24,7 @@ parser.add_argument("--device", default="cuda", type=str)
 def init_gaussians(sh_degree: int, source: str, device: str, load_ply: str, load_camera: str = None):
     gaussians = CameraTrainableGaussianModel(sh_degree).to(device)
     gaussians.load_ply(load_ply)
-    dataset = (ColmapTrainableCameraDataset(source) if load_camera else TrainableCameraDataset.from_json(load_camera)).to(device)
+    dataset = (TrainableCameraDataset.from_json(load_camera) if load_camera else ColmapTrainableCameraDataset(source)).to(device)
     return dataset, gaussians
 
 
