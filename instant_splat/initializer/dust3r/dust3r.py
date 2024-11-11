@@ -51,12 +51,14 @@ class Dust3rInitializer(AbstractInitializer):
                  niter: int = 300,
                  schedule: str = 'linear',
                  lr: float = 0.01,
-                 focal_avg: bool = True):
+                 focal_avg: bool = True,
+                 scene_scale: float = 10.0):
         self.batch_size = batch_size
         self.niter = niter
         self.schedule = schedule
         self.lr = lr
         self.focal_avg = focal_avg
+        self.scene_scale = scene_scale
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = AsymmetricCroCo3DStereo.from_pretrained(model_path).to(self.device)
 
@@ -85,14 +87,14 @@ class Dust3rInitializer(AbstractInitializer):
         intrinsics = scene.get_intrinsics()
         #######################################################################################################################################
         return InitializedPointCloud(
-            points=torch.concatenate([p[m] for p, m in zip(pts3d, confidence_masks)]),
+            points=torch.concatenate([p[m] for p, m in zip(pts3d, confidence_masks)])*args.scene_scale,
             colors=torch.concatenate([p[m] for p, m in zip(imgs, confidence_masks)])
         ), [
             InitializingCamera(
                 image_width=ori_sizes[i][0], image_height=ori_sizes[i][1],
                 FoVx=focal2fov(intrinsics[i][0, 0], intrinsics[i][0, 2]*2),
                 FoVy=focal2fov(intrinsics[i][1, 1], intrinsics[i][1, 2]*2),
-                R=poses[i][:3, :3], T=poses[i][:3, 3],
+                R=poses[i][:3, :3], T=poses[i][:3, 3]*args.scene_scale,
                 image_path=image_path_list[i]
             )
             for i in range(len(image_path_list))
