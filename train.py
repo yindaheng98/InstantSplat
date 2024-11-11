@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import random
 import torch
 from tqdm import tqdm
@@ -26,7 +27,7 @@ parser.add_argument("--init", action="store_true")
 parser.add_argument("--init_config", default=None, type=str)
 
 
-def init_gaussians(sh_degree: int, source: str, device: str, load_ply: str = None, load_camera: str = None, configs={}, init=False, init_configs={}):
+def init_gaussians(sh_degree: int, source: str, destination: str, device: str, load_ply: str = None, load_camera: str = None, configs={}, init=False, init_configs={}):
     gaussians = CameraTrainableGaussianModel(sh_degree).to(device)
     if load_ply:  # load a trained model
         gaussians.load_ply(load_ply)
@@ -38,6 +39,9 @@ def init_gaussians(sh_degree: int, source: str, device: str, load_ply: str = Non
         initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
         dataset = TrainableInitializedCameraDataset(initialized_cameras).to(device)
         gaussians.create_from_pcd(initialized_point_cloud.points, initialized_point_cloud.colors)
+        if os.path.exists(os.path.join(destination, "input.ply")):
+            os.remove(os.path.join(destination, "input.ply"))
+        initialized_point_cloud.save_ply(os.path.join(destination, "input.ply"))
     else:  # create_from_pcd
         import numpy as np
         from plyfile import PlyData
@@ -47,6 +51,9 @@ def init_gaussians(sh_degree: int, source: str, device: str, load_ply: str = Non
         rgb = np.vstack([vertices['red'], vertices['green'], vertices['blue']]).T
         gaussians.create_from_pcd(torch.from_numpy(xyz), torch.from_numpy(rgb / 255.0))
         dataset = (TrainableCameraDataset.from_json(load_camera) if load_camera else ColmapTrainableCameraDataset(source)).to(device)
+        if os.path.exists(os.path.join(destination, "input.ply")):
+            os.remove(os.path.join(destination, "input.ply"))
+        shutil.copy2(os.path.join(source, "sparse/0", "points3D.ply"), os.path.join(destination, "input.ply"))
 
     trainer = Trainer(
         gaussians,
@@ -71,7 +78,7 @@ def main(sh_degree: int, source: str, destination: str, iteration: int, device: 
     configs = {} if args.config is None else read_config(args.config)
     init_configs = {} if args.init_config is None else read_config(args.init_config)
     dataset, gaussians, trainer = init_gaussians(
-        sh_degree=sh_degree, source=source, device=device,
+        sh_degree=sh_degree, source=source, destination=destination, device=device,
         load_ply=args.load_ply, load_camera=args.load_camera, configs=configs,
         init=args.init, init_configs=init_configs)
     dataset.save_cameras(os.path.join(destination, "cameras_orig.json"))
