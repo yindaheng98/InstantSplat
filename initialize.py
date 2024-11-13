@@ -2,7 +2,7 @@ import json
 import os
 from argparse import ArgumentParser
 
-from instant_splat.initializer import Dust3rInitializer, InitializedCameraDataset
+from instantsplat.initializer import Dust3rInitializer, InitializedCameraDataset
 
 
 parser = ArgumentParser()

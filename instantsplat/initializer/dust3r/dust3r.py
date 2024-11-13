@@ -12,7 +12,7 @@ from dust3r.model import AsymmetricCroCo3DStereo
 from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
 from dust3r.utils.image import _resize_pil_image
-from instant_splat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
+from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 
 from .alignment import compute_global_alignment
 

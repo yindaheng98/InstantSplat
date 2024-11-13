@@ -9,8 +9,8 @@ from gaussian_splatting import CameraTrainableGaussianModel
 from gaussian_splatting.dataset import TrainableCameraDataset
 from gaussian_splatting.utils import psnr
 from gaussian_splatting.dataset.colmap import ColmapTrainableCameraDataset
-from instant_splat.trainer import Trainer
-from instant_splat.initializer import Dust3rInitializer, TrainableInitializedCameraDataset
+from instantsplat.trainer import Trainer
+from instantsplat.initializer import Dust3rInitializer, TrainableInitializedCameraDataset
 
 parser = ArgumentParser()
 parser.add_argument("--sh_degree", default=3, type=int)

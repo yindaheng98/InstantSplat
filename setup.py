@@ -14,7 +14,7 @@ from torch import cuda
 from torch.utils.cpp_extension import CUDAExtension, BuildExtension
 import os
 
-packages = ['instant_splat', 'instant_splat.utils']
+packages = ['instantsplat'] + ["instantsplat." + package for package in find_packages(where="instantsplat")]
 packages_dust3r = ['dust3r'] + ["dust3r." + package for package in find_packages(where="submodules/dust3r/dust3r")]
 packages_croco = ['croco', 'croco.utils', 'croco.models', 'croco.models.curope']
 
@@ -37,10 +37,10 @@ if os.name == 'nt':
     nvcc_compiler_flags.append("-allow-unsupported-compiler")
 
 setup(
-    name="instant_splat",
+    name="instantsplat",
     packages=packages + packages_dust3r + packages_croco,
     package_dir={
-        'instant_splat': 'instant_splat',
+        'instantsplat': 'instantsplat',
         'dust3r': 'submodules/dust3r/dust3r',
         'croco': 'submodules/dust3r/croco',
     },
