@@ -11,8 +11,13 @@ Install Pytorch and torchvision following the official guideline: [pytorch.org](
 
 Install Pillow, numpy and tqdm
 ```sh
-pip install Pillow numpy tqdm
+pip install Pillow numpy tqdm roma
 pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master
+```
+
+Download model
+```sh
+wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/DUSt3R/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth
 ```
 
 ### Local Install
