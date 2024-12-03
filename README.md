@@ -9,15 +9,9 @@ We **refactored the original code following the standard Python package structur
 
 Install Pytorch and torchvision following the official guideline: [pytorch.org](https://pytorch.org/)
 
-Install Pillow, numpy and tqdm
+Install `gaussian-splatting`
 ```sh
-pip install Pillow numpy tqdm roma
 pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master
-```
-
-Download model
-```sh
-wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/DUSt3R/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth
 ```
 
 ### Local Install
@@ -25,13 +19,22 @@ wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/DUSt3R
 ```shell
 git clone https://github.com/yindaheng98/InstantSplat --recursive
 cd InstantSplat
-pip install --target . --upgrade .
+pip install opencv-python roma scipy huggingface_hub einops
+pip install --target . --upgrade . --no-deps
 ```
 
 ### Pip Install
 
 ```shell
 pip install --upgrade git+https://github.com/yindaheng98/InstantSplat.git@main
+```
+
+### Download model
+
+```sh
+wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/DUSt3R/DUSt3R_ViTLarge_BaseDecoder_224_linear.pth
+wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/DUSt3R/DUSt3R_ViTLarge_BaseDecoder_512_linear.pth
+wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/DUSt3R/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth
 ```
 
 ## Running

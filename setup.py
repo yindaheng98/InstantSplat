@@ -58,5 +58,12 @@ setup(
     ],
     cmdclass={
         'build_ext': BuildExtension
-    }
+    },
+    install_requires=[
+        'opencv-python',
+        'roma',
+        'scipy',
+        'huggingface_hub',
+        'einops',
+    ]
 )
