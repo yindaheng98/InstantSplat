@@ -1,11 +1,11 @@
 import os
 from argparse import ArgumentParser
 
-from instantsplat.initializer import Dust3rInitializer, ColmapSparseInitializer, InitializedCameraDataset
+from instantsplat.initializer import Dust3rInitializer, ColmapSparseInitializer, ColmapDenseInitializer, InitializedCameraDataset
 
 
 parser = ArgumentParser()
-parser.add_argument("-i", "--initializer", choices=["dust3r", "colmap-sparse"], default="dust3r", type=str)
+parser.add_argument("-i", "--initializer", choices=["dust3r", "colmap-sparse", "colmap-dense"], default="dust3r", type=str)
 parser.add_argument("-d", "--directory", required=True, type=str)
 parser.add_argument("--device", default="cuda", type=str)
 parser.add_argument("-o", "--option", default=[], action='append', type=str)
@@ -13,6 +13,7 @@ parser.add_argument("-o", "--option", default=[], action='append', type=str)
 default_image_folder = {
     "dust3r": "images",
     "colmap-sparse": "input",
+    "colmap-dense": "input",
 }
 
 if __name__ == '__main__':
@@ -26,6 +27,9 @@ if __name__ == '__main__':
         initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
     elif args.initializer == "colmap-sparse":
         initializer = ColmapSparseInitializer(destination=args.directory, **configs).to(args.device)
+        initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
+    elif args.initializer == "colmap-dense":
+        initializer = ColmapDenseInitializer(destination=args.directory, **configs).to(args.device)
         initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
     else:
         raise ValueError(f"Unknown initializer {args.initializer}")
