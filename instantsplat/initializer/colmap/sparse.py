@@ -7,6 +7,8 @@ import torch
 from gaussian_splatting.dataset.colmap import read_colmap_cameras, read_colmap_points3D
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 
+from .load_cameras import load_colmap_cameras
+
 
 def execute(cmd):
     proc = subprocess.Popen(cmd, shell=False)
@@ -20,10 +22,12 @@ class ColmapSparseInitializer(AbstractInitializer):
                  colmap_executable: str = "colmap",
                  camera: str = "OPENCV",
                  single_camera_per_image: bool = True,
+                 load_camera: str = None,
                  scene_scale: float = 1.0):
         self.colmap_executable = os.path.abspath(colmap_executable)
         self.camera = camera
-        self.single_camera_per_image = single_camera_per_image
+        self.single_camera_per_image = "1" if single_camera_per_image else "0"
+        self.load_camera = load_camera
         self.destination = destination
         self.scene_scale = scene_scale
         self.use_gpu = "1"
@@ -40,9 +44,8 @@ class ColmapSparseInitializer(AbstractInitializer):
             "--image_path", os.path.join(folder, "input"),
             "--ImageReader.camera_model", args.camera,
             "--SiftExtraction.use_gpu", args.use_gpu,
+            "--ImageReader.single_camera_per_image", args.single_camera_per_image,
         ]
-        if args.single_camera_per_image:
-            cmd += ["--ImageReader.single_camera_per_image=1"]
         return execute(cmd)
 
     def exhaustive_matcher(args, folder):
@@ -54,14 +57,23 @@ class ColmapSparseInitializer(AbstractInitializer):
         return execute(cmd)
 
     def mapper(args, folder):
-        os.makedirs(os.path.join(folder, "distorted", "sparse"), exist_ok=True)
         cmd = [
             args.colmap_executable, "mapper",
             "--database_path", os.path.join(folder, "distorted", "database.db"),
             "--image_path", os.path.join(folder, "input"),
-            "--output_path", os.path.join(folder, "distorted", "sparse"),
             "--Mapper.ba_global_function_tolerance=0.000001",
         ]
+        if args.load_camera:
+            os.makedirs(os.path.join(folder, "distorted", "sparse", "0"), exist_ok=True)
+            cmd += [
+                "--input_path", load_colmap_cameras(args.load_camera, folder, args.colmap_executable, args.use_gpu),
+                "--output_path", os.path.join(folder, "distorted", "sparse", "0")
+            ]
+        else:
+            os.makedirs(os.path.join(folder, "distorted", "sparse"), exist_ok=True)
+            cmd += [
+                "--output_path", os.path.join(folder, "distorted", "sparse")
+            ]
         return execute(cmd)
 
     def image_undistorter(args, folder):

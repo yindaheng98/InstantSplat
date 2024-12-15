@@ -43,6 +43,23 @@
             ]
         },
         {
+            "name": "initialize colmap-sparse load camera",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "initialize.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-d",
+                "data/sora/santorini/3_views",
+                "--initializer",
+                "colmap-sparse",
+                "-o",
+                "colmap_executable='./data/colmap/COLMAP.bat'",
+                "-o",
+                "load_camera='./data/sora/santorini/3_views/cameras'",
+            ]
+        },
+        {
             "name": "train",
             "type": "debugpy",
             "request": "launch",
