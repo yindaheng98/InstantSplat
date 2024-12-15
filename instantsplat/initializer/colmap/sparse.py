@@ -2,8 +2,10 @@ import os
 import tempfile
 import subprocess
 import shutil
+import torch
 
-from instantsplat.initializer.abc import AbstractInitializer
+from gaussian_splatting.dataset.colmap import read_colmap_cameras, read_colmap_points3D
+from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 
 
 def execute(cmd):
@@ -14,14 +16,16 @@ def execute(cmd):
 
 class ColmapSparseInitializer(AbstractInitializer):
     def __init__(self,
+                 destination: str,
                  colmap_executable: str = "colmap",
                  camera: str = "OPENCV",
                  single_camera_per_image: bool = True,
-                 save_distorted_images: str = None):
+                 scene_scale: float = 1.0):
         self.colmap_executable = os.path.abspath(colmap_executable)
         self.camera = camera
         self.single_camera_per_image = single_camera_per_image
-        self.save_distorted_images = save_distorted_images
+        self.destination = destination
+        self.scene_scale = scene_scale
         self.use_gpu = "1"
 
     def to(self, device):
@@ -81,17 +85,39 @@ class ColmapSparseInitializer(AbstractInitializer):
             raise RuntimeError("Undistortion failed")
 
     def save_distorted(self, folder, image_path_list):
-        if not self.save_distorted_images:
-            return
-        os.makedirs(self.save_distorted_images, exist_ok=True)
+        os.makedirs(os.path.join(self.destination, "images"), exist_ok=True)
         for image_path in image_path_list:
-            src = os.path.join(folder, "input", os.path.basename(image_path))
+            src = os.path.join(folder, "images", os.path.basename(image_path))
             if not os.path.exists(src):
                 raise RuntimeError("Undistortion incomplete")
-            dst = os.path.join(self.save_distorted_images, os.path.basename(image_path))
+            dst = os.path.join(self.destination, "images", os.path.basename(image_path))
             if os.path.exists(dst):
                 os.remove(dst)
-            shutil.copy2(os.path.join(folder, "images", os.path.basename(image_path)), os.path.join(self.save_distorted_images, os.path.basename(image_path)))
+            shutil.copy2(src, dst)
+
+    def read_points3D(self, folder):
+        os.makedirs(os.path.join(folder, "sparse/0"), exist_ok=True)
+        for entry in os.scandir(os.path.join(folder, "sparse")):
+            if entry.name.startswith("points3D"):
+                shutil.copy2(entry.path, os.path.join(folder, "sparse/0", entry.name))
+        xyz, rgb, _ = read_colmap_points3D(folder)
+        return InitializedPointCloud(
+            points=torch.from_numpy(xyz)*self.scene_scale, colors=torch.from_numpy(rgb)/255.0
+        )
+
+    def read_camera(self, folder):
+        os.makedirs(os.path.join(folder, "sparse/0"), exist_ok=True)
+        for entry in os.scandir(os.path.join(folder, "sparse")):
+            if entry.name.startswith("images") or entry.name.startswith("cameras"):
+                shutil.copy2(entry.path, os.path.join(folder, "sparse/0", entry.name))
+        return [
+            InitializingCamera(
+                image_width=camera.image_width, image_height=camera.image_height,
+                FoVx=camera.FoVx, FoVy=camera.FoVy,
+                R=camera.R, T=camera.T*self.scene_scale,
+                image_path=os.path.join(self.destination, "images", os.path.basename(camera.image_path))
+            )
+            for camera in read_colmap_cameras(folder)]
 
     def __call__(self, image_path_list):
         with tempfile.TemporaryDirectory() as tempdir:
@@ -100,4 +126,4 @@ class ColmapSparseInitializer(AbstractInitializer):
                 shutil.copy2(image_path, os.path.join(tempdir, "input", os.path.basename(image_path)))
             self.sparse_reconstruct(tempdir)
             self.save_distorted(tempdir, image_path_list)
-            pass  # TODO: load the result and return it
+            return self.read_points3D(tempdir), self.read_camera(tempdir)

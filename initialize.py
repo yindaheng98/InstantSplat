@@ -25,7 +25,7 @@ if __name__ == '__main__':
         initializer = Dust3rInitializer(**configs).to(args.device)
         initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
     elif args.initializer == "colmap-sparse":
-        initializer = ColmapSparseInitializer(save_distorted_images=os.path.join(args.directory, default_image_folder["dust3r"]), **configs).to(args.device)
+        initializer = ColmapSparseInitializer(destination=args.directory, **configs).to(args.device)
         initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
     else:
         raise ValueError(f"Unknown initializer {args.initializer}")
