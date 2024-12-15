@@ -23,6 +23,11 @@ pip install opencv-python roma scipy huggingface_hub einops
 pip install --target . --upgrade . --no-deps
 ```
 
+(Optional) If you do not want to install those related dependencies in your env:
+```sh
+pip install --target . --no-deps --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master
+```
+
 ### Pip Install
 
 ```shell

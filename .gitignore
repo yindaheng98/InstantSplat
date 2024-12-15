@@ -15,6 +15,7 @@ data/*
 checkpoints
 /croco
 /dust3r
+/gaussian_splatting
 
 *.dist-info
 # Byte-compiled / optimized / DLL files
