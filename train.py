@@ -21,10 +21,10 @@ parser.add_argument("-l", "--load_ply", default=None, type=str)
 parser.add_argument("--load_camera", default=None, type=str)
 parser.add_argument("--save_iterations", nargs="+", type=int, default=[7000, 30000])
 parser.add_argument("--device", default="cuda", type=str)
-parser.add_argument("-o", "--option", action='append', type=str)
+parser.add_argument("-o", "--option", default=[], action='append', type=str)
 
 parser.add_argument("--init", action="store_true")
-parser.add_argument("--init_option", action='append', type=str)
+parser.add_argument("--init_option", default=[], action='append', type=str)
 
 
 def init_gaussians(sh_degree: int, source: str, destination: str, device: str, load_ply: str = None, load_camera: str = None, configs={}, init=False, init_configs={}):
