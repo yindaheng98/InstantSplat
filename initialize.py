@@ -1,25 +1,31 @@
 import os
 from argparse import ArgumentParser
 
-from instantsplat.initializer import Dust3rInitializer, InitializedCameraDataset
+from instantsplat.initializer import Dust3rInitializer, ColmapSparseInitializer, InitializedCameraDataset
 
 
 parser = ArgumentParser()
-parser.add_argument("-i", "--initializer", choices=["dust3r", "colmap"], default="dust3r", type=str)
+parser.add_argument("-i", "--initializer", choices=["dust3r", "colmap-sparse"], default="dust3r", type=str)
 parser.add_argument("-d", "--directory", required=True, type=str)
-parser.add_argument("-f", "--image_folder", default=None, type=str)
 parser.add_argument("--device", default="cuda", type=str)
-parser.add_argument("-o", "--option", action='append', type=str)
+parser.add_argument("-o", "--option", default=[], action='append', type=str)
 
+default_image_folder = {
+    "dust3r": "images",
+    "colmap-sparse": "input",
+}
 
 if __name__ == '__main__':
 
     args = parser.parse_args()
-    image_folder = args.image_folder or os.path.join(args.directory, "images")
     configs = {o.split("=", 1)[0]: eval(o.split("=", 1)[1]) for o in args.option}
+    image_folder = os.path.join(args.directory, default_image_folder[args.initializer])
     image_path_list = [os.path.join(image_folder, file) for file in sorted(os.listdir(image_folder))]
     if args.initializer == "dust3r":
         initializer = Dust3rInitializer(**configs).to(args.device)
+        initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
+    elif args.initializer == "colmap-sparse":
+        initializer = ColmapSparseInitializer(save_distorted_images=os.path.join(args.directory, default_image_folder["dust3r"]), **configs).to(args.device)
         initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
     else:
         raise ValueError(f"Unknown initializer {args.initializer}")
