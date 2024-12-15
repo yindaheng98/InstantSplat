@@ -21,10 +21,10 @@ parser.add_argument("-l", "--load_ply", default=None, type=str)
 parser.add_argument("--load_camera", default=None, type=str)
 parser.add_argument("--save_iterations", nargs="+", type=int, default=[7000, 30000])
 parser.add_argument("--device", default="cuda", type=str)
-parser.add_argument("--config", default=None, type=str)
+parser.add_argument("-o", "--option", action='append', type=str)
 
 parser.add_argument("--init", action="store_true")
-parser.add_argument("--init_config", default=None, type=str)
+parser.add_argument("--init_option", action='append', type=str)
 
 
 def init_gaussians(sh_degree: int, source: str, destination: str, device: str, load_ply: str = None, load_camera: str = None, configs={}, init=False, init_configs={}):
@@ -66,17 +66,12 @@ def init_gaussians(sh_degree: int, source: str, destination: str, device: str, l
     return dataset, gaussians, trainer
 
 
-def read_config(config_path: str):
-    with open(config_path, "r") as f:
-        return json.load(f)
-
-
 def main(sh_degree: int, source: str, destination: str, iteration: int, device: str, args):
     os.makedirs(destination, exist_ok=True)
     with open(os.path.join(destination, "cfg_args"), 'w') as cfg_log_f:
         cfg_log_f.write(str(Namespace(sh_degree=sh_degree, source_path=source)))
-    configs = {} if args.config is None else read_config(args.config)
-    init_configs = {} if args.init_config is None else read_config(args.init_config)
+    configs = {o.split("=", 1)[0]: eval(o.split("=", 1)[1]) for o in args.option}
+    init_configs = {o.split("=", 1)[0]: eval(o.split("=", 1)[1]) for o in args.init_option}
     dataset, gaussians, trainer = init_gaussians(
         sh_degree=sh_degree, source=source, destination=destination, device=device,
         load_ply=args.load_ply, load_camera=args.load_camera, configs=configs,
