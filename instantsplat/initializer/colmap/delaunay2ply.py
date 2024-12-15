@@ -1,4 +1,3 @@
-import argparse
 import torch
 import numpy as np
 from plyfile import PlyData, PlyElement
@@ -54,6 +53,7 @@ def delaunay2ply(delaunay, reference, batch=1024):
 
 
 if __name__ == "__main__":
+    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--delaunay", type=str, required=True, help="path to the delaunay point cloud")
     parser.add_argument("--reference", type=str, required=True, help="path to the reference point cloud")

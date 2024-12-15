@@ -13,6 +13,21 @@
             ]
         },
         {
+            "name": "initialize colmap-dense",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "initialize.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-d",
+                "data/sora/santorini/3_views",
+                "--initializer",
+                "colmap-dense",
+                "-o",
+                "colmap_executable='./data/colmap/COLMAP.bat'",
+            ]
+        },
+        {
             "name": "initialize colmap-sparse",
             "type": "debugpy",
             "request": "launch",
