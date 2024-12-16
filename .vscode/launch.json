@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "initialize",
+            "name": "initialize dust3r",
             "type": "debugpy",
             "request": "launch",
             "program": "initialize.py",
