@@ -5,7 +5,7 @@
             "name": "initialize dust3r",
             "type": "debugpy",
             "request": "launch",
-            "program": "initialize.py",
+            "module": "instantsplat.initialize",
             "console": "integratedTerminal",
             "args": [
                 "-d",
@@ -16,7 +16,7 @@
             "name": "initialize colmap-dense",
             "type": "debugpy",
             "request": "launch",
-            "program": "initialize.py",
+            "module": "instantsplat.initialize",
             "console": "integratedTerminal",
             "args": [
                 "-d",
@@ -31,7 +31,7 @@
             "name": "initialize colmap-sparse",
             "type": "debugpy",
             "request": "launch",
-            "program": "initialize.py",
+            "module": "instantsplat.initialize",
             "console": "integratedTerminal",
             "args": [
                 "-d",
@@ -46,7 +46,7 @@
             "name": "initialize colmap-sparse load camera",
             "type": "debugpy",
             "request": "launch",
-            "program": "initialize.py",
+            "module": "instantsplat.initialize",
             "console": "integratedTerminal",
             "args": [
                 "-d",

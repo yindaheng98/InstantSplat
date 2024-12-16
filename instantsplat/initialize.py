@@ -1,6 +1,6 @@
 import os
 
-from instantsplat.initializer import Dust3rInitializer, ColmapSparseInitializer, ColmapDenseInitializer, InitializedCameraDataset
+from .initializer import Dust3rInitializer, ColmapSparseInitializer, ColmapDenseInitializer, InitializedCameraDataset
 
 
 def initialize(initializer, directory, configs, device):
