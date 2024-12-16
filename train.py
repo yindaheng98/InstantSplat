@@ -1,4 +1,3 @@
-import json
 import os
 import shutil
 import random
@@ -10,7 +9,9 @@ from gaussian_splatting.dataset import TrainableCameraDataset
 from gaussian_splatting.utils import psnr
 from gaussian_splatting.dataset.colmap import ColmapTrainableCameraDataset
 from instantsplat.trainer import Trainer
-from instantsplat.initializer import Dust3rInitializer, TrainableInitializedCameraDataset
+from instantsplat.initializer import TrainableInitializedCameraDataset
+
+from instantsplat.initialize import initialize
 
 parser = ArgumentParser()
 parser.add_argument("--sh_degree", default=3, type=int)
@@ -23,20 +24,17 @@ parser.add_argument("--save_iterations", nargs="+", type=int, default=[7000, 300
 parser.add_argument("--device", default="cuda", type=str)
 parser.add_argument("-o", "--option", default=[], action='append', type=str)
 
-parser.add_argument("--init", action="store_true")
+parser.add_argument("--init", choices=["dust3r", "colmap-sparse", "colmap-dense"], default=None, type=str)
 parser.add_argument("--init_option", default=[], action='append', type=str)
 
 
-def init_gaussians(sh_degree: int, source: str, destination: str, device: str, load_ply: str = None, load_camera: str = None, configs={}, init=False, init_configs={}):
+def prepare_training(sh_degree: int, source: str, destination: str, device: str, load_ply: str = None, load_camera: str = None, configs={}, init=None, init_configs={}):
     gaussians = CameraTrainableGaussianModel(sh_degree).to(device)
     if load_ply:  # load a trained model
         gaussians.load_ply(load_ply)
         dataset = (TrainableCameraDataset.from_json(load_camera) if load_camera else ColmapTrainableCameraDataset(source)).to(device)
-    elif init:  # init by dust3r
-        image_folder = os.path.join(source, "images")
-        image_path_list = [os.path.join(image_folder, file) for file in sorted(os.listdir(image_folder))]
-        initializer = Dust3rInitializer(**init_configs).to(device)
-        initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
+    elif init:  # initialize
+        initialized_cameras, initialized_point_cloud = initialize(initializer=init, directory=source, configs=init_configs, device=device)
         dataset = TrainableInitializedCameraDataset(initialized_cameras).to(device)
         gaussians.create_from_pcd(initialized_point_cloud.points, initialized_point_cloud.colors)
         if os.path.exists(os.path.join(destination, "input.ply")):
@@ -72,7 +70,7 @@ def main(sh_degree: int, source: str, destination: str, iteration: int, device: 
         cfg_log_f.write(str(Namespace(sh_degree=sh_degree, source_path=source)))
     configs = {o.split("=", 1)[0]: eval(o.split("=", 1)[1]) for o in args.option}
     init_configs = {o.split("=", 1)[0]: eval(o.split("=", 1)[1]) for o in args.init_option}
-    dataset, gaussians, trainer = init_gaussians(
+    dataset, gaussians, trainer = prepare_training(
         sh_degree=sh_degree, source=source, destination=destination, device=device,
         load_ply=args.load_ply, load_camera=args.load_camera, configs=configs,
         init=args.init, init_configs=init_configs)

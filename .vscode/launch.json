@@ -60,7 +60,7 @@
             ]
         },
         {
-            "name": "train",
+            "name": "initialize and train",
             "type": "debugpy",
             "request": "launch",
             "program": "train.py",
@@ -72,7 +72,8 @@
                 "output/sora/santorini/3_views",
                 "-i",
                 "1000",
-                "--init"
+                "--init",
+                "dust3r",
             ],
             "justMyCode": false
         },
