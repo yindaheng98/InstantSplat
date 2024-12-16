@@ -19,22 +19,30 @@ def execute(cmd):
 class ColmapSparseInitializer(AbstractInitializer):
     def __init__(self,
                  destination: str,
+                 run_at_destination: bool = True,
                  colmap_executable: str = "colmap",
                  camera: str = "OPENCV",
                  single_camera_per_image: bool = True,
                  load_camera: str = None,
                  scene_scale: float = 1.0):
+        self.destination = destination
+        self.run_at_destination = run_at_destination
         self.colmap_executable = os.path.abspath(colmap_executable)
         self.camera = camera
         self.single_camera_per_image = "1" if single_camera_per_image else "0"
         self.load_camera = load_camera
-        self.destination = destination
         self.scene_scale = scene_scale
         self.use_gpu = "1"
 
     def to(self, device):
         self.use_gpu = "0" if device == "cpu" else "1"
         return self
+
+    def put_distorted(self, image_path_list, folder):
+        os.makedirs(os.path.join(folder, "input"), exist_ok=True)
+        for image_path in image_path_list:
+            if not os.path.samefile(image_path, os.path.join(folder, "input", os.path.basename(image_path))):
+                shutil.copy2(image_path, os.path.join(folder, "input", os.path.basename(image_path)))
 
     def feature_extractor(args, folder):
         os.makedirs(os.path.join(folder, "distorted"))
@@ -104,6 +112,8 @@ class ColmapSparseInitializer(AbstractInitializer):
                 raise RuntimeError("Undistortion incomplete")
             dst = os.path.join(self.destination, "images", os.path.basename(image_path))
             if os.path.exists(dst):
+                if os.path.samefile(src, dst):
+                    continue
                 os.remove(dst)
             shutil.copy2(src, dst)
 
@@ -131,11 +141,31 @@ class ColmapSparseInitializer(AbstractInitializer):
             )
             for camera in read_colmap_cameras(folder)]
 
+    def run(self, image_path_list, tempdir):
+        self.put_distorted(image_path_list, tempdir)
+        self.sparse_reconstruct(tempdir)
+        self.save_distorted(tempdir, image_path_list)
+        return self.read_points3D(tempdir), self.read_camera(tempdir)
+
+    def verify_undistorted(self, image_path_list, folder):
+        for image_path in image_path_list:
+            dst = os.path.join(self.destination, "images", os.path.basename(image_path))
+            if not os.path.exists(dst):
+                return False
+        camera_folder = os.path.join(folder, "sparse", "0")
+        if not os.path.exists(os.path.join(camera_folder, "cameras.txt")) and not os.path.exists(os.path.join(camera_folder, "cameras.bin")):
+            return False
+        if not os.path.exists(os.path.join(camera_folder, "images.txt")) and not os.path.exists(os.path.join(camera_folder, "images.bin")):
+            return False
+        if not os.path.exists(os.path.join(camera_folder, "points3D.ply")) and not os.path.exists(os.path.join(camera_folder, "points3D.bin")):
+            return False
+        return True
+
     def __call__(self, image_path_list):
-        with tempfile.TemporaryDirectory() as tempdir:
-            os.makedirs(os.path.join(tempdir, "input"))
-            for image_path in image_path_list:
-                shutil.copy2(image_path, os.path.join(tempdir, "input", os.path.basename(image_path)))
-            self.sparse_reconstruct(tempdir)
-            self.save_distorted(tempdir, image_path_list)
-            return self.read_points3D(tempdir), self.read_camera(tempdir)
+        if self.run_at_destination:
+            if not self.verify_undistorted(image_path_list, self.destination):
+                return self.run(image_path_list, self.destination)
+            return self.read_points3D(self.destination), self.read_camera(self.destination)
+        else:
+            with tempfile.TemporaryDirectory() as tempdir:
+                return self.run(image_path_list, tempdir)
