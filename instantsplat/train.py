@@ -10,7 +10,7 @@ from gaussian_splatting.train import save_cfg_args, training
 from instantsplat.trainer import Trainer
 from instantsplat.initializer import TrainableInitializedCameraDataset
 
-from instantsplat.initialize import initialize
+from .initialize import initialize
 
 
 def prepare_training(sh_degree: int, source: str, destination: str, device: str, load_ply: str = None, load_camera: str = None, configs={}, init=None, init_configs={}) -> Tuple[CameraDataset, GaussianModel, AbstractTrainer]:

@@ -63,7 +63,7 @@
             "name": "initialize and train",
             "type": "debugpy",
             "request": "launch",
-            "program": "train.py",
+            "module": "instantsplat.train",
             "console": "integratedTerminal",
             "args": [
                 "-s",
@@ -81,7 +81,7 @@
             "name": "train initialized",
             "type": "debugpy",
             "request": "launch",
-            "program": "train.py",
+            "module": "instantsplat.train",
             "console": "integratedTerminal",
             "args": [
                 "-s",
@@ -97,7 +97,7 @@
             "name": "render",
             "type": "debugpy",
             "request": "launch",
-            "program": "render.py",
+            "module": "gaussian_splatting.render",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
