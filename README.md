@@ -3,6 +3,12 @@
 This repo is the **refactored python training and inference code for [InstantSplat](https://github.com/NVlabs/InstantSplat)**.
 Forked from commit [2c5006d41894d06464da53d5495300860f432872](https://github.com/NVlabs/InstantSplat/tree/2c5006d41894d06464da53d5495300860f432872).
 We **refactored the original code following the standard Python package structure**, while **keeping the algorithms used in the code identical to the original version**.
+
+Initialization methods:
+- [x] DUST3R (same method used in [InstantSplat](https://github.com/NVlabs/InstantSplat))
+- [x] COLMAP Sparse reconstruct (same method used in [gaussian-splatting](https://github.com/graphdeco-inria/gaussian-splatting))
+- [x] COLMAP Dense reconstruct
+
 ## Install
 
 ### Requirements
@@ -30,6 +36,8 @@ pip install --target . --no-deps --upgrade git+https://github.com/yindaheng98/ga
 
 ### Pip Install
 
+You can download wheel from [Releases](https://github.com/yindaheng98/InstantSplat/releases), or
+install latest from source:
 ```shell
 pip install --upgrade git+https://github.com/yindaheng98/InstantSplat.git@main
 ```

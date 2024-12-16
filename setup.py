@@ -38,6 +38,7 @@ if os.name == 'nt':
 
 setup(
     name="instantsplat",
+    version='1.0',
     packages=packages + packages_dust3r + packages_croco,
     package_dir={
         'instantsplat': 'instantsplat',
