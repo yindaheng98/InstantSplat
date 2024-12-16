@@ -7,7 +7,7 @@ We **refactored the original code following the standard Python package structur
 Initialization methods:
 - [x] DUST3R (same method used in [InstantSplat](https://github.com/NVlabs/InstantSplat))
 - [x] COLMAP Sparse reconstruct (same method used in [gaussian-splatting](https://github.com/graphdeco-inria/gaussian-splatting))
-- [x] COLMAP Dense reconstruct
+- [x] COLMAP Dense reconstruct (use `patch_match_stereo`, `stereo_fusion`, `poisson_mesher` and `delaunay_mesher` in COLMAP to reconstruct dense point cloud for initialization)
 
 ## Install
 
@@ -15,7 +15,9 @@ Initialization methods:
 
 Install Pytorch and torchvision following the official guideline: [pytorch.org](https://pytorch.org/)
 
-Install `gaussian-splatting`
+Install [`gaussian-splatting`](https://github.com/yindaheng98/gaussian-splatting).
+You can download wheel from [Releases](https://github.com/yindaheng98/gaussian-splatting/releases), or
+install latest from source:
 ```sh
 pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master
 ```
