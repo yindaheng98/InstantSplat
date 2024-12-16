@@ -1,3 +1,4 @@
+import itertools
 import os
 import tempfile
 import subprocess
@@ -94,15 +95,35 @@ class ColmapSparseInitializer(AbstractInitializer):
         ]
         return execute(cmd)
 
-    def sparse_reconstruct(self, folder):
-        if self.feature_extractor(folder) != 0:
-            raise RuntimeError("Feature extraction failed")
-        if self.exhaustive_matcher(folder) != 0:
-            raise RuntimeError("Feature matching failed")
-        if self.mapper(folder) != 0:
-            raise RuntimeError("Mapping failed")
-        if self.image_undistorter(folder) != 0:
-            raise RuntimeError("Undistortion failed")
+    def sparse_reconstruct(self, folder, image_path_list):
+        mapper_ok = True
+        for file in ["cameras.bin", "images.bin", "points3D.bin"]:
+            if not os.path.exists(os.path.join(folder, "distorted", "sparse", "0", file)):
+                mapper_ok = False
+                break
+        if self.load_camera is not None or not mapper_ok:
+            if self.feature_extractor(folder) != 0:
+                raise RuntimeError("Feature extraction failed")
+            if self.exhaustive_matcher(folder) != 0:
+                raise RuntimeError("Feature matching failed")
+            if self.mapper(folder) != 0:
+                raise RuntimeError("Mapping failed")
+            if self.image_undistorter(folder) != 0:
+                raise RuntimeError("Undistortion failed")
+            return
+        undistorter_ok = True
+        for image_path in image_path_list:
+            if not os.path.exists(os.path.join(folder, "images", os.path.basename(image_path))):
+                undistorter_ok = False
+                break
+        for file in ["cameras.bin", "images.bin", "points3D.bin"]:
+            if not os.path.exists(os.path.join(folder, "sparse", file)):
+                undistorter_ok = False
+                break
+        if not undistorter_ok:
+            if self.image_undistorter(folder) != 0:
+                raise RuntimeError("Undistortion failed")
+            return
 
     def save_distorted(self, folder, image_path_list):
         os.makedirs(os.path.join(self.destination, "images"), exist_ok=True)
@@ -143,29 +164,14 @@ class ColmapSparseInitializer(AbstractInitializer):
 
     def run(self, image_path_list, tempdir):
         self.put_distorted(image_path_list, tempdir)
-        self.sparse_reconstruct(tempdir)
+        self.sparse_reconstruct(tempdir, image_path_list)
         self.save_distorted(tempdir, image_path_list)
-        return self.read_points3D(tempdir), self.read_camera(tempdir)
-
-    def verify_undistorted(self, image_path_list, folder):
-        for image_path in image_path_list:
-            dst = os.path.join(self.destination, "images", os.path.basename(image_path))
-            if not os.path.exists(dst):
-                return False
-        camera_folder = os.path.join(folder, "sparse", "0")
-        if not os.path.exists(os.path.join(camera_folder, "cameras.txt")) and not os.path.exists(os.path.join(camera_folder, "cameras.bin")):
-            return False
-        if not os.path.exists(os.path.join(camera_folder, "images.txt")) and not os.path.exists(os.path.join(camera_folder, "images.bin")):
-            return False
-        if not os.path.exists(os.path.join(camera_folder, "points3D.ply")) and not os.path.exists(os.path.join(camera_folder, "points3D.bin")):
-            return False
-        return True
 
     def __call__(self, image_path_list):
         if self.run_at_destination:
-            if not self.verify_undistorted(image_path_list, self.destination):
-                return self.run(image_path_list, self.destination)
+            self.run(image_path_list, self.destination)
             return self.read_points3D(self.destination), self.read_camera(self.destination)
         else:
             with tempfile.TemporaryDirectory() as tempdir:
-                return self.run(image_path_list, tempdir)
+                self.run(image_path_list, tempdir)
+                return self.read_points3D(tempdir), self.read_camera(tempdir)
