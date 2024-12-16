@@ -70,25 +70,61 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             os.path.join(folder, "colorful-delaunay.ply"),
             threshold=args.poisson2ply_thresh)
 
-    def dense_reconstruct(self, folder):
-        if self.patch_match_stereo(folder) != 0:
-            raise ValueError("Patch match stereo failed")
-        if self.stereo_fusion(folder) != 0:
-            raise ValueError("Stereo fusion failed")
-        if self.poisson_mesher(folder) != 0:
-            raise ValueError("Poisson mesher failed")
-        if self.delaunay_mesher(folder) != 0:
-            raise ValueError("Delaunay mesher failed")
-        self.delaunay2ply(folder).write(os.path.join(folder, "colorful-delaunay.ply"))
-        self.poisson2ply(folder).write(os.path.join(folder, "filtered-poisson.ply"))
+    @staticmethod
+    def verify_patch_match_stereo(folder, image_path_list):
+        for image_path in image_path_list:
+            if not os.path.exists(os.path.join(folder, "stereo", "depth_maps", os.path.basename(image_path) + ".geometric.bin")):
+                return False
+            if not os.path.exists(os.path.join(folder, "stereo", "depth_maps", os.path.basename(image_path) + ".photometric.bin")):
+                return False
+            if not os.path.exists(os.path.join(folder, "stereo", "normal_maps", os.path.basename(image_path) + ".geometric.bin")):
+                return False
+            if not os.path.exists(os.path.join(folder, "stereo", "normal_maps", os.path.basename(image_path) + ".photometric.bin")):
+                return False
+        return True
+
+    def dense_reconstruct(self, folder, image_path_list):
+        ok = True
+
+        ok = ok and self.verify_patch_match_stereo(folder, image_path_list)
+        if not ok:
+            if self.patch_match_stereo(folder) != 0:
+                raise ValueError("Patch match stereo failed")
+
+        ok = ok and os.path.exists(os.path.join(folder, "fused.ply"))
+        if not ok:
+            if self.stereo_fusion(folder) != 0:
+                raise ValueError("Stereo fusion failed")
+
+        ok = ok and os.path.exists(os.path.join(folder, "meshed-poisson.ply"))
+        if not ok:
+            if self.poisson_mesher(folder) != 0:
+                raise ValueError("Poisson mesher failed")
+
+        ok = ok and os.path.exists(os.path.join(folder, "meshed-delaunay.ply"))
+        if not ok:
+            if self.delaunay_mesher(folder) != 0:
+                raise ValueError("Delaunay mesher failed")
+
+        ok = ok and os.path.exists(os.path.join(folder, "colorful-delaunay.ply"))
+        if not ok:
+            self.delaunay2ply(folder).write(os.path.join(folder, "colorful-delaunay.ply"))
+
+        ok = ok and os.path.exists(os.path.join(folder, "filtered-poisson.ply"))
+        if not ok:
+            self.poisson2ply(folder).write(os.path.join(folder, "filtered-poisson.ply"))
+
+    def run(self, image_path_list, tempdir):
+        super().run(image_path_list, tempdir)
+        self.dense_reconstruct(tempdir, image_path_list)
 
     def __call__(self, image_path_list):
-        with tempfile.TemporaryDirectory() as tempdir:
-            os.makedirs(os.path.join(tempdir, "input"))
-            for image_path in image_path_list:
-                shutil.copy2(image_path, os.path.join(tempdir, "input", os.path.basename(image_path)))
-            self.sparse_reconstruct(tempdir)
-            self.save_distorted(tempdir, image_path_list)
-            self.dense_reconstruct(tempdir)
-            xyz, rgb = read_ply(os.path.join(tempdir, "filtered-poisson.ply"))
-            return InitializedPointCloud(points=xyz*self.scene_scale, colors=rgb/255.0), self.read_camera(tempdir)
+        if self.run_at_destination:
+            self.run(image_path_list, self.destination)
+            xyz, rgb = read_ply(os.path.join(self.destination, "filtered-poisson.ply"))
+            return InitializedPointCloud(points=xyz*self.scene_scale, colors=rgb/255.0), self.read_camera(self.destination)
+        else:
+            with tempfile.TemporaryDirectory() as tempdir:
+                self.run(image_path_list, tempdir)
+                xyz, rgb = read_ply(os.path.join(tempdir, "filtered-poisson.ply"))
+                return InitializedPointCloud(points=xyz*self.scene_scale, colors=rgb/255.0), self.read_camera(tempdir)
