@@ -1,11 +1,10 @@
-import itertools
 import os
 import tempfile
 import subprocess
 import shutil
 import torch
 
-from gaussian_splatting.dataset.colmap import read_colmap_cameras, read_colmap_points3D
+from gaussian_splatting.dataset.colmap import read_cameras_binary, read_points3D_binary
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 
 from .load_cameras import load_colmap_cameras
@@ -46,7 +45,7 @@ class ColmapSparseInitializer(AbstractInitializer):
                 shutil.copy2(image_path, os.path.join(folder, "input", os.path.basename(image_path)))
 
     def feature_extractor(args, folder):
-        os.makedirs(os.path.join(folder, "distorted"))
+        os.makedirs(os.path.join(folder, "distorted"), exist_ok=True)
         cmd = [
             args.colmap_executable, "feature_extractor",
             "--database_path", os.path.join(folder, "distorted", "database.db"),
@@ -139,20 +138,15 @@ class ColmapSparseInitializer(AbstractInitializer):
             shutil.copy2(src, dst)
 
     def read_points3D(self, folder):
-        os.makedirs(os.path.join(folder, "sparse/0"), exist_ok=True)
-        for entry in os.scandir(os.path.join(folder, "sparse")):
-            if entry.name.startswith("points3D"):
-                shutil.copy2(entry.path, os.path.join(folder, "sparse/0", entry.name))
-        xyz, rgb, _ = read_colmap_points3D(folder)
+        xyz, rgb, _ = read_points3D_binary(os.path.join(folder, "sparse", "points3D.bin"))
         return InitializedPointCloud(
             points=torch.from_numpy(xyz)*self.scene_scale, colors=torch.from_numpy(rgb)/255.0
         )
 
     def read_camera(self, folder):
-        os.makedirs(os.path.join(folder, "sparse/0"), exist_ok=True)
-        for entry in os.scandir(os.path.join(folder, "sparse")):
-            if entry.name.startswith("images") or entry.name.startswith("cameras"):
-                shutil.copy2(entry.path, os.path.join(folder, "sparse/0", entry.name))
+        image_dir = os.path.join(folder, "images")
+        cameras_extrinsic_file = os.path.join(folder, "sparse", "images.bin")
+        cameras_intrinsic_file = os.path.join(folder, "sparse", "cameras.bin")
         return [
             InitializingCamera(
                 image_width=camera.image_width, image_height=camera.image_height,
@@ -160,7 +154,7 @@ class ColmapSparseInitializer(AbstractInitializer):
                 R=camera.R, T=camera.T*self.scene_scale,
                 image_path=os.path.join(self.destination, "images", os.path.basename(camera.image_path))
             )
-            for camera in read_colmap_cameras(folder)]
+            for camera in read_cameras_binary(cameras_extrinsic_file, cameras_intrinsic_file, image_dir)]
 
     def run(self, image_path_list, tempdir):
         self.put_distorted(image_path_list, tempdir)
