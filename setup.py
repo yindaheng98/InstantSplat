@@ -66,5 +66,6 @@ setup(
         'scipy',
         'huggingface_hub',
         'einops',
+        'open3d',
     ]
 )
