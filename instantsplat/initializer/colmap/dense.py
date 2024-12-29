@@ -1,5 +1,4 @@
 import os
-import shutil
 import tempfile
 from instantsplat.initializer.abc import InitializedPointCloud
 from .sparse import ColmapSparseInitializer, execute
@@ -14,12 +13,14 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             PatchMatchStereo_cache_size=32,
             delaunay2ply_batch=512,
             poisson2ply_thresh=0.2,
+            use_fused=False,
             **kwargs):
         super().__init__(*args, **kwargs)
         self.PatchMatchStereo_max_image_size = PatchMatchStereo_max_image_size
         self.PatchMatchStereo_cache_size = PatchMatchStereo_cache_size
         self.delaunay2ply_batch = delaunay2ply_batch
         self.poisson2ply_thresh = poisson2ply_thresh
+        self.use_fused = use_fused
 
     def patch_match_stereo(args, folder):
         cmd = [
@@ -96,6 +97,9 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             if self.stereo_fusion(folder) != 0:
                 raise ValueError("Stereo fusion failed")
 
+        if self.use_fused:
+            return
+
         ok = ok and os.path.exists(os.path.join(folder, "meshed-poisson.ply"))
         if not ok:
             if self.poisson_mesher(folder) != 0:
@@ -119,12 +123,13 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
         self.dense_reconstruct(tempdir, image_path_list)
 
     def __call__(self, image_path_list):
+        use_file = "fused.ply" if self.use_fused else "filtered-poisson.ply"
         if self.run_at_destination:
             self.run(image_path_list, self.destination)
-            xyz, rgb = read_ply(os.path.join(self.destination, "filtered-poisson.ply"))
+            xyz, rgb = read_ply(os.path.join(self.destination, use_file))
             return InitializedPointCloud(points=xyz*self.scene_scale, colors=rgb/255.0), self.read_camera(self.destination)
         else:
             with tempfile.TemporaryDirectory() as tempdir:
                 self.run(image_path_list, tempdir)
-                xyz, rgb = read_ply(os.path.join(tempdir, "filtered-poisson.ply"))
+                xyz, rgb = read_ply(os.path.join(tempdir, use_file))
                 return InitializedPointCloud(points=xyz*self.scene_scale, colors=rgb/255.0), self.read_camera(tempdir)
