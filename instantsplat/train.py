@@ -5,7 +5,7 @@ import torch
 from gaussian_splatting import GaussianModel, CameraTrainableGaussianModel
 from gaussian_splatting.dataset import CameraDataset, TrainableCameraDataset
 from gaussian_splatting.trainer import AbstractTrainer
-from gaussian_splatting.dataset.colmap import ColmapTrainableCameraDataset
+from gaussian_splatting.dataset.colmap import ColmapTrainableCameraDataset, colmap_init
 from gaussian_splatting.train import save_cfg_args, training
 from instantsplat.trainer import Trainer
 from instantsplat.initializer import TrainableInitializedCameraDataset
@@ -15,10 +15,7 @@ from .initialize import initialize
 
 def prepare_training(sh_degree: int, source: str, destination: str, device: str, load_ply: str = None, load_camera: str = None, configs={}, init=None, init_configs={}) -> Tuple[CameraDataset, GaussianModel, AbstractTrainer]:
     gaussians = CameraTrainableGaussianModel(sh_degree).to(device)
-    if load_ply:  # load a trained model
-        gaussians.load_ply(load_ply)
-        dataset = (TrainableCameraDataset.from_json(load_camera) if load_camera else ColmapTrainableCameraDataset(source)).to(device)
-    elif init:  # initialize
+    if init:  # initialize
         initialized_cameras, initialized_point_cloud = initialize(initializer=init, directory=source, configs=init_configs, device=device)
         dataset = TrainableInitializedCameraDataset(initialized_cameras).to(device)
         gaussians.create_from_pcd(initialized_point_cloud.points, initialized_point_cloud.colors)
@@ -26,14 +23,8 @@ def prepare_training(sh_degree: int, source: str, destination: str, device: str,
             os.remove(os.path.join(destination, "input.ply"))
         initialized_point_cloud.save_ply(os.path.join(destination, "input.ply"))
     else:  # create_from_pcd
-        import numpy as np
-        from plyfile import PlyData
-        plydata = PlyData.read(os.path.join(source, "sparse/0", "points3D.ply"))
-        vertices = plydata['vertex']
-        xyz = np.vstack([vertices['x'], vertices['y'], vertices['z']]).T
-        rgb = np.vstack([vertices['red'], vertices['green'], vertices['blue']]).T
-        gaussians.create_from_pcd(torch.from_numpy(xyz), torch.from_numpy(rgb / 255.0))
         dataset = (TrainableCameraDataset.from_json(load_camera) if load_camera else ColmapTrainableCameraDataset(source)).to(device)
+        colmap_init(gaussians, source) if not load_ply else gaussians.load_ply(load_ply)
         if os.path.exists(os.path.join(destination, "input.ply")):
             os.remove(os.path.join(destination, "input.ply"))
         shutil.copy2(os.path.join(source, "sparse/0", "points3D.ply"), os.path.join(destination, "input.ply"))
