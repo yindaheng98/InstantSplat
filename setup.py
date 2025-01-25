@@ -22,7 +22,7 @@ packages_croco = ['croco', 'croco.utils', 'croco.models', 'croco.models.curope']
 packages_dust3r += ["dust3r.dust3r"]  # ugly workaround for agly MAST3R import
 os.makedirs("submodules/dust3r/dust3r/dust3r", exist_ok=True)  # ugly workaround for ugly MAST3R import
 with open("submodules/dust3r/dust3r/dust3r/__init__.py", "w") as f:
-    f.write("from .dust3r import *\n")
+    f.write("\n")
 
 cxx_compiler_flags = []
 nvcc_compiler_flags = []
