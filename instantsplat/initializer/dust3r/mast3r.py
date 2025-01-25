@@ -22,26 +22,24 @@ def get_intrinsics(self: SparseGA, device):
 class Mast3rInitializer(AbstractInitializer):
     def __init__(self,
                  model_path: str = "checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric.pth",
-                 batch_size: int = 1,
-                 niter: int = 300,
-                 schedule: str = 'linear',
-                 lr: float = 0.01,
-                 focal_avg: bool = True,
-                 scene_scale: float = 10.0,
-                 resize: int = 512,
-                 shared_intrinsics: bool = False,
+                 coarse_lr: float = 0.07,
+                 coarse_niter: int = 500,
+                 fine_lr: float = 0.014,
+                 fine_niter: int = 200,
+                 min_conf_thr: float = 2.,
                  matching_conf_thr: float = 5.,
-                 min_conf_thr: float = 2.):
-        self.batch_size = batch_size
-        self.niter = niter
-        self.schedule = schedule
-        self.lr = lr
-        self.focal_avg = focal_avg
+                 scene_scale: float = 10.0,
+                 shared_intrinsics: bool = False,
+                 resize: int = 512):
+        self.coarse_lr = coarse_lr
+        self.coarse_niter = coarse_niter
+        self.fine_lr = fine_lr
+        self.fine_niter = fine_niter
+        self.min_conf_thr = min_conf_thr
+        self.matching_conf_thr = matching_conf_thr
         self.scene_scale = scene_scale
         self.resize = resize
         self.shared_intrinsics = shared_intrinsics
-        self.matching_conf_thr = matching_conf_thr
-        self.min_conf_thr = min_conf_thr
         self.cache = tempfile.TemporaryDirectory()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = AsymmetricMASt3R.from_pretrained(model_path).to(self.device)
@@ -62,7 +60,7 @@ class Mast3rInitializer(AbstractInitializer):
         pairs = make_pairs(images, scene_graph='complete', prefilter=None, symmetrize=True)
         scene = sparse_global_alignment(
             image_path_list, pairs, args.cache.name,
-            model, lr1=args.lr, niter1=args.niter, lr2=args.lr, niter2=args.niter, device=device,
+            model, lr1=args.coarse_lr, niter1=args.coarse_niter, lr2=args.fine_lr, niter2=args.fine_niter, device=device,
             opt_depth=True, shared_intrinsics=args.shared_intrinsics,
             matching_conf_thr=args.matching_conf_thr)
 
