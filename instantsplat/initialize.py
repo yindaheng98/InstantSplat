@@ -1,11 +1,12 @@
 import os
 
-from .initializer import Dust3rInitializer, ColmapSparseInitializer, ColmapDenseInitializer, InitializedCameraDataset
+from .initializer import Dust3rInitializer, Mast3rInitializer, ColmapSparseInitializer, ColmapDenseInitializer, InitializedCameraDataset
 
 
 def initialize(initializer, directory, configs, device):
     default_image_folder = {
         "dust3r": "images",
+        "mast3r": "images",
         "colmap-sparse": "input",
         "colmap-dense": "input",
     }
@@ -13,6 +14,9 @@ def initialize(initializer, directory, configs, device):
     image_path_list = [os.path.join(image_folder, file) for file in sorted(os.listdir(image_folder))]
     if initializer == "dust3r":
         initializer = Dust3rInitializer(**configs).to(device)
+        initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
+    elif initializer == "mast3r":
+        initializer = Mast3rInitializer(**configs).to(device)
         initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
     elif initializer == "colmap-sparse":
         initializer = ColmapSparseInitializer(destination=directory, **configs).to(device)
@@ -28,7 +32,7 @@ def initialize(initializer, directory, configs, device):
 if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser()
-    parser.add_argument("-i", "--initializer", choices=["dust3r", "colmap-sparse", "colmap-dense"], default="dust3r", type=str)
+    parser.add_argument("-i", "--initializer", choices=["dust3r", "mast3r", "colmap-sparse", "colmap-dense"], default="dust3r", type=str)
     parser.add_argument("-d", "--directory", required=True, type=str)
     parser.add_argument("--device", default="cuda", type=str)
     parser.add_argument("-o", "--option", default=[], action='append', type=str)

@@ -106,11 +106,10 @@ class Xst3rInitializer(AbstractInitializer):
 
 
 class Dust3rInitializer(Xst3rInitializer):
-    def __init__(self,
-                 model_path: str = "checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth", **kwargs):
+    def __init__(self, model_path: str = "checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth", **kwargs):
         super().__init__(model=AsymmetricCroCo3DStereo.from_pretrained(model_path), **kwargs)
 
 
 class Mast3rInitializer(Xst3rInitializer):
-    def __init__(self, model_path: str = "checkpoints/MASt3R_ViTLarge_BaseDecoder_512.pth", **kwargs):
+    def __init__(self, model_path: str = "checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric.pth", **kwargs):
         super().__init__(model=AsymmetricMASt3R.from_pretrained(model_path), **kwargs)
