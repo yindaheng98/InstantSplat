@@ -52,13 +52,15 @@ class Dust3rInitializer(AbstractInitializer):
                  schedule: str = 'linear',
                  lr: float = 0.01,
                  focal_avg: bool = True,
-                 scene_scale: float = 10.0):
+                 scene_scale: float = 10.0,
+                 resize: int = 512):
         self.batch_size = batch_size
         self.niter = niter
         self.schedule = schedule
         self.lr = lr
         self.focal_avg = focal_avg
         self.scene_scale = scene_scale
+        self.resize = resize
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = AsymmetricCroCo3DStereo.from_pretrained(model_path).to(self.device)
 
@@ -69,7 +71,7 @@ class Dust3rInitializer(AbstractInitializer):
 
     def __call__(args, image_path_list):
         device = args.device
-        images, ori_sizes = load_images(image_path_list, size=512)
+        images, ori_sizes = load_images(image_path_list, size=args.resize)
         model = args.model
         #######################################################################################################################################
         pairs = make_pairs(images, scene_graph='complete', prefilter=None, symmetrize=True)
