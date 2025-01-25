@@ -15,6 +15,7 @@ data/*
 checkpoints
 /croco
 /dust3r
+/mast3r
 /gaussian_splatting
 
 *.dist-info

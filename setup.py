@@ -16,6 +16,7 @@ import os
 
 packages = ['instantsplat'] + ["instantsplat." + package for package in find_packages(where="instantsplat")]
 packages_dust3r = ['dust3r'] + ["dust3r." + package for package in find_packages(where="submodules/dust3r/dust3r")]
+packages_mast3r = ['mast3r'] + ["mast3r." + package for package in find_packages(where="submodules/mast3r/mast3r")]
 packages_croco = ['croco', 'croco.utils', 'croco.models', 'croco.models.curope']
 
 
@@ -39,10 +40,11 @@ if os.name == 'nt':
 setup(
     name="instantsplat",
     version='1.0',
-    packages=packages + packages_dust3r + packages_croco,
+    packages=packages + packages_dust3r + packages_mast3r + packages_croco,
     package_dir={
         'instantsplat': 'instantsplat',
         'dust3r': 'submodules/dust3r/dust3r',
+        'mast3r': 'submodules/mast3r/mast3r',
         'croco': 'submodules/dust3r/croco',
     },
     ext_modules=[
