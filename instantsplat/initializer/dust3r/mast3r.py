@@ -1,12 +1,22 @@
+import tempfile
 import torch
-from dust3r.inference import inference
 from mast3r.model import AsymmetricMASt3R
 from dust3r.image_pairs import make_pairs
-from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
+from mast3r.cloud_opt.sparse_ga import sparse_global_alignment, SparseGA
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 
 from .utils import load_images, focal2fov
-from .alignment import compute_global_alignment
+
+
+def get_intrinsics(self: SparseGA, device):
+    focals = self.get_focals()
+    pps = self.get_principal_points()
+    K = torch.zeros((len(focals), 3, 3), device=device)
+    for i in range(len(focals)):
+        K[i, 0, 0] = K[i, 1, 1] = focals[i]
+        K[i, :2, 2] = pps[i]
+        K[i, 2, 2] = 1
+    return K
 
 
 class Mast3rInitializer(AbstractInitializer):
@@ -18,7 +28,10 @@ class Mast3rInitializer(AbstractInitializer):
                  lr: float = 0.01,
                  focal_avg: bool = True,
                  scene_scale: float = 10.0,
-                 resize: int = 512):
+                 resize: int = 512,
+                 shared_intrinsics: bool = False,
+                 matching_conf_thr: float = 5.,
+                 min_conf_thr: float = 2.):
         self.batch_size = batch_size
         self.niter = niter
         self.schedule = schedule
@@ -26,8 +39,15 @@ class Mast3rInitializer(AbstractInitializer):
         self.focal_avg = focal_avg
         self.scene_scale = scene_scale
         self.resize = resize
+        self.shared_intrinsics = shared_intrinsics
+        self.matching_conf_thr = matching_conf_thr
+        self.min_conf_thr = min_conf_thr
+        self.cache = tempfile.TemporaryDirectory()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = AsymmetricMASt3R.from_pretrained(model_path).to(self.device)
+
+    def __del__(self):
+        self.cache.cleanup()
 
     def to(self, device):
         self.device = device
@@ -40,21 +60,20 @@ class Mast3rInitializer(AbstractInitializer):
         model = args.model
         #######################################################################################################################################
         pairs = make_pairs(images, scene_graph='complete', prefilter=None, symmetrize=True)
-        output = inference(pairs, model, device, batch_size=args.batch_size)
-        scene = global_aligner(output, device=device, mode=GlobalAlignerMode.PointCloudOptimizer)
-        loss = compute_global_alignment(scene=scene, init="mst", niter=args.niter, schedule=args.schedule, lr=args.lr, focal_avg=args.focal_avg)
-        scene = scene.clean_pointcloud()
+        scene = sparse_global_alignment(
+            image_path_list, pairs, args.cache.name,
+            model, lr1=args.lr, niter1=args.niter, lr2=args.lr, niter2=args.niter, device=device,
+            opt_depth=True, shared_intrinsics=args.shared_intrinsics,
+            matching_conf_thr=args.matching_conf_thr)
 
         imgs = [torch.from_numpy(img).to(device) for img in scene.imgs]
-        focals = scene.get_focals()
         poses = torch.linalg.inv(scene.get_im_poses().detach())
-        pts3d = [p.detach() for p in scene.get_pts3d()]
-        scene.min_conf_thr = float(scene.conf_trf(torch.tensor(1.0)))
-        confidence_masks = scene.get_masks()
-        intrinsics = scene.get_intrinsics()
+        pts3d, _, confs = scene.get_dense_pts3d(clean_depth=True)
+        confidence_masks = [(c > args.min_conf_thr) for c in confs]
+        intrinsics = get_intrinsics(scene, device=device)
         #######################################################################################################################################
         return InitializedPointCloud(
-            points=torch.concatenate([p[m] for p, m in zip(pts3d, confidence_masks)])*args.scene_scale,
+            points=torch.concatenate([p.view(*m.shape, 3)[m] for p, m in zip(pts3d, confidence_masks)])*args.scene_scale,
             colors=torch.concatenate([p[m] for p, m in zip(imgs, confidence_masks)])
         ), [
             InitializingCamera(
