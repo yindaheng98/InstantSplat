@@ -6,9 +6,11 @@ import numpy as np
 import PIL.Image
 from PIL.ImageOps import exif_transpose
 import torch
+import torch.nn as nn
 import torchvision.transforms as tvf
 from dust3r.inference import inference
 from dust3r.model import AsymmetricCroCo3DStereo
+from mast3r.model import AsymmetricMASt3R
 from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
 from dust3r.utils.image import _resize_pil_image
@@ -44,9 +46,9 @@ def focal2fov(focal, pixels):
     return 2*math.atan(pixels/(2*focal))
 
 
-class Dust3rInitializer(AbstractInitializer):
+class Xst3rInitializer(AbstractInitializer):
     def __init__(self,
-                 model_path: str = "checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth",
+                 model: nn.Module,
                  batch_size: int = 1,
                  niter: int = 300,
                  schedule: str = 'linear',
@@ -62,7 +64,7 @@ class Dust3rInitializer(AbstractInitializer):
         self.scene_scale = scene_scale
         self.resize = resize
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = AsymmetricCroCo3DStereo.from_pretrained(model_path).to(self.device)
+        self.model = model.to(self.device)
 
     def to(self, device):
         self.device = device
@@ -101,3 +103,14 @@ class Dust3rInitializer(AbstractInitializer):
             )
             for i in range(len(image_path_list))
         ]
+
+
+class Dust3rInitializer(Xst3rInitializer):
+    def __init__(self,
+                 model_path: str = "checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth", **kwargs):
+        super().__init__(model=AsymmetricCroCo3DStereo.from_pretrained(model_path), **kwargs)
+
+
+class Mast3rInitializer(Xst3rInitializer):
+    def __init__(self, model_path: str = "checkpoints/MASt3R_ViTLarge_BaseDecoder_512.pth", **kwargs):
+        super().__init__(model=AsymmetricMASt3R.from_pretrained(model_path), **kwargs)

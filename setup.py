@@ -19,6 +19,10 @@ packages_dust3r = ['dust3r'] + ["dust3r." + package for package in find_packages
 packages_mast3r = ['mast3r'] + ["mast3r." + package for package in find_packages(where="submodules/mast3r/mast3r")]
 packages_croco = ['croco', 'croco.utils', 'croco.models', 'croco.models.curope']
 
+packages_dust3r += ["dust3r.dust3r"]  # ugly workaround for agly MAST3R import
+os.makedirs("submodules/dust3r/dust3r/dust3r", exist_ok=True)  # ugly workaround for ugly MAST3R import
+with open("submodules/dust3r/dust3r/dust3r/__init__.py", "w") as f:
+    f.write("from .dust3r import *\n")
 
 cxx_compiler_flags = []
 nvcc_compiler_flags = []
@@ -71,3 +75,5 @@ setup(
         'open3d',
     ]
 )
+
+os.remove("submodules/dust3r/dust3r/dust3r/__init__.py")  # ugly workaround for ugly MAST3R import
