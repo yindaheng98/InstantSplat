@@ -27,7 +27,7 @@ class ColmapSparseInitializer(AbstractInitializer):
                  scene_scale: float = 1.0):
         self.destination = destination
         self.run_at_destination = run_at_destination
-        self.colmap_executable = os.path.abspath(colmap_executable)
+        self.colmap_executable = colmap_executable
         self.camera = camera
         self.single_camera_per_image = "1" if single_camera_per_image else "0"
         self.load_camera = load_camera
