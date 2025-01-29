@@ -12,6 +12,7 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             PatchMatchStereo_max_image_size=2000,
             PatchMatchStereo_cache_size=32,
             delaunay2ply_batch=512,
+            delaunay2ply_reference_batch=512*512,
             poisson2ply_thresh=0.2,
             use_fused=False,
             **kwargs):
@@ -19,6 +20,7 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
         self.PatchMatchStereo_max_image_size = PatchMatchStereo_max_image_size
         self.PatchMatchStereo_cache_size = PatchMatchStereo_cache_size
         self.delaunay2ply_batch = delaunay2ply_batch
+        self.delaunay2ply_reference_batch = delaunay2ply_reference_batch
         self.poisson2ply_thresh = poisson2ply_thresh
         self.use_fused = use_fused
 
@@ -63,7 +65,8 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
         return delaunay2ply(
             os.path.join(folder, "meshed-delaunay.ply"),
             os.path.join(folder, "meshed-poisson.ply"),
-            batch=args.delaunay2ply_batch)
+            batch=args.delaunay2ply_batch,
+            reference_batch=args.delaunay2ply_reference_batch)
 
     def poisson2ply(args, folder):
         return poisson2ply(
