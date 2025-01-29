@@ -27,7 +27,7 @@ pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@
 ```shell
 git clone https://github.com/yindaheng98/InstantSplat --recursive
 cd InstantSplat
-pip install opencv-python roma scipy huggingface_hub einops open3d
+pip install opencv-python roma scipy huggingface_hub einops open3d scikit-learn
 pip install --target . --upgrade . --no-deps
 ```
 

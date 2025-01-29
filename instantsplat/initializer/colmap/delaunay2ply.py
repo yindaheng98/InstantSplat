@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from plyfile import PlyData, PlyElement
 from tqdm import tqdm
+from sklearn.neighbors import NearestNeighbors
 
 
 def read_ply(path):
@@ -20,32 +21,11 @@ def read_delaunay(path):
 
 
 def get_color(pos, pos_reference, color_reference, batch=1024, reference_batch=1024*1024):
-    n_points = pos.shape[0]
-    n_points_reference = pos_reference.shape[0]
-    color = torch.zeros(size=(n_points, color_reference.shape[1]), dtype=color_reference.dtype)
-    pbar = tqdm(desc="Processing point pairs", total=n_points*n_points_reference)
-    for i in range(0, n_points, batch):
-        step = batch if i+batch < n_points else (n_points-i)
-
-        step_reference = min(batch+reference_batch, n_points_reference)
-        pos_reference_step = pos_reference[0:step_reference, ...]
-        color_reference_step = color_reference[0:step_reference, ...]
-        dist = torch.norm(pos[i:i+step, ...].unsqueeze(1) - pos_reference_step.unsqueeze(0), p=2, dim=2)
-        idx = dist.argmin(dim=1)
-        color[i:i+step] = color_reference_step[idx, ...]
-        pbar.update(step_reference)
-
-        for j in range(batch+reference_batch, n_points_reference, batch):
-            pos_reference_step[reference_batch:reference_batch+idx.shape[0], ...] = pos_reference_step[idx, ...]
-            color_reference_step[reference_batch:reference_batch+idx.shape[0]:, ...] = color_reference_step[idx, ...]
-
-            step_reference = reference_batch if j+reference_batch < n_points_reference else (n_points_reference-j)
-            pos_reference_step[0:step_reference, ...] = pos_reference[j:j+step_reference, ...]
-            color_reference_step[0:step_reference, ...] = color_reference[j:j+step_reference, ...]
-            dist = torch.norm(pos[i:i+step, ...].unsqueeze(1) - pos_reference_step.unsqueeze(0), p=2, dim=2)
-            idx = dist.argmin(dim=1)
-            color[i:i+step] = color_reference_step[idx, ...]
-            pbar.update(step_reference)
+    pos_reference = pos_reference[~pos_reference.isnan().any(-1), ...]
+    color_reference = color_reference[~pos_reference.isnan().any(-1), ...]
+    nbrs = NearestNeighbors(n_neighbors=1, algorithm='ball_tree').fit(pos_reference.cpu())
+    distances, indices = nbrs.kneighbors(pos.cpu())
+    color = color_reference[torch.from_numpy(indices).squeeze(-1), ...]
     return color
 
 
