@@ -6,6 +6,7 @@ We **refactored the original code following the standard Python package structur
 
 Initialization methods:
 - [x] DUST3R (same method used in [InstantSplat](https://github.com/NVlabs/InstantSplat))
+- [x] MAST3R (same method used in [Splatt3R](https://github.com/btsmart/splatt3r))
 - [x] COLMAP Sparse reconstruct (same method used in [gaussian-splatting](https://github.com/graphdeco-inria/gaussian-splatting))
 - [x] COLMAP Dense reconstruct (use `patch_match_stereo`, `stereo_fusion`, `poisson_mesher` and `delaunay_mesher` in COLMAP to reconstruct dense point cloud for initialization)
 
@@ -57,23 +58,23 @@ wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/MASt3R
 
 1. Initialize coarse point cloud and jointly train 3DGS & cameras
 ```shell
-python train.py -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --init
+python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --init
 ```
 
 2. Render it
 ```shell
-python render.py -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --load_camera output/sora/santorini/3_views/cameras.json
+python -m gaussian_splatting.render -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --load_camera output/sora/santorini/3_views/cameras.json
 ```
 
 (Optional) Initialize coarse point and save as a Colmap workspace than jointly train 3DGS & cameras
 ```shell
-python initialize.py -d data/sora/santorini/3_views
-python train.py -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000
+python -m instantsplat.initialize -d data/sora/santorini/3_views
+python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000
 ```
 
 ## Usage
 
-**See [initialize.py](initialize.py), [train.py](train.py) and [render.py](render.py) for full example.**
+**See [instantsplat.initialize](instantsplat/initialize.py), [instantsplat.train](instantsplat/train.py) and [gaussian_splatting.render](https://github.com/yindaheng98/gaussian-splatting/blob/master/gaussian_splatting/render.py) for full example.**
 
 Also check [yindaheng98/gaussian-splatting](https://github.com/yindaheng98/gaussian-splatting) for more detail of training process.
 
