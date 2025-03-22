@@ -1,6 +1,6 @@
 from gaussian_splatting import CameraTrainableGaussianModel
 from gaussian_splatting.dataset import TrainableCameraDataset
-from gaussian_splatting.trainer import CameraTrainer
+from gaussian_splatting.trainer import BaseCameraTrainer
 
 
 def Trainer(
@@ -17,7 +17,7 @@ def Trainer(
         camera_rotation_lr_max_steps=1000,
         opacity_lr=0.05,
         *args, **kwargs):
-    return CameraTrainer(
+    return BaseCameraTrainer(
         model=model,
         scene_extent=scene_extent,
         dataset=dataset,

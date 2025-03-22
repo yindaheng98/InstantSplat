@@ -46,7 +46,7 @@ if os.name == 'nt':
 
 setup(
     name="instantsplat",
-    version='1.0.5',
+    version='1.1.0',
     author='yindaheng98',
     author_email='yindaheng98@gmail.com',
     url='https://github.com/yindaheng98/instantsplat',
