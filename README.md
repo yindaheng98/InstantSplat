@@ -55,7 +55,7 @@ pip install --target . --upgrade --no-deps .
 pip install --target . --no-deps --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master
 ```
 
-### Download model
+## Download model
 
 ```sh
 wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/DUSt3R/DUSt3R_ViTLarge_BaseDecoder_224_linear.pth
@@ -68,7 +68,11 @@ wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/MASt3R
 
 1. Initialize coarse point cloud and jointly train 3DGS & cameras
 ```shell
-python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --init
+# Option 1: init and train in one command
+python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --init dust3r
+# Option 2: init and train in two separate commands
+python -m instantsplat.train -i dust3r -d data/sora/santorini/3_views -i dust3r # init coarse point and save as a Colmap workspace at data/sora/santorini/3_views
+python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 # train
 ```
 
 2. Render it
@@ -76,11 +80,7 @@ python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santo
 python -m gaussian_splatting.render -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --load_camera output/sora/santorini/3_views/cameras.json
 ```
 
-(Optional) Initialize coarse point and save as a Colmap workspace than jointly train 3DGS & cameras
-```shell
-python -m instantsplat.initialize -d data/sora/santorini/3_views
-python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000
-```
+See [.vscode\launch.json](.vscode\launch.json) for more command examples.
 
 ## Usage
 
