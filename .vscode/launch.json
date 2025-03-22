@@ -15,6 +15,21 @@
             ]
         },
         {
+            "name": "initialize mast3r",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "instantsplat.initialize",
+            "console": "integratedTerminal",
+            "args": [
+                "-d",
+                "data/sora/santorini/3_views",
+                "-i",
+                "mast3r",
+                "-o",
+                "resize=1024",
+            ]
+        },
+        {
             "name": "initialize colmap-dense",
             "type": "debugpy",
             "request": "launch",
