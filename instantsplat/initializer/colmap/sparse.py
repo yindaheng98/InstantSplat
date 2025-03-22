@@ -24,7 +24,8 @@ class ColmapSparseInitializer(AbstractInitializer):
                  camera: str = "OPENCV",
                  single_camera_per_image: bool = True,
                  load_camera: str = None,
-                 scene_scale: float = 1.0):
+                 scene_scale: float = 1.0,
+                 allow_undistortion_missing: bool = False):
         self.destination = destination
         self.run_at_destination = run_at_destination
         self.colmap_executable = colmap_executable
@@ -33,6 +34,7 @@ class ColmapSparseInitializer(AbstractInitializer):
         self.load_camera = load_camera
         self.scene_scale = scene_scale
         self.use_gpu = "1"
+        self.allow_undistortion_missing = allow_undistortion_missing
 
     def to(self, device):
         self.use_gpu = "0" if device == "cpu" else "1"
@@ -129,7 +131,10 @@ class ColmapSparseInitializer(AbstractInitializer):
         for image_path in image_path_list:
             src = os.path.join(folder, "images", os.path.basename(image_path))
             if not os.path.exists(src):
-                raise RuntimeError("Undistortion incomplete")
+                if self.allow_undistortion_missing:
+                    continue
+                else:
+                    raise RuntimeError("Undistortion incomplete")
             dst = os.path.join(self.destination, "images", os.path.basename(image_path))
             if os.path.exists(dst):
                 if os.path.samefile(src, dst):
