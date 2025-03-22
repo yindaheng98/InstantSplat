@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from .initializer import Dust3rInitializer, Mast3rInitializer, ColmapSparseInitializer, ColmapDenseInitializer, InitializedCameraDataset
 
@@ -43,5 +44,6 @@ if __name__ == '__main__':
     dataset = InitializedCameraDataset(initialized_cameras)
 
     os.makedirs(os.path.join(args.directory, "sparse/0"), exist_ok=True)
+    shutil.rmtree(os.path.join(args.directory, "sparse/0"), ignore_errors=True)
     initialized_point_cloud.save_ply(os.path.join(args.directory, "sparse/0/points3D.ply"))
     dataset.save_colmap_cameras(os.path.join(args.directory, "sparse/0"))
