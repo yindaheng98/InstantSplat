@@ -10,39 +10,49 @@ Initialization methods:
 - [x] COLMAP Sparse reconstruct (same method used in [gaussian-splatting](https://github.com/graphdeco-inria/gaussian-splatting))
 - [x] COLMAP Dense reconstruct (use `patch_match_stereo`, `stereo_fusion`, `poisson_mesher` and `delaunay_mesher` in COLMAP to reconstruct dense point cloud for initialization)
 
-## Install
+## Prerequisites
 
-### Requirements
+* [Pytorch](https://pytorch.org/) (v2.4 or higher recommended)
+* [CUDA Toolkit](https://developer.nvidia.com/cuda-12-4-0-download-archive) (12.4 recommended, should match with PyTorch version)
 
-Install Pytorch and torchvision following the official guideline: [pytorch.org](https://pytorch.org/)
+## Install (PyPI)
 
-Install [`gaussian-splatting`](https://github.com/yindaheng98/gaussian-splatting).
-You can download wheel from [Releases](https://github.com/yindaheng98/gaussian-splatting/releases), or
-install latest from source:
+```sh
+pip install --upgrade InstantSplat
+```
+
+## Install (Build from source)
+
+```sh
+pip install --upgrade git+https://github.com/yindaheng98/InstantSplat.git@main
+```
+If you have trouble with [`gaussian-splatting`](https://github.com/yindaheng98/gaussian-splatting), you can install it from source:
 ```sh
 pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master
 ```
 
-### Local Install
+## Install (Development)
 
+Install [`gaussian-splatting`](https://github.com/yindaheng98/gaussian-splatting).
+You can download the wheel from [PyPI](https://pypi.org/project/gaussian-splatting/):
 ```shell
-git clone https://github.com/yindaheng98/InstantSplat --recursive
-cd InstantSplat
-pip install opencv-python roma scipy huggingface_hub einops open3d scikit-learn
-pip install --target . --upgrade . --no-deps
+pip install --upgrade gaussian-splatting
+```
+Alternatively, install the latest version from the source:
+```sh
+pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master
 ```
 
-(Optional) If you do not want to install those related dependencies in your env:
+```shell
+git clone --recursive https://github.com/yindaheng98/InstantSplat
+cd InstantSplat
+pip install tqdm plyfile scikit-learn numpy
+pip install --target . --upgrade --no-deps .
+```
+
+(Optional) If you prefer not to install `gaussian-splatting` in your environment, you can install it in your `InstantSplat` directory:
 ```sh
 pip install --target . --no-deps --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master
-```
-
-### Pip Install
-
-You can download wheel from [Releases](https://github.com/yindaheng98/InstantSplat/releases), or
-install latest from source:
-```shell
-pip install --upgrade git+https://github.com/yindaheng98/InstantSplat.git@main
 ```
 
 ### Download model

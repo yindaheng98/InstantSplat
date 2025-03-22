@@ -73,6 +73,7 @@ setup(
         'huggingface_hub',
         'einops',
         'open3d',
+        'gaussian-splatting',
     ]
 )
 
