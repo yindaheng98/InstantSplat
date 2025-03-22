@@ -18,7 +18,7 @@ Initialization methods:
 ## Install (PyPI)
 
 ```sh
-pip install --upgrade InstantSplat
+pip install --upgrade instantsplat
 ```
 
 ## Install (Build from source)

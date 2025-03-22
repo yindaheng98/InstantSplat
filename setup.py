@@ -14,6 +14,9 @@ from torch import cuda
 from torch.utils.cpp_extension import CUDAExtension, BuildExtension
 import os
 
+with open("README.md", "r", encoding='utf8') as fh:
+    long_description = fh.read()
+
 packages = ['instantsplat'] + ["instantsplat." + package for package in find_packages(where="instantsplat")]
 packages_dust3r = ['dust3r'] + ["dust3r." + package for package in find_packages(where="submodules/dust3r/dust3r")]
 packages_mast3r = ['mast3r'] + ["mast3r." + package for package in find_packages(where="submodules/mast3r/mast3r")]
@@ -43,7 +46,13 @@ if os.name == 'nt':
 
 setup(
     name="instantsplat",
-    version='1.0',
+    version='1.0.1',
+    author='yindaheng98',
+    author_email='yindaheng98@gmail.com',
+    url='https://github.com/yindaheng98/instantsplat',
+    description=u'Refactored python initialization and training code for InstantSplat',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     packages=packages + packages_dust3r + packages_mast3r + packages_croco,
     package_dir={
         'instantsplat': 'instantsplat',
