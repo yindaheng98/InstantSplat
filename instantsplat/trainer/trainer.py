@@ -16,12 +16,14 @@ def Trainer(
         camera_rotation_lr_delay_mult=0.01,
         camera_rotation_lr_max_steps=1000,
         opacity_lr=0.05,
+        position_lr_max_steps=1000,
         *args, **kwargs):
     return BaseCameraTrainer(
         model=model,
         scene_extent=scene_extent,
         dataset=dataset,
         opacity_lr=opacity_lr,
+        position_lr_max_steps=position_lr_max_steps,
         camera_position_lr_init=camera_position_lr_init,
         camera_position_lr_final=camera_position_lr_final,
         camera_position_lr_delay_mult=camera_position_lr_delay_mult,
