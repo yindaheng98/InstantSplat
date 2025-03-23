@@ -34,10 +34,12 @@ class ColmapSparseInitializer(AbstractInitializer):
         self.load_camera = load_camera
         self.scene_scale = scene_scale
         self.use_gpu = "1"
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.allow_undistortion_missing = allow_undistortion_missing
 
     def to(self, device):
         self.use_gpu = "0" if device == "cpu" else "1"
+        self.device = device
         return self
 
     def put_distorted(self, image_path_list, folder):
@@ -156,7 +158,7 @@ class ColmapSparseInitializer(AbstractInitializer):
             InitializingCamera(
                 image_width=camera.image_width, image_height=camera.image_height,
                 FoVx=camera.FoVx, FoVy=camera.FoVy,
-                R=camera.R, T=camera.T*self.scene_scale,
+                R=camera.R.to(self.device), T=camera.T.to(self.device)*self.scene_scale,
                 image_path=os.path.join(self.destination, "images", os.path.basename(camera.image_path))
             )
             for camera in read_cameras_binary(cameras_extrinsic_file, cameras_intrinsic_file, image_dir)]
