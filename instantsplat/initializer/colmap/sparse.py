@@ -147,7 +147,7 @@ class ColmapSparseInitializer(AbstractInitializer):
     def read_points3D(self, folder):
         xyz, rgb, _ = read_points3D_binary(os.path.join(folder, "sparse", "points3D.bin"))
         return InitializedPointCloud(
-            points=torch.from_numpy(xyz)*self.scene_scale, colors=torch.from_numpy(rgb)/255.0
+            points=torch.from_numpy(xyz).to(self.device)*self.scene_scale, colors=torch.from_numpy(rgb).to(self.device)/255.0
         )
 
     def read_camera(self, folder):

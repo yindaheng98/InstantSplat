@@ -130,9 +130,9 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
         if self.run_at_destination:
             self.run(image_path_list, self.destination)
             xyz, rgb = read_ply(os.path.join(self.destination, use_file))
-            return InitializedPointCloud(points=xyz*self.scene_scale, colors=rgb/255.0), self.read_camera(self.destination)
+            return InitializedPointCloud(points=xyz.to(self.device)*self.scene_scale, colors=rgb.to(self.device)/255.0), self.read_camera(self.destination)
         else:
             with tempfile.TemporaryDirectory() as tempdir:
                 self.run(image_path_list, tempdir)
                 xyz, rgb = read_ply(os.path.join(tempdir, use_file))
-                return InitializedPointCloud(points=xyz*self.scene_scale, colors=rgb/255.0), self.read_camera(tempdir)
+                return InitializedPointCloud(points=xyz.to(self.device)*self.scene_scale, colors=rgb.to(self.device)/255.0), self.read_camera(tempdir)
