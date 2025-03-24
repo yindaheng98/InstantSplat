@@ -11,12 +11,12 @@ def align_cameras(reference_points: torch.Tensor, reference_cameras: List[Initia
     T_ref = torch.stack([camera.T for camera in reference_cameras])
     R = torch.stack([camera.R for camera in cameras]).to(R_ref.dtype)
     T = torch.stack([camera.T for camera in cameras]).to(T_ref.dtype)
-    R_tran = torch.bmm(R_ref.transpose(1, 2), R).mean(0)
+    R_tran = torch.bmm(R_ref.transpose(1, 2), R).median(0).values
     dist_T = (T.unsqueeze(0) - T.unsqueeze(1)).norm(dim=-1, p=2)
     dist_T_ref = (T_ref.unsqueeze(0) - T_ref.unsqueeze(1)).norm(dim=-1, p=2)
     scales = dist_T_ref / dist_T
-    scale = scales[~scales.isnan()].mean()
-    T_tran = (T_ref - T @ R_tran.T * scale).mean(0)
+    scale = scales[~scales.isnan()].median()
+    T_tran = (T_ref - T @ R_tran.T * scale).median(0).values
     return (reference_points @ R_tran.T.to(reference_points.dtype)) * scale - T_tran
 
 
