@@ -19,6 +19,8 @@ def align_cameras(reference_points: torch.Tensor, reference_cameras: List[Initia
     T_tran = (T_ref - T @ R_tran.T * scale).median(0).values
     return (reference_points @ R_tran.T.to(reference_points.dtype)) * scale - T_tran
 
+# TODO: align_cameras no accurate, need point cloud registration, train the R_tran, scale and T_tran
+
 
 class AlignInitializer(AbstractInitializer):
     def __init__(self, *initializers: AbstractInitializer):
