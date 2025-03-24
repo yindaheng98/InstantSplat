@@ -10,6 +10,7 @@ def align_cameras(reference_points: torch.Tensor, reference_cameras: List[Initia
     R = torch.stack([camera.R for camera in cameras]).to(R_ref.dtype)
     T = torch.stack([camera.T for camera in cameras]).to(T_ref.dtype)
     R_tran = torch.bmm(R_ref.transpose(1, 2), R).mean(0)
+    # TODO: implement translation alignment
     return reference_points @ R_tran.T.to(reference_points.dtype)
 
 
