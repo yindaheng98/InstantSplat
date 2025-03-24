@@ -31,7 +31,7 @@ def registration_by_ICP(reference_points: torch.Tensor, points: torch.Tensor) ->
     trans_init = torch.eye(4).cpu().numpy()
     reg_p2p = o3d.pipelines.registration.registration_icp(
         source, target, threshold, trans_init,
-        o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+        o3d.pipelines.registration.TransformationEstimationPointToPoint(with_scaling=True),
         o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2000))
     source_transformed = copy.deepcopy(source).transform(reg_p2p.transformation)
     points_transformed = torch.from_numpy(np.asarray(source_transformed.points)).to(reference_points.device).to(reference_points.dtype)
