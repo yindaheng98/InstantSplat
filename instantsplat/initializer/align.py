@@ -16,7 +16,10 @@ def align_cameras(reference_points: torch.Tensor, reference_cameras: List[Initia
     dist_T_ref = (T_ref.unsqueeze(0) - T_ref.unsqueeze(1)).norm(dim=-1, p=2)
     scales = dist_T_ref / dist_T
     scale = scales[~scales.isnan()].mean()
-    return reference_points @ R_tran.T.to(reference_points.dtype) * scale
+    T_ = -(R.transpose(1, 2) @ T.unsqueeze(-1)).squeeze(-1)
+    T_ref_ = -(R_ref.transpose(1, 2) @ T_ref.unsqueeze(-1)).squeeze(-1)
+    T_tran = torch.bmm(R_ref, (T_ - T_ref_ / scale).unsqueeze(-1)).squeeze(-1).mean(0)
+    return (reference_points @ R_tran.T.to(reference_points.dtype) + T_tran) * scale
 
 
 
