@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import torch
 import tqdm
+import tifffile
 
 from depth_anything_v2.dpt import DepthAnythingV2
 from instantsplat.initializer import AbstractInitializer, InitializedPointCloud, InitializingCamera
@@ -25,7 +26,7 @@ def default_image_path_to_depth_path(image_path: str) -> str:
     return os.path.join(
         os.path.dirname(os.path.dirname(image_path)),
         "depths",
-        os.path.splitext(os.path.basename(image_path))[0]+'.png'
+        os.path.splitext(os.path.basename(image_path))[0]+'.tiff'
     )
 
 
@@ -52,11 +53,14 @@ class DepthAnythingV2InitializerWrapper(DepthInitializerWrapper):
         depth_anything = self.depth_anything
         raw_image = cv2.imread(image_path)
         depth = depth_anything.infer_image(raw_image, self.input_size)
-        depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0
+        depth_scaled = np.repeat(((depth - depth.min()) / (depth.max() - depth.min()) * 255.0).astype(np.uint8)[..., np.newaxis], 3, axis=-1)
         depth_path = self.image_path_to_depth_path(image_path)
-        depth = depth.astype(np.uint8)
         os.makedirs(os.path.dirname(depth_path), exist_ok=True)
-        cv2.imwrite(depth_path, depth)
+        if depth_path.endswith('.tiff'):
+            tifffile.imwrite(depth_path, depth)
+            cv2.imwrite(os.path.splitext(depth_path)[0] + '.png', depth_scaled)
+            return depth_path
+        cv2.imwrite(depth_path, depth_scaled)
         return depth_path
 
     def compute_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[str]:
