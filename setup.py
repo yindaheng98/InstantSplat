@@ -9,7 +9,7 @@
 # For inquiries contact  george.drettakis@inria.fr
 #
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, find_namespace_packages
 from torch import cuda
 from torch.utils.cpp_extension import CUDAExtension, BuildExtension
 import os
@@ -21,6 +21,7 @@ packages = ['instantsplat'] + ["instantsplat." + package for package in find_pac
 packages_dust3r = ['dust3r'] + ["dust3r." + package for package in find_packages(where="submodules/dust3r/dust3r")]
 packages_mast3r = ['mast3r'] + ["mast3r." + package for package in find_packages(where="submodules/mast3r/mast3r")]
 packages_croco = ['croco', 'croco.utils', 'croco.models', 'croco.models.curope']
+packages_depth_anything_v2 = ['depth_anything_v2'] + ["depth_anything_v2." + package for package in find_namespace_packages(where="submodules/Depth-Anything-V2/depth_anything_v2")]
 
 packages_dust3r += ["dust3r.dust3r"]  # ugly workaround for agly MAST3R import
 os.makedirs("submodules/dust3r/dust3r/dust3r", exist_ok=True)  # ugly workaround for ugly MAST3R import
@@ -53,12 +54,13 @@ setup(
     description=u'Refactored python initialization and training code for InstantSplat',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=packages + packages_dust3r + packages_mast3r + packages_croco,
+    packages=packages + packages_dust3r + packages_mast3r + packages_croco + packages_depth_anything_v2,
     package_dir={
         'instantsplat': 'instantsplat',
         'dust3r': 'submodules/dust3r/dust3r',
         'mast3r': 'submodules/mast3r/mast3r',
         'croco': 'submodules/dust3r/croco',
+        'depth_anything_v2': 'submodules/Depth-Anything-V2/depth_anything_v2',
     },
     ext_modules=[
         CUDAExtension(

@@ -4,3 +4,6 @@
 [submodule "submodules/mast3r"]
 	path = submodules/mast3r
 	url = https://github.com/naver/mast3r
+[submodule "submodules/Depth-Anything-V2"]
+	path = submodules/Depth-Anything-V2
+	url = https://github.com/DepthAnything/Depth-Anything-V2
