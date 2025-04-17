@@ -13,21 +13,21 @@ default_image_folder = {
 }
 
 
-def initialize(initializer, directory, configs, device):
+def initialize(initializer, directory, with_depth, configs, device):
     image_folder = os.path.join(directory, default_image_folder[initializer])
     image_path_list = [os.path.join(image_folder, file) for file in sorted(os.listdir(image_folder))]
     if initializer == "dust3r":
-        initializer = Dust3rInitializer(**configs).to(device)
+        initializer = (Dust3rInitializer if not with_depth else DepthAnythingV2Dust3rInitializer)(**configs).to(device)
     elif initializer == "mast3r":
-        initializer = Mast3rInitializer(**configs).to(device)
+        initializer = (Mast3rInitializer if not with_depth else DepthAnythingV2Mast3rInitializer)(**configs).to(device)
     elif initializer == "colmap-sparse":
-        initializer = ColmapSparseInitializer(destination=directory, **configs).to(device)
+        initializer = (ColmapSparseInitializer if not with_depth else DepthAnythingV2ColmapSparseInitializer)(destination=directory, **configs).to(device)
     elif initializer == "colmap-dense":
-        initializer = ColmapDenseInitializer(destination=directory, **configs).to(device)
+        initializer = (ColmapDenseInitializer if not with_depth else DepthAnythingV2ColmapDenseInitializer)(destination=directory, **configs).to(device)
     elif initializer == "colmap-dense-dust3r":
-        initializer = Dust3rAlign2ColmapDenseInitializer(destination=directory, **configs).to(device)
+        initializer = (Dust3rAlign2ColmapDenseInitializer if not with_depth else DepthAnythingV2Dust3rAlign2ColmapDenseInitializer)(destination=directory, **configs).to(device)
     elif initializer == "colmap-dense-mast3r":
-        initializer = Mast3rAlign2ColmapDenseInitializer(destination=directory, **configs).to(device)
+        initializer = (Mast3rAlign2ColmapDenseInitializer if not with_depth else DepthAnythingV2Mast3rAlign2ColmapDenseInitializer)(destination=directory, **configs).to(device)
     else:
         raise ValueError(f"Unknown initializer {initializer}")
     initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
@@ -39,12 +39,13 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("-i", "--initializer", choices=list(default_image_folder.keys()), default="dust3r", type=str)
     parser.add_argument("-d", "--directory", required=True, type=str)
+    parser.add_argument("--with_depth", action="store_true")
     parser.add_argument("--device", default="cuda", type=str)
     parser.add_argument("-o", "--option", default=[], action='append', type=str)
 
     args = parser.parse_args()
     configs = {o.split("=", 1)[0]: eval(o.split("=", 1)[1]) for o in args.option}
-    initialized_cameras, initialized_point_cloud = initialize(args.initializer, args.directory, configs, args.device)
+    initialized_cameras, initialized_point_cloud = initialize(args.initializer, args.directory, args.with_depth, configs, args.device)
     dataset = InitializedCameraDataset(initialized_cameras)
 
     shutil.rmtree(os.path.join(args.directory, "sparse/0"), ignore_errors=True)
