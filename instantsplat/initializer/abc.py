@@ -13,6 +13,7 @@ class InitializingCamera(NamedTuple):
     R: torch.Tensor
     T: torch.Tensor
     image_path: str
+    depth_path: str = None
 
 
 class InitializedPointCloud(NamedTuple):
