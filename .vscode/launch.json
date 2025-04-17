@@ -129,6 +129,7 @@
                 "output/sora/santorini/3_views",
                 "-i",
                 "1000",
+                "--with_depth",
             ],
             "justMyCode": false
         },

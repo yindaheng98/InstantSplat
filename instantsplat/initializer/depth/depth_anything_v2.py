@@ -5,6 +5,7 @@ from typing import List
 import cv2
 import numpy as np
 import torch
+import tqdm
 
 from depth_anything_v2.dpt import DepthAnythingV2
 from instantsplat.initializer import AbstractInitializer, InitializedPointCloud, InitializingCamera
@@ -59,4 +60,4 @@ class DepthAnythingV2InitializerWrapper(DepthInitializerWrapper):
         return depth_path
 
     def compute_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[str]:
-        return [self.compute_depth(camera.image_path) for camera in cameras]
+        return [self.compute_depth(camera.image_path) for camera in tqdm.tqdm(cameras, desc="Computing depth")]
