@@ -8,14 +8,14 @@ from .poisson2ply import poisson2ply
 
 class ColmapDenseInitializer(ColmapSparseInitializer):
     def __init__(
-            self, *args,
+            self,
             PatchMatchStereo_max_image_size=2000,
             PatchMatchStereo_cache_size=32,
             delaunay2ply_batch=512,
             delaunay2ply_reference_batch=512*512,
             poisson2ply_thresh=0.2,
             use_fused=False,
-            **kwargs):
+            *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.PatchMatchStereo_max_image_size = PatchMatchStereo_max_image_size
         self.PatchMatchStereo_cache_size = PatchMatchStereo_cache_size

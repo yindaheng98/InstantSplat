@@ -30,6 +30,21 @@
             ]
         },
         {
+            "name": "initialize dust3r align to colmap",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "instantsplat.initialize",
+            "console": "integratedTerminal",
+            "args": [
+                "-d",
+                "data/sora/santorini/3_views",
+                "--initializer",
+                "colmap-dense-dust3r",
+                "-o",
+                "colmap_executable='./data/colmap/COLMAP.bat'",
+            ]
+        },
+        {
             "name": "initialize colmap-dense",
             "type": "debugpy",
             "request": "launch",
