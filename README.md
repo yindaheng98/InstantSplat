@@ -46,8 +46,13 @@ pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@
 ```shell
 git clone --recursive https://github.com/yindaheng98/InstantSplat
 cd InstantSplat
-pip install tqdm plyfile scikit-learn numpy
+pip install tqdm plyfile scikit-learn numpy triton xformers
 pip install --target . --upgrade --no-deps .
+```
+
+(Optional) Install `xformers` and `triton` for faster depth anything:
+```shell
+pip install triton xformers
 ```
 
 (Optional) If you prefer not to install `gaussian-splatting` in your environment, you can install it in your `InstantSplat` directory:
