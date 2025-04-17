@@ -10,8 +10,6 @@
             "args": [
                 "-d",
                 "data/sora/santorini/3_views",
-                "-o",
-                "resize=1024",
                 "--with_depth",
             ]
         },
