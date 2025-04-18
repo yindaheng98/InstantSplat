@@ -1,6 +1,7 @@
 from gaussian_splatting import CameraTrainableGaussianModel
 from gaussian_splatting.dataset import TrainableCameraDataset
 from gaussian_splatting.trainer import BaseCameraTrainer, DepthCameraTrainer
+from .smallscale import ScaleRegularizer
 
 
 def Trainer(
@@ -33,6 +34,27 @@ def Trainer(
         camera_rotation_lr_delay_mult=camera_rotation_lr_delay_mult,
         camera_rotation_lr_max_steps=camera_rotation_lr_max_steps,
         *args, **kwargs
+    )
+
+
+def ScaleRegularizeTrainer(
+    model: CameraTrainableGaussianModel,
+    scene_extent: float,
+    dataset: TrainableCameraDataset,
+    scale_reg_from_iter=100,
+    scale_reg_weight=1.0,
+    *args, **kwargs
+) -> ScaleRegularizer:
+    return ScaleRegularizer(
+        Trainer(
+            model=model,
+            scene_extent=scene_extent,
+            dataset=dataset,
+            *args, **kwargs
+        ),
+        scene_extent=scene_extent,
+        scale_reg_from_iter=scale_reg_from_iter,
+        scale_reg_weight=scale_reg_weight,
     )
 
 
