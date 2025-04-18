@@ -46,7 +46,7 @@ pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@
 ```shell
 git clone --recursive https://github.com/yindaheng98/InstantSplat
 cd InstantSplat
-pip install tqdm plyfile scikit-learn numpy triton xformers
+pip install tqdm plyfile scikit-learn numpy tifffile triton xformers
 pip install --target . --upgrade --no-deps .
 ```
 
