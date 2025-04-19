@@ -147,6 +147,7 @@
                 "1000",
                 "--load_camera",
                 "output/sora/santorini/3_views/cameras.json",
+                "--save_depth_pcd",
             ]
         },
     ]
