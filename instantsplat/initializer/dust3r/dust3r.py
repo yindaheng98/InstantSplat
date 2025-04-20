@@ -1,3 +1,4 @@
+from typing import List
 import torch
 from dust3r.inference import inference
 from dust3r.model import AsymmetricCroCo3DStereo
@@ -7,6 +8,10 @@ from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera
 
 from .utils import load_images, focal2fov
 from .alignment import compute_global_alignment
+
+
+def preset_poses(scene, known_cameras: List[InitializingCamera]):
+    return scene  # TODO: implement this function
 
 
 class Dust3rInitializer(AbstractInitializer):
@@ -34,7 +39,7 @@ class Dust3rInitializer(AbstractInitializer):
         self.model = self.model.to(device)
         return self
 
-    def __call__(args, image_path_list):
+    def __call__(args, image_path_list, known_cameras: List[InitializingCamera] = []):
         device = args.device
         images, ori_sizes = load_images(image_path_list, size=args.resize)
         model = args.model
@@ -42,6 +47,8 @@ class Dust3rInitializer(AbstractInitializer):
         pairs = make_pairs(images, scene_graph='complete', prefilter=None, symmetrize=True)
         output = inference(pairs, model, device, batch_size=args.batch_size)
         scene = global_aligner(output, device=device, mode=GlobalAlignerMode.PointCloudOptimizer)
+        if len(known_cameras) > 0:
+            scene = preset_poses(scene, known_cameras)
         loss = compute_global_alignment(scene=scene, init="mst", niter=args.niter, schedule=args.schedule, lr=args.lr, focal_avg=args.focal_avg)
         scene = scene.clean_pointcloud()
 
@@ -66,3 +73,17 @@ class Dust3rInitializer(AbstractInitializer):
             )
             for i in range(len(image_path_list))
         ]
+
+
+class Align2Dust3rInitializer(Dust3rInitializer):
+    def __init__(self, another_initializer: AbstractInitializer, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.another_initializer = another_initializer
+
+    def __call__(self, image_path_list):
+        another_point_cloud, another_cameras = self.another_initializer(image_path_list)
+        point_cloud, cameras = super().__call__([camera.image_path for camera in another_cameras], known_cameras=another_cameras)
+        return InitializedPointCloud(
+            points=torch.concatenate((point_cloud.points, another_point_cloud.points*self.scene_scale)),
+            colors=torch.concatenate((point_cloud.colors, another_point_cloud.colors))
+        ), cameras

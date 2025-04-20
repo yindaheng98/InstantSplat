@@ -1,6 +1,5 @@
 from .colmap import ColmapSparseInitializer, ColmapDenseInitializer
-from .dust3r import Dust3rInitializer
-from .dust3r import Mast3rInitializer
+from .dust3r import Dust3rInitializer, Align2Dust3rInitializer, Mast3rInitializer
 from .align import AlignInitializer
 from .depth import DepthAnythingV2InitializerWrapper
 
@@ -15,18 +14,16 @@ def Dust3rAlign2ColmapDenseInitializer(
         scene_scale: float = 10.0,
         resize: int = 512,
         *args, **kwargs):
-    return AlignInitializer(
+    return Align2Dust3rInitializer(
         ColmapDenseInitializer(*args, **kwargs),
-        Dust3rInitializer(
-            model_path=model_path,
-            batch_size=batch_size,
-            niter=niter,
-            schedule=schedule,
-            lr=lr,
-            focal_avg=focal_avg,
-            scene_scale=scene_scale,
-            resize=resize,
-        )
+        model_path=model_path,
+        batch_size=batch_size,
+        niter=niter,
+        schedule=schedule,
+        lr=lr,
+        focal_avg=focal_avg,
+        scene_scale=scene_scale,
+        resize=resize,
     )
 
 
