@@ -34,3 +34,7 @@ def load_images(img_path_list: List[str], size: int = None):
 
 def focal2fov(focal, pixels):
     return 2*math.atan(pixels/(2*focal))
+
+
+def fov2focal(fov, pixels):
+    return pixels / (2 * math.tan(fov / 2))

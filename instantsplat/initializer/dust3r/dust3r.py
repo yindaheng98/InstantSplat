@@ -6,12 +6,24 @@ from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 
-from .utils import load_images, focal2fov
+from .utils import load_images, focal2fov, fov2focal
 from .alignment import compute_global_alignment
 
 
-def preset_poses(scene, known_cameras: List[InitializingCamera]):
-    return scene  # TODO: implement this function
+def preset_cameras(scene, known_cameras: List[InitializingCamera]):
+    Rt = torch.zeros((len(known_cameras), 4, 4))
+    focal = torch.zeros(len(known_cameras))
+    for i, camera in enumerate(known_cameras):
+        Rt[i, :3, :3] = camera.R
+        Rt[i, :3, 3] = camera.T
+        Rt[i, 3, 3] = 1.0
+        fx = fov2focal(camera.FoVx, camera.image_width)
+        fy = fov2focal(camera.FoVy, camera.image_height)
+        focal[i] = (fx + fy) / 2
+    C2W = torch.linalg.inv(Rt)
+    scene.preset_pose(C2W)
+    scene.preset_focal(known_focals=focal)
+    return scene
 
 
 class Dust3rInitializer(AbstractInitializer):
@@ -47,9 +59,11 @@ class Dust3rInitializer(AbstractInitializer):
         pairs = make_pairs(images, scene_graph='complete', prefilter=None, symmetrize=True)
         output = inference(pairs, model, device, batch_size=args.batch_size)
         scene = global_aligner(output, device=device, mode=GlobalAlignerMode.PointCloudOptimizer)
+        init = "mst"
         if len(known_cameras) > 0:
-            scene = preset_poses(scene, known_cameras)
-        loss = compute_global_alignment(scene=scene, init="mst", niter=args.niter, schedule=args.schedule, lr=args.lr, focal_avg=args.focal_avg)
+            scene = preset_cameras(scene, known_cameras)
+            init = "known_poses"
+        loss = compute_global_alignment(scene=scene, init=init, niter=args.niter, schedule=args.schedule, lr=args.lr, focal_avg=args.focal_avg)
         scene = scene.clean_pointcloud()
 
         imgs = [torch.from_numpy(img).to(device) for img in scene.imgs]
