@@ -11,6 +11,7 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             self,
             PatchMatchStereo_max_image_size=2000,
             PatchMatchStereo_cache_size=32,
+            PoissonMeshing_num_threads=16,
             delaunay2ply_batch=512,
             delaunay2ply_reference_batch=512*512,
             poisson2ply_thresh=0.2,
@@ -19,6 +20,7 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
         super().__init__(*args, **kwargs)
         self.PatchMatchStereo_max_image_size = PatchMatchStereo_max_image_size
         self.PatchMatchStereo_cache_size = PatchMatchStereo_cache_size
+        self.PoissonMeshing_num_threads = PoissonMeshing_num_threads
         self.delaunay2ply_batch = delaunay2ply_batch
         self.delaunay2ply_reference_batch = delaunay2ply_reference_batch
         self.poisson2ply_thresh = poisson2ply_thresh
@@ -50,6 +52,7 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             args.colmap_executable, "poisson_mesher",
             "--input_path", os.path.join(folder, "fused.ply"),
             "--output_path", os.path.join(folder, "meshed-poisson.ply"),
+            "--PoissonMeshing.num_threads", str(args.PoissonMeshing_num_threads),
         ]
         return execute(cmd)
 
