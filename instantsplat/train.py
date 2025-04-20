@@ -7,7 +7,7 @@ from gaussian_splatting.dataset import CameraDataset, TrainableCameraDataset
 from gaussian_splatting.trainer import AbstractTrainer
 from gaussian_splatting.dataset.colmap import ColmapTrainableCameraDataset, colmap_init
 from gaussian_splatting.train import save_cfg_args, training
-from instantsplat.trainer import ScaleRegularizeTrainer
+from instantsplat.trainer import ScaleRegularizeTrainer, BaseScaleRegularizeTrainer
 from instantsplat.initializer import TrainableInitializedCameraDataset
 
 from .initialize import initialize
@@ -16,20 +16,20 @@ from .initialize import initialize
 def prepare_training(sh_degree: int, source: str, destination: str, device: str, load_ply: str = None, load_camera: str = None, with_depth=False, configs={}, init=None, init_configs={}) -> Tuple[CameraDataset, GaussianModel, AbstractTrainer]:
     gaussians = CameraTrainableGaussianModel(sh_degree).to(device)
     if init:  # initialize
-        initialized_cameras, initialized_point_cloud = initialize(initializer=init, directory=source, with_depth=with_depth, configs=init_configs, device=device)
+        initialized_cameras, initialized_point_cloud = initialize(initializer=init, directory=source, with_depth=True, configs=init_configs, device=device)
         dataset = TrainableInitializedCameraDataset(initialized_cameras).to(device)
         gaussians.create_from_pcd(initialized_point_cloud.points, initialized_point_cloud.colors)
         if os.path.exists(os.path.join(destination, "input.ply")):
             os.remove(os.path.join(destination, "input.ply"))
         initialized_point_cloud.save_ply(os.path.join(destination, "input.ply"))
     else:  # create_from_pcd
-        dataset = (TrainableCameraDataset.from_json(load_camera, load_depth=with_depth) if load_camera else ColmapTrainableCameraDataset(source, load_depth=with_depth)).to(device)
+        dataset = (TrainableCameraDataset.from_json(load_camera, load_depth=True) if load_camera else ColmapTrainableCameraDataset(source, load_depth=True)).to(device)
         colmap_init(gaussians, source) if not load_ply else gaussians.load_ply(load_ply)
         if os.path.exists(os.path.join(destination, "input.ply")):
             os.remove(os.path.join(destination, "input.ply"))
         shutil.copy2(os.path.join(source, "sparse/0", "points3D.ply"), os.path.join(destination, "input.ply"))
 
-    trainer = ScaleRegularizeTrainer(
+    trainer = (ScaleRegularizeTrainer if with_depth else BaseScaleRegularizeTrainer)(
         gaussians,
         scene_extent=dataset.scene_extent(),
         dataset=dataset,
