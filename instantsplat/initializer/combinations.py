@@ -11,7 +11,7 @@ def Dust3rAlign2ColmapDenseInitializer(
         schedule: str = 'linear',
         lr: float = 0.01,
         focal_avg: bool = True,
-        scene_scale: float = 10.0,
+        scene_scale: float = 1.0,
         resize: int = 512,
         *args, **kwargs):
     return Align2Dust3rInitializer(
