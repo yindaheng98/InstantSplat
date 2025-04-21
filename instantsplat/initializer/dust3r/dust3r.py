@@ -90,7 +90,7 @@ class Dust3rInitializer(AbstractInitializer):
         ]
 
 
-class Align2Dust3rInitializer(Dust3rInitializer):
+class Dust3rAlign2Initializer(Dust3rInitializer):
     def __init__(self, another_initializer: AbstractInitializer, *args, scene_scale=1., **kwargs):
         super().__init__(*args, scene_scale=scene_scale, **kwargs)
         self.another_initializer = another_initializer
