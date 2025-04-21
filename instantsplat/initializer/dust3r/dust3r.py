@@ -17,8 +17,9 @@ def preset_cameras(scene, known_cameras: List[InitializingCamera]):
         Rt[i, :3, :3] = camera.R
         Rt[i, :3, 3] = camera.T
         Rt[i, 3, 3] = 1.0
-        fx = fov2focal(camera.FoVx, camera.image_width)
-        fy = fov2focal(camera.FoVy, camera.image_height)
+        height, width = scene.imshapes[i]
+        fx = fov2focal(camera.FoVx, width)
+        fy = fov2focal(camera.FoVy, height)
         focal[i] = (fx + fy) / 2
     C2W = torch.linalg.inv(Rt)
     scene.preset_pose(C2W)
@@ -90,8 +91,8 @@ class Dust3rInitializer(AbstractInitializer):
 
 
 class Align2Dust3rInitializer(Dust3rInitializer):
-    def __init__(self, another_initializer: AbstractInitializer, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, another_initializer: AbstractInitializer, *args, scene_scale=1., **kwargs):
+        super().__init__(*args, scene_scale=scene_scale, **kwargs)
         self.another_initializer = another_initializer
 
     def __call__(self, image_path_list):
