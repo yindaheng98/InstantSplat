@@ -2,3 +2,4 @@ from .abc import DepthInitializerWrapper
 from .depth_anything_v2 import DepthAnythingV2InitializerWrapper
 from .autoscale import AutoScaleDepthInitializerWrapper
 from .combinations import AutoScaleDepthAnythingV2InitializerWrapper
+from .pcd2depth import PointCloudCloudAsDepthInitializerWrapper
