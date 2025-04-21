@@ -8,6 +8,10 @@ from .utils import fov2focal, count, get_min_depth
 
 
 class PointCloudCloudAsDepthInitializerWrapper(DepthInitializerWrapper):
+    #!Duplicated:
+    # Due to the sparsity of the point cloud,
+    # this method may cause the depth of some pixels to correspond to occluded surfaces
+    # rather than the correct foreground surfaces.
 
     def pcd2depth(self, pointcloud: InitializedPointCloud, camera: InitializingCamera) -> torch.Tensor:
         xyz = pointcloud.points

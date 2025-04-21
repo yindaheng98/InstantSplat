@@ -1,6 +1,6 @@
 from .colmap import ColmapSparseInitializer, ColmapDenseInitializer
 from .dust3r import Dust3rInitializer, Dust3rAlign2Initializer, Mast3rInitializer
-from .depth import AutoScaleDepthAnythingV2InitializerWrapper, PointCloudCloudAsDepthInitializerWrapper
+from .depth import AutoScaleDepthAnythingV2InitializerWrapper
 
 
 # Dust3r align to Colmap dense
@@ -27,26 +27,6 @@ def Dust3rAlign2ColmapDenseInitializer(
         resize=resize,
     )
 
-
-# Use pointcloud as depth
-
-def ColmapDenseAsDepthInitializer(*args, **kwargs):
-    return PointCloudCloudAsDepthInitializerWrapper(ColmapDenseInitializer(*args, **kwargs))
-
-
-def Dust3rAsDepthInitializer(*args, **kwargs):
-    return PointCloudCloudAsDepthInitializerWrapper(Dust3rInitializer(*args, **kwargs))
-
-
-def Mast3rAsDepthInitializer(*args, **kwargs):
-    return PointCloudCloudAsDepthInitializerWrapper(Mast3rInitializer(*args, **kwargs))
-
-
-def Dust3rAlign2ColmapDenseAsDepthInitializer(*args, **kwargs):
-    return PointCloudCloudAsDepthInitializerWrapper(Dust3rAlign2ColmapDenseInitializer(*args, **kwargs))
-
-
-# Use depth anything v2 as depth
 
 def DepthAnythingV2ColmapSparseInitializer(
         input_size=518,

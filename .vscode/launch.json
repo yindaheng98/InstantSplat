@@ -26,19 +26,6 @@
             ]
         },
         {
-            "name": "initialize dust3r as depth",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "instantsplat.initialize",
-            "console": "integratedTerminal",
-            "args": [
-                "-d",
-                "data/sora/santorini/3_views",
-                "--initializer",
-                "dust3r-as-depth",
-            ]
-        },
-        {
             "name": "initialize dust3r align to colmap",
             "type": "debugpy",
             "request": "launch",
@@ -81,23 +68,6 @@
                 "colmap-sparse",
                 "-o",
                 "colmap_executable='./data/colmap/COLMAP.bat'",
-            ]
-        },
-        {
-            "name": "initialize colmap-sparse load camera",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "instantsplat.initialize",
-            "console": "integratedTerminal",
-            "args": [
-                "-d",
-                "data/sora/santorini/3_views",
-                "--initializer",
-                "colmap-sparse",
-                "-o",
-                "colmap_executable='./data/colmap/COLMAP.bat'",
-                "-o",
-                "load_camera='./data/sora/santorini/3_views/cameras'",
             ]
         },
         {

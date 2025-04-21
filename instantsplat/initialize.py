@@ -9,8 +9,6 @@ default_image_folder = {
     "colmap-sparse": "input",
     "colmap-dense": "input",
     "dust3r-align-colmap": "input",
-    "dust3r-as-depth": "images",
-    "mast3r-as-depth": "images",
 }
 
 
@@ -27,10 +25,6 @@ def initialize(initializer, directory, configs, device):
         initializer = DepthAnythingV2ColmapDenseInitializer(destination=directory, **configs).to(device)
     elif initializer == "dust3r-align-colmap":
         initializer = DepthAnythingV2Dust3rAlign2ColmapDenseInitializer(destination=directory, **configs).to(device)
-    elif initializer == "dust3r-as-depth":
-        initializer = Dust3rAsDepthInitializer(**configs).to(device)
-    elif initializer == "mast3r-as-depth":
-        initializer = Mast3rAsDepthInitializer(**configs).to(device)
     else:
         raise ValueError(f"Unknown initializer {initializer}")
     initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
