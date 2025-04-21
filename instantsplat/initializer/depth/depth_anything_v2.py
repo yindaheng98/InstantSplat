@@ -9,7 +9,7 @@ import tqdm
 from depth_anything_v2.dpt import DepthAnythingV2
 from instantsplat.initializer import AbstractInitializer, InitializedPointCloud, InitializingCamera
 
-from .abc import DepthInitializerWrapper
+from .autoscale import AutoScaleDepthInitializerWrapper
 
 # https://github.com/DepthAnything/Depth-Anything-V2/blob/main/run.py
 model_configs = {
@@ -28,7 +28,7 @@ def default_image_path_to_depth_path(image_path: str) -> str:
     )
 
 
-class DepthAnythingV2InitializerWrapper(DepthInitializerWrapper):
+class DepthAnythingV2InitializerWrapper(AutoScaleDepthInitializerWrapper):
     def __init__(
             self,
             base_initializer: AbstractInitializer,
@@ -52,5 +52,5 @@ class DepthAnythingV2InitializerWrapper(DepthInitializerWrapper):
         raw_image = cv2.imread(image_path)
         return torch.tensor(depth_anything.infer_image(raw_image, self.input_size))
 
-    def compute_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[torch.Tensor]:
+    def compute_raw_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[torch.Tensor]:
         return [self.compute_depth(camera.image_path) for camera in tqdm.tqdm(cameras, desc="Computing Depths")]
