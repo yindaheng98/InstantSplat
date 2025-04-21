@@ -12,6 +12,21 @@ def fov2focal(fov, pixels):
     return pixels / (2 * math.tan(fov / 2))
 
 
+def count(uv, height, width):
+    """Count on each pixel on reference image: how many point projected to this pixel?"""
+    index = (uv[..., 1] * width + uv[..., 0])
+    src = torch.ones_like(index)
+    counts = torch.zeros(height*width, dtype=src.dtype, device=src.device).scatter_add_(0, index, src)
+    return counts.reshape(height, width)
+
+
+def get_min_depth(uv, depth, height, width):
+    """Count on each pixel: get min depth among all point projected to this pixel"""
+    index = (uv[..., 1] * width + uv[..., 0])
+    min_depth = torch.zeros(height*width, dtype=depth.dtype, device=depth.device).index_reduce_(0, index, depth, 'amin', include_self=False)
+    return min_depth.reshape(height, width)
+
+
 class AutoScaleDepthInitializerWrapper(DepthInitializerWrapper):
 
     @abc.abstractmethod
@@ -19,18 +34,29 @@ class AutoScaleDepthInitializerWrapper(DepthInitializerWrapper):
         """Compute raw depth for the given point cloud and cameras."""
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def autoscale_depth(self, raw_depth: torch.Tensor, pointcloud: InitializedPointCloud, camera: InitializingCamera) -> torch.Tensor:
+    def autoscale_depth(self, raw_invdepth: torch.Tensor, pointcloud: InitializedPointCloud, camera: InitializingCamera) -> torch.Tensor:
         xyz = pointcloud.points
         fx, fy = fov2focal(camera.FoVx, camera.image_width), fov2focal(camera.FoVy, camera.image_height)
         cx, cy = camera.image_width / 2, camera.image_height / 2
-        K = torch.tensor([[fx, 0, cx], [0, fy, cy], [0, 0, 1]], device=raw_depth.device)
+        K = torch.tensor([[fx, 0, cx], [0, fy, cy], [0, 0, 1]], device=raw_invdepth.device)
         R = camera.R.to(dtype=xyz.dtype)
         T = camera.T.to(dtype=xyz.dtype)
         uvd = (K @ ((R @ xyz.T).T + T.unsqueeze(0)).T).T
-        uv, d = uvd[:, 0:2] / uvd[:, 2:3], uvd[:, 2:3]
+        uv, d = (uvd[:, 0:2] / uvd[:, 2:3]).round().long(), uvd[:, 2]
         valid_mask = (0 <= uv[:, 0:2]).all(-1) & (uv[:, 0] < camera.image_width) & (uv[:, 1] < camera.image_height)
-        uv, d = uv[valid_mask, :], d[valid_mask, :]
-        return raw_depth
+        uv, d = uv[valid_mask, :], d[valid_mask]
+        d_count = count(uv, camera.image_height, camera.image_width)
+        d_min = get_min_depth(uv, d, camera.image_height, camera.image_width)
+        d_idx = d_count > 0 & (raw_invdepth > 1e-6) & (d_min > 1e-6)
+        invd_raw = raw_invdepth[d_idx]
+        invd_target = 1 / d_min[d_idx]
+        center_raw = invd_raw.median()
+        center_target = invd_target.median()
+        extent_raw = (invd_raw.max() - center_raw).mean()
+        extent_target = (invd_target.max() - center_target).mean()
+        scale = extent_target / extent_raw
+        shift = center_target - center_raw * scale
+        return raw_invdepth * scale + shift
 
     def compute_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[torch.Tensor]:
         """Compute depth and auto scale according to the point cloud and cameras."""

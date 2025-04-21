@@ -53,7 +53,7 @@ class DepthAnythingV2InitializerWrapper(AutoScaleDepthInitializerWrapper):
     def compute_depth(self, image_path: str) -> torch.Tensor:
         depth_anything = self.depth_anything
         raw_image = cv2.imread(image_path)
-        return torch.tensor(depth_anything.infer_image(raw_image, self.input_size), device=self.device).unsqueeze(0)
+        return torch.tensor(depth_anything.infer_image(raw_image, self.input_size), device=self.device)
 
     def compute_raw_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[torch.Tensor]:
         return [self.compute_depth(camera.image_path) for camera in tqdm.tqdm(cameras, desc="Computing Depths")]
