@@ -3,10 +3,8 @@ import os
 from typing import List
 
 import cv2
-import numpy as np
 import torch
 import tqdm
-import tifffile
 
 from depth_anything_v2.dpt import DepthAnythingV2
 from instantsplat.initializer import AbstractInitializer, InitializedPointCloud, InitializingCamera
@@ -49,19 +47,10 @@ class DepthAnythingV2InitializerWrapper(DepthInitializerWrapper):
         self.depth_anything = self.depth_anything.to(device).eval()
         return super().to(device)
 
-    def compute_depth(self, image_path: str) -> str:
+    def compute_depth(self, image_path: str) -> torch.Tensor:
         depth_anything = self.depth_anything
         raw_image = cv2.imread(image_path)
-        depth = depth_anything.infer_image(raw_image, self.input_size)
-        depth_scaled = np.repeat(((depth - depth.min()) / (depth.max() - depth.min()) * 255.0).astype(np.uint8)[..., np.newaxis], 3, axis=-1)
-        depth_path = self.image_path_to_depth_path(image_path)
-        os.makedirs(os.path.dirname(depth_path), exist_ok=True)
-        if depth_path.endswith('.tiff'):
-            tifffile.imwrite(depth_path, depth)
-            cv2.imwrite(os.path.splitext(depth_path)[0] + '.png', depth_scaled)
-            return depth_path
-        cv2.imwrite(depth_path, depth_scaled)
-        return depth_path
+        return torch.tensor(depth_anything.infer_image(raw_image, self.input_size))
 
-    def compute_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[str]:
-        return [self.compute_depth(camera.image_path) for camera in tqdm.tqdm(cameras, desc="Computing depth")]
+    def compute_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[torch.Tensor]:
+        return [self.compute_depth(camera.image_path) for camera in tqdm.tqdm(cameras, desc="Computing Depths")]
