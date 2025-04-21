@@ -26,8 +26,8 @@ class PointCloudCloudAsDepthInitializerWrapper(DepthInitializerWrapper):
         invd = 1 / d_min[d_idx]
         invd = torch.zeros_like(d_count, dtype=invd.dtype)
         invd[d_idx] = 1 / d_min[d_idx]
-        return invd  # , d_idx.float()
+        return invd, d_idx.float()
 
-    def compute_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[torch.Tensor]:
+    def compute_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[Tuple[torch.Tensor, torch.Tensor]]:
         """Compute depth and auto scale according to the point cloud and cameras."""
         return [self.pcd2depth(pointcloud, camera) for camera in cameras]

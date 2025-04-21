@@ -1,6 +1,6 @@
 
 import os
-from typing import List
+from typing import List, Tuple
 
 import cv2
 import torch
@@ -43,7 +43,7 @@ class DepthAnythingV2InitializerWrapper(DepthInitializerWrapper):
     def compute_depth(self, image_path: str) -> torch.Tensor:
         depth_anything = self.depth_anything
         raw_image = cv2.imread(image_path)
-        return torch.tensor(depth_anything.infer_image(raw_image, self.input_size), device=self.device)
+        return torch.tensor(depth_anything.infer_image(raw_image, self.input_size), device=self.device), None
 
-    def compute_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[torch.Tensor]:
+    def compute_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[Tuple[torch.Tensor, torch.Tensor]]:
         return [self.compute_depth(camera.image_path) for camera in tqdm.tqdm(cameras, desc="Computing Depths")]

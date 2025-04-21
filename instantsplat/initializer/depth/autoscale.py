@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import torch
 
@@ -36,7 +36,7 @@ class AutoScaleDepthInitializerWrapper(DepthInitializerWrapper):
         shift = center_target - center_raw * scale
         return raw_invdepth * scale + shift
 
-    def compute_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[torch.Tensor]:
+    def compute_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[Tuple[torch.Tensor, torch.Tensor]]:
         """Compute depth and auto scale according to the point cloud and cameras."""
         raw_depths = self.base_initializer_wrapper.compute_depths(pointcloud, cameras)
-        return [self.autoscale_depth(raw_depth, pointcloud, camera) for raw_depth, camera in zip(raw_depths, cameras)]
+        return [(self.autoscale_depth(raw_depth, pointcloud, camera), mask) for (raw_depth, mask), camera in zip(raw_depths, cameras)]
