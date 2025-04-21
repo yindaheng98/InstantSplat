@@ -49,12 +49,14 @@ def Trainer(
         camera_rotation_lr_max_steps=1000,
         opacity_lr=0.05,
         position_lr_max_steps=1000,
+        depth_from_iter=0,
         depth_l1_weight_max_steps=1000,
         *args, **kwargs):
     return CameraTrainer(
         model, scene_extent, dataset,
         opacity_lr=opacity_lr,
         position_lr_max_steps=position_lr_max_steps,
+        depth_from_iter=depth_from_iter,
         depth_l1_weight_max_steps=depth_l1_weight_max_steps,
         camera_position_lr_init=camera_position_lr_init,
         camera_position_lr_final=camera_position_lr_final,
