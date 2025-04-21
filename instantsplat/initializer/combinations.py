@@ -1,7 +1,7 @@
 from .colmap import ColmapSparseInitializer, ColmapDenseInitializer
 from .dust3r import Dust3rInitializer, Align2Dust3rInitializer, Mast3rInitializer
 from .align import AlignInitializer
-from .depth import DepthAnythingV2InitializerWrapper
+from .depth import AutoScaleDepthAnythingV2InitializerWrapper
 
 
 def Dust3rAlign2ColmapDenseInitializer(
@@ -60,14 +60,14 @@ def DepthAnythingV2ColmapSparseInitializer(
         input_size=518,
         encoder='vitl',
         checkpoints_folder='checkpoints',
-        image_path_to_depth_path=None,
+        device="cuda",
         *args, **kwargs):
-    return DepthAnythingV2InitializerWrapper(
+    return AutoScaleDepthAnythingV2InitializerWrapper(
         ColmapSparseInitializer(*args, **kwargs),
         input_size=input_size,
         encoder=encoder,
         checkpoints_folder=checkpoints_folder,
-        image_path_to_depth_path=image_path_to_depth_path,
+        device=device,
     )
 
 
@@ -75,14 +75,14 @@ def DepthAnythingV2ColmapDenseInitializer(
         input_size=518,
         encoder='vitl',
         checkpoints_folder='checkpoints',
-        image_path_to_depth_path=None,
+        device="cuda",
         *args, **kwargs):
-    return DepthAnythingV2InitializerWrapper(
+    return AutoScaleDepthAnythingV2InitializerWrapper(
         ColmapDenseInitializer(*args, **kwargs),
         input_size=input_size,
         encoder=encoder,
         checkpoints_folder=checkpoints_folder,
-        image_path_to_depth_path=image_path_to_depth_path,
+        device=device,
     )
 
 
@@ -90,14 +90,14 @@ def DepthAnythingV2Dust3rInitializer(
         input_size=518,
         encoder='vitl',
         checkpoints_folder='checkpoints',
-        image_path_to_depth_path=None,
+        device="cuda",
         *args, **kwargs):
-    return DepthAnythingV2InitializerWrapper(
+    return AutoScaleDepthAnythingV2InitializerWrapper(
         Dust3rInitializer(*args, **kwargs),
         input_size=input_size,
         encoder=encoder,
         checkpoints_folder=checkpoints_folder,
-        image_path_to_depth_path=image_path_to_depth_path,
+        device=device,
     )
 
 
@@ -105,14 +105,14 @@ def DepthAnythingV2Mast3rInitializer(
         input_size=518,
         encoder='vitl',
         checkpoints_folder='checkpoints',
-        image_path_to_depth_path=None,
+        device="cuda",
         *args, **kwargs):
-    return DepthAnythingV2InitializerWrapper(
+    return AutoScaleDepthAnythingV2InitializerWrapper(
         Mast3rInitializer(*args, **kwargs),
         input_size=input_size,
         encoder=encoder,
         checkpoints_folder=checkpoints_folder,
-        image_path_to_depth_path=image_path_to_depth_path,
+        device=device,
     )
 
 
@@ -120,14 +120,14 @@ def DepthAnythingV2Dust3rAlign2ColmapDenseInitializer(
         input_size=518,
         encoder='vitl',
         checkpoints_folder='checkpoints',
-        image_path_to_depth_path=None,
+        device="cuda",
         *args, **kwargs):
-    return DepthAnythingV2InitializerWrapper(
+    return AutoScaleDepthAnythingV2InitializerWrapper(
         Dust3rAlign2ColmapDenseInitializer(*args, **kwargs),
         input_size=input_size,
         encoder=encoder,
         checkpoints_folder=checkpoints_folder,
-        image_path_to_depth_path=image_path_to_depth_path,
+        device=device,
     )
 
 
@@ -135,12 +135,12 @@ def DepthAnythingV2Mast3rAlign2ColmapDenseInitializer(
         input_size=518,
         encoder='vitl',
         checkpoints_folder='checkpoints',
-        image_path_to_depth_path=None,
+        device="cuda",
         *args, **kwargs):
-    return DepthAnythingV2InitializerWrapper(
+    return AutoScaleDepthAnythingV2InitializerWrapper(
         Mast3rAlign2ColmapDenseInitializer(*args, **kwargs),
         input_size=input_size,
         encoder=encoder,
         checkpoints_folder=checkpoints_folder,
-        image_path_to_depth_path=image_path_to_depth_path,
+        device=device,
     )

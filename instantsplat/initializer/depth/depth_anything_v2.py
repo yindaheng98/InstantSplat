@@ -9,7 +9,7 @@ import tqdm
 from depth_anything_v2.dpt import DepthAnythingV2
 from instantsplat.initializer import AbstractInitializer, InitializedPointCloud, InitializingCamera
 
-from .autoscale import AutoScaleDepthInitializerWrapper
+from .abc import DepthInitializerWrapper
 
 # https://github.com/DepthAnything/Depth-Anything-V2/blob/main/run.py
 model_configs = {
@@ -20,29 +20,19 @@ model_configs = {
 }
 
 
-def default_image_path_to_depth_path(image_path: str) -> str:
-    return os.path.join(
-        os.path.dirname(os.path.dirname(image_path)),
-        "depths",
-        os.path.splitext(os.path.basename(image_path))[0]+'.tiff'
-    )
-
-
-class DepthAnythingV2InitializerWrapper(AutoScaleDepthInitializerWrapper):
+class DepthAnythingV2InitializerWrapper(DepthInitializerWrapper):
     def __init__(
             self,
             base_initializer: AbstractInitializer,
             input_size=518,
             encoder='vitl',
             checkpoints_folder='checkpoints',
-            image_path_to_depth_path=None,
             device="cuda"):
         super().__init__(base_initializer)
         self.input_size = input_size
         depth_anything = DepthAnythingV2(**model_configs[encoder])
         depth_anything.load_state_dict(torch.load(os.path.join(checkpoints_folder, f'depth_anything_v2_{encoder}.pth'), map_location='cpu'))
         self.depth_anything = depth_anything.eval()
-        self.image_path_to_depth_path = default_image_path_to_depth_path if image_path_to_depth_path is None else image_path_to_depth_path
         self.to(device)
 
     def to(self, device):
@@ -55,5 +45,5 @@ class DepthAnythingV2InitializerWrapper(AutoScaleDepthInitializerWrapper):
         raw_image = cv2.imread(image_path)
         return torch.tensor(depth_anything.infer_image(raw_image, self.input_size), device=self.device)
 
-    def compute_raw_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[torch.Tensor]:
+    def compute_depths(self, pointcloud: InitializedPointCloud, cameras: List[InitializingCamera]) -> List[torch.Tensor]:
         return [self.compute_depth(camera.image_path) for camera in tqdm.tqdm(cameras, desc="Computing Depths")]
