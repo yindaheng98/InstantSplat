@@ -4,8 +4,7 @@ from .dust3r import Dust3rInitializer, Mast3rInitializer
 from .colmap import ColmapSparseInitializer, ColmapDenseInitializer
 from .depth import DepthInitializerWrapper, DepthAnythingV2InitializerWrapper
 from .combinations import Dust3rAlign2ColmapDenseInitializer
-from .combinations import ColmapDenseInitializer, Dust3rAsDepthInitializer, Mast3rAsDepthInitializer
-from .combinations import Dust3rAlign2ColmapDenseAsDepthInitializer
+from .combinations import ColmapDenseInitializer
 from .combinations import DepthAnythingV2ColmapDenseInitializer, DepthAnythingV2ColmapSparseInitializer
 from .combinations import DepthAnythingV2Dust3rInitializer, DepthAnythingV2Mast3rInitializer
 from .combinations import DepthAnythingV2Dust3rAlign2ColmapDenseInitializer
