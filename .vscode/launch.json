@@ -85,7 +85,6 @@
                 "1000",
                 "--init",
                 "dust3r",
-                "--with_depth",
             ],
             "justMyCode": false
         },
@@ -102,7 +101,6 @@
                 "output/sora/santorini/3_views",
                 "-i",
                 "1000",
-                "--with_depth",
                 "--with_scale_reg",
             ],
             "justMyCode": false
