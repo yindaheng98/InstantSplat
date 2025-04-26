@@ -23,7 +23,7 @@ def preset_cameras(scene, known_cameras: List[InitializingCamera]):
         focal[i] = (fx + fy) / 2
     C2W = torch.linalg.inv(Rt)
     scene.preset_pose(C2W)
-    scene.preset_focal(known_focals=focal.cpu().numpy())
+    scene.preset_focal(known_focals=focal.tolist())
     return scene
 
 
