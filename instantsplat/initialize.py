@@ -9,6 +9,11 @@ default_image_folder = {
     "colmap-sparse": "input",
     "colmap-dense": "input",
     "dust3r-align-colmap": "input",
+    "nodepth-dust3r": "images",
+    "nodepth-mast3r": "images",
+    "nodepth-colmap-sparse": "input",
+    "nodepth-colmap-dense": "input",
+    "nodepth-dust3r-align-colmap": "input",
 }
 
 
@@ -18,14 +23,24 @@ def initialize(initializer, directory, configs, device):
     match initializer:
         case "dust3r":
             initializer = DepthAnythingV2Dust3rInitializer(**configs).to(device)
+        case "nodepth-dust3r":
+            initializer = Dust3rInitializer(**configs).to(device)
         case "mast3r":
             initializer = DepthAnythingV2Mast3rInitializer(**configs).to(device)
+        case "nodepth-mast3r":
+            initializer = Mast3rInitializer(**configs).to(device)
         case "colmap-sparse":
             initializer = DepthAnythingV2ColmapSparseInitializer(destination=directory, **configs).to(device)
+        case "nodepth-colmap-sparse":
+            initializer = ColmapSparseInitializer(destination=directory, **configs).to(device)
         case "colmap-dense":
             initializer = DepthAnythingV2ColmapDenseInitializer(destination=directory, **configs).to(device)
+        case "nodepth-colmap-dense":
+            initializer = ColmapDenseInitializer(destination=directory, **configs).to(device)
         case "dust3r-align-colmap":
             initializer = DepthAnythingV2Dust3rAlign2ColmapDenseInitializer(destination=directory, **configs).to(device)
+        case "nodepth-dust3r-align-colmap":
+            initializer = Dust3rAlign2ColmapDenseInitializer(destination=directory, **configs).to(device)
         case _:
             raise ValueError(f"Unknown initializer {initializer}")
     initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
