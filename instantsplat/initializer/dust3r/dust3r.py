@@ -11,8 +11,8 @@ from .alignment import compute_global_alignment
 
 
 def preset_cameras(scene, known_cameras: List[InitializingCamera]):
-    Rt = torch.zeros((len(known_cameras), 4, 4), device=camera.R.device)
-    focal = torch.zeros(len(known_cameras), device=camera.R.device)
+    Rt = torch.zeros((len(known_cameras), 4, 4), device=known_cameras[0].R.device)
+    focal = torch.zeros(len(known_cameras), device=known_cameras[0].R.device)
     for i, camera in enumerate(known_cameras):
         Rt[i, :3, :3] = camera.R
         Rt[i, :3, 3] = camera.T.to(camera.R.device)
@@ -23,7 +23,7 @@ def preset_cameras(scene, known_cameras: List[InitializingCamera]):
         focal[i] = (fx + fy) / 2
     C2W = torch.linalg.inv(Rt)
     scene.preset_pose(C2W)
-    scene.preset_focal(known_focals=focal)
+    scene.preset_focal(known_focals=focal.cpu().numpy())
     return scene
 
 
