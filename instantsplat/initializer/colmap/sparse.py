@@ -149,11 +149,9 @@ class ColmapSparseInitializer(AbstractInitializer):
 
     def read_points3D(self, folder):
         points3D = read_points3D_binary(os.path.join(folder, "sparse", "points3D.bin"))
-        xyz = np.array([points3D[key].xyz for key in points3D])
-        rgb = np.array([points3D[key].rgb for key in points3D])
-        return InitializedPointCloud(
-            points=torch.from_numpy(xyz).to(self.device)*self.scene_scale, colors=torch.from_numpy(rgb).to(self.device)/255.0
-        )
+        xyz = torch.from_numpy(np.array([points3D[key].xyz for key in points3D])).to(device=self.device, dtype=torch.float)
+        rgb = torch.from_numpy(np.array([points3D[key].rgb for key in points3D])).to(device=self.device, dtype=torch.float)
+        return InitializedPointCloud(points=xyz*self.scene_scale, colors=rgb/255.0)
 
     def read_camera(self, folder):
         image_dir = os.path.join(folder, "images")
@@ -165,7 +163,8 @@ class ColmapSparseInitializer(AbstractInitializer):
             InitializingCamera(
                 image_width=camera.image_width, image_height=camera.image_height,
                 FoVx=camera.FoVx, FoVy=camera.FoVy,
-                R=camera.R.to(self.device), T=camera.T.to(self.device)*self.scene_scale,
+                R=camera.R.to(device=self.device, dtype=torch.float),
+                T=camera.T.to(device=self.device, dtype=torch.float)*self.scene_scale,
                 image_path=os.path.join(self.destination, "images", os.path.basename(camera.image_path))
             )
             for camera in parse_colmap_camera(cam_extrinsics, cam_intrinsics, image_dir, os.path.join(folder, "depths"))]

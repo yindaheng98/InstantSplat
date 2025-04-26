@@ -1,7 +1,6 @@
 import torch
 import numpy as np
 from plyfile import PlyData, PlyElement
-from tqdm import tqdm
 from sklearn.neighbors import NearestNeighbors
 
 
@@ -24,7 +23,7 @@ def get_color(pos, pos_reference, color_reference, batch=1024, reference_batch=1
     pos_reference, color_reference = pos_reference[~pos_reference.isnan().any(-1), ...], color_reference[~pos_reference.isnan().any(-1), ...]
     nbrs = NearestNeighbors(n_neighbors=1, algorithm='ball_tree').fit(pos_reference.cpu())
     distances, indices = nbrs.kneighbors(pos.cpu())
-    color = color_reference[torch.from_numpy(indices).squeeze(-1), ...]
+    color = color_reference[torch.from_numpy(indices).to(pos.device).squeeze(-1), ...]
     return color
 
 

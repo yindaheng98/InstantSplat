@@ -11,11 +11,11 @@ from .alignment import compute_global_alignment
 
 
 def preset_cameras(scene, known_cameras: List[InitializingCamera]):
-    Rt = torch.zeros((len(known_cameras), 4, 4))
-    focal = torch.zeros(len(known_cameras))
+    Rt = torch.zeros((len(known_cameras), 4, 4), device=camera.R.device)
+    focal = torch.zeros(len(known_cameras), device=camera.R.device)
     for i, camera in enumerate(known_cameras):
         Rt[i, :3, :3] = camera.R
-        Rt[i, :3, 3] = camera.T
+        Rt[i, :3, 3] = camera.T.to(camera.R.device)
         Rt[i, 3, 3] = 1.0
         height, width = scene.imshapes[i]
         fx = fov2focal(camera.FoVx, width)
@@ -68,7 +68,6 @@ class Dust3rInitializer(AbstractInitializer):
         scene = scene.clean_pointcloud()
 
         imgs = [torch.from_numpy(img).to(device) for img in scene.imgs]
-        focals = scene.get_focals()
         poses = torch.linalg.inv(scene.get_im_poses().detach())
         pts3d = [p.detach() for p in scene.get_pts3d()]
         scene.min_conf_thr = float(scene.conf_trf(torch.tensor(1.0)))
