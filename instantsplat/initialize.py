@@ -20,6 +20,7 @@ default_image_folder = {
 def initialize(initializer, directory, configs, device):
     image_folder = os.path.join(directory, default_image_folder[initializer])
     image_path_list = [os.path.join(image_folder, file) for file in sorted(os.listdir(image_folder))]
+    def convert_image_path(image_path): return os.path.join(os.path.dirname(os.path.dirname(image_path)), "images", os.path.basename(image_path))
     match initializer:
         case "dust3r":
             initializer = DepthAnythingV2Dust3rInitializer(**configs).to(device)
@@ -38,9 +39,9 @@ def initialize(initializer, directory, configs, device):
         case "nodepth-colmap-dense":
             initializer = ColmapDenseInitializer(destination=directory, **configs).to(device)
         case "dust3r-align-colmap":
-            initializer = DepthAnythingV2Dust3rAlign2ColmapDenseInitializer(destination=directory, **configs).to(device)
+            initializer = DepthAnythingV2Dust3rAlign2ColmapDenseInitializer(destination=directory, convert_image_path=convert_image_path, **configs).to(device)
         case "nodepth-dust3r-align-colmap":
-            initializer = Dust3rAlign2ColmapDenseInitializer(destination=directory, **configs).to(device)
+            initializer = Dust3rAlign2ColmapDenseInitializer(destination=directory, convert_image_path=convert_image_path, **configs).to(device)
         case _:
             raise ValueError(f"Unknown initializer {initializer}")
     initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)

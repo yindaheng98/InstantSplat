@@ -6,6 +6,7 @@ from .depth import AutoScaleDepthAnythingV2InitializerWrapper
 # Dust3r align to Colmap dense
 
 def Dust3rAlign2ColmapDenseInitializer(
+        convert_image_path=lambda image_path: image_path,
         model_path: str = "checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth",
         batch_size: int = 1,
         niter: int = 300,
@@ -17,6 +18,7 @@ def Dust3rAlign2ColmapDenseInitializer(
         *args, **kwargs):
     return Dust3rAlign2Initializer(
         ColmapDenseInitializer(*args, **kwargs),
+        convert_image_path=convert_image_path,
         model_path=model_path,
         batch_size=batch_size,
         niter=niter,
