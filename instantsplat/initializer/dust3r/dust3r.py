@@ -90,9 +90,10 @@ class Dust3rInitializer(AbstractInitializer):
 
 
 class Dust3rAlign2Initializer(Dust3rInitializer):
-    def __init__(self, another_initializer: AbstractInitializer, *args, convert_image_path=lambda image_path: image_path, scene_scale=1., **kwargs):
+    def __init__(self, another_initializer: AbstractInitializer, *args, convert_image_path=lambda image_path: image_path, update_camera=False, scene_scale=1., **kwargs):
         super().__init__(*args, scene_scale=scene_scale, **kwargs)
         self.convert_image_path = convert_image_path
+        self.update_camera = update_camera
         self.another_initializer = another_initializer
 
     def __call__(self, image_path_list):
@@ -101,4 +102,4 @@ class Dust3rAlign2Initializer(Dust3rInitializer):
         return InitializedPointCloud(
             points=torch.concatenate((point_cloud.points, another_point_cloud.points*self.scene_scale)),
             colors=torch.concatenate((point_cloud.colors, another_point_cloud.colors))
-        ), cameras
+        ), (cameras if self.update_camera else another_cameras)
