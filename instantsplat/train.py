@@ -10,7 +10,7 @@ from gaussian_splatting.train import save_cfg_args, training
 from instantsplat.trainer import Trainer, BaseTrainer
 from instantsplat.trainer import ScaleRegularizeTrainer, BaseScaleRegularizeTrainer
 from instantsplat.initializer import TrainableInitializedCameraDataset
-from instantsplat.initialize import initialize
+from instantsplat.initialize import initialize, default_image_folder
 
 basemodes = {
     "base": Trainer,
@@ -25,7 +25,7 @@ scaleregmodes = {
 def prepare_training(sh_degree: int, source: str, destination: str, device: str, mode: str, load_ply: str = None, load_camera: str = None, load_depth=False, with_scale_reg=False, configs={}, init=None, init_configs={}) -> Tuple[CameraDataset, GaussianModel, AbstractTrainer]:
     gaussians = CameraTrainableGaussianModel(sh_degree).to(device)
     if init:  # initialize
-        initialized_cameras, initialized_point_cloud = initialize(initializer=init, directory=source, with_depth=load_depth, configs=init_configs, device=device)
+        initialized_cameras, initialized_point_cloud = initialize(initializer=init, directory=source, configs=init_configs, device=device)
         dataset = TrainableInitializedCameraDataset(initialized_cameras).to(device)
         gaussians.create_from_pcd(initialized_point_cloud.points, initialized_point_cloud.colors)
         if os.path.exists(os.path.join(destination, "input.ply")):
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     parser.add_argument("--save_iterations", nargs="+", type=int, default=[1000])
     parser.add_argument("--device", default="cuda", type=str)
     parser.add_argument("-o", "--option", default=[], action='append', type=str)
-    parser.add_argument("--init", choices=["dust3r", "colmap-sparse", "colmap-dense"], default=None, type=str)
+    parser.add_argument("--init", choices=list(default_image_folder.keys()), default=None, type=str)
     parser.add_argument("--init_option", default=[], action='append', type=str)
     args = parser.parse_args()
     save_cfg_args(args.destination, args.sh_degree, args.source)
