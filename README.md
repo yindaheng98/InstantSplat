@@ -15,6 +15,11 @@ Initialization methods:
 * [Pytorch](https://pytorch.org/) (v2.4 or higher recommended)
 * [CUDA Toolkit](https://developer.nvidia.com/cuda-12-4-0-download-archive) (12.4 recommended, should match with PyTorch version)
 
+Install colmap executable:
+```sh
+conda install conda-forge::colmap
+```
+
 ## Install (PyPI)
 
 ```sh
