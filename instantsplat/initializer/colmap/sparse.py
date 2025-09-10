@@ -61,6 +61,8 @@ class ColmapSparseInitializer(AbstractInitializer):
             "--SiftExtraction.use_gpu", args.use_gpu,
             "--ImageReader.single_camera_per_image", args.single_camera_per_image,
         ]
+        if os.path.exists(os.path.join(folder, "mask")):
+            cmd += ["--ImageReader.mask_path", os.path.join(folder, "mask")]
         return execute(cmd)
 
     def exhaustive_matcher(args, folder):
