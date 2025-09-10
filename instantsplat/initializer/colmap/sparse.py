@@ -50,6 +50,11 @@ class ColmapSparseInitializer(AbstractInitializer):
         for image_path in image_path_list:
             if not os.path.samefile(image_path, os.path.join(folder, "input", os.path.basename(image_path))):
                 shutil.copy2(image_path, os.path.join(folder, "input", os.path.basename(image_path)))
+            mask_path = os.path.join(os.path.dirname(os.path.dirname(image_path)), "mask", os.path.basename(image_path) + ".png")
+            if not os.path.exists(mask_path):
+                continue
+            if not os.path.samefile(mask_path, os.path.join(folder, "mask", os.path.basename(image_path) + ".png")):
+                shutil.copy2(mask_path, os.path.join(folder, "mask", os.path.basename(image_path) + ".png"))
 
     def feature_extractor(args, folder):
         os.makedirs(os.path.join(folder, "distorted"), exist_ok=True)
