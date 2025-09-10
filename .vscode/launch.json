@@ -37,7 +37,7 @@
                 "--initializer",
                 "dust3r-align-colmap",
                 "-o",
-                "colmap_executable='./data/colmap/COLMAP.bat'",
+                "colmap_executable='.\\data\\colmap\\COLMAP.bat'",
             ]
         },
         {
@@ -52,7 +52,7 @@
                 "--initializer",
                 "colmap-dense",
                 "-o",
-                "colmap_executable='./data/colmap/COLMAP.bat'",
+                "colmap_executable='.\\data\\colmap\\COLMAP.bat'",
             ]
         },
         {
@@ -67,7 +67,7 @@
                 "--initializer",
                 "colmap-sparse",
                 "-o",
-                "colmap_executable='./data/colmap/COLMAP.bat'",
+                "colmap_executable='.\\data\\colmap\\COLMAP.bat'",
             ]
         },
         {
