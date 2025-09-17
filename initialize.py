@@ -1,5 +1,3 @@
-# Before this script
-# python -m instantsplat.initialize -d data/car --initializer nodepth-colmap-sparse -o colmap_executable='./data/colmap/COLMAP.bat' -o allow_undistortion_missing=1
 import os
 import shutil
 import re
