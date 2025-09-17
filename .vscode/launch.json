@@ -48,11 +48,13 @@
             "console": "integratedTerminal",
             "args": [
                 "-d",
-                "data/sora/santorini/3_views",
+                "data/car",
                 "--initializer",
-                "colmap-dense",
+                "nodepth-colmap-dense",
                 "-o",
                 "colmap_executable='.\\data\\colmap\\COLMAP.bat'",
+                "-o",
+                "allow_undistortion_missing=1",
             ]
         },
         {
@@ -63,11 +65,30 @@
             "console": "integratedTerminal",
             "args": [
                 "-d",
-                "data/sora/santorini/3_views",
+                "data/car",
                 "--initializer",
-                "colmap-sparse",
+                "nodepth-colmap-dense",
                 "-o",
                 "colmap_executable='.\\data\\colmap\\COLMAP.bat'",
+                "-o",
+                "allow_undistortion_missing=1",
+            ]
+        },
+        {
+            "name": "initialize car",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "initialize.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-d",
+                "data/car",
+                "--initializer",
+                "nodepth-colmap-dense",
+                "-o",
+                "colmap_executable='.\\data\\colmap\\COLMAP.bat'",
+                "-o",
+                "allow_undistortion_missing=1",
             ]
         },
         {
