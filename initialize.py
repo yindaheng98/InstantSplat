@@ -1,13 +1,13 @@
 import os
 import shutil
 import re
+from typing import List
 
 from tqdm import tqdm
 
 from instantsplat.initialize import *
 
 default_image_folder = {
-    "dust3r": "images",
     "colmap-sparse": "input",
     "colmap-dense": "input",
 }
@@ -17,8 +17,6 @@ def initialize(initializer, directory, configs, device):
     image_folder = os.path.join(directory, default_image_folder[initializer])
     image_path_list = [os.path.join(image_folder, file) for file in sorted(os.listdir(image_folder))]
     match initializer:
-        case "dust3r":
-            initializer = Dust3rInitializer(**configs).to(device)
         case "colmap-sparse":
             initializer = ColmapSparseInitializer(destination=directory, **configs).to(device)
         case "colmap-dense":
@@ -29,17 +27,32 @@ def initialize(initializer, directory, configs, device):
     return initialized_cameras, initialized_point_cloud
 
 
+default_image_folder_reinit = {
+    "dust3r": "images",
+}
+
+
+def reinitialize(initializer, directory, configs, device, known_cameras: List[InitializingCamera] = []):
+    image_folder = os.path.join(directory, default_image_folder_reinit[initializer])
+    image_path_list = [os.path.join(image_folder, file) for file in sorted(os.listdir(image_folder))]
+    initializer = Dust3rInitializer(**configs).to(device)
+    initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list, known_cameras=known_cameras)
+    return initialized_cameras, initialized_point_cloud
+
+
 if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser()
-    parser.add_argument("-i", "--initializer", choices=["colmap-sparse", "colmap-dense"], default="colmap-dense", type=str)
+    parser.add_argument("-i", "--initializer", choices=list(default_image_folder.keys()), default="colmap-dense", type=str)
     parser.add_argument("-d", "--directory", required=True, type=str)
     parser.add_argument("--device", default="cuda", type=str)
     parser.add_argument("-o", "--option", default=[], action='append', type=str)
+    parser.add_argument("-r", "--option_reinit", default=[], action='append', type=str)
 
     args = parser.parse_args()
     configs = {o.split("=", 1)[0]: eval(o.split("=", 1)[1]) for o in args.option}
     initialized_cameras, initialized_point_cloud = initialize(args.initializer, args.directory, configs, args.device)
+
     frames = {}
     for init_camera in initialized_cameras:
         print(os.path.basename(init_camera.image_path))
@@ -52,6 +65,7 @@ if __name__ == '__main__':
             frames[frame_idx] = []
         frames[frame_idx].append(init_camera)
 
+    configs_reinit = {o.split("=", 1)[0]: eval(o.split("=", 1)[1]) for o in args.option_reinit}
     for frame_idx, initialized_cameras in tqdm(frames.items(), desc="Writing frames"):
         directory = os.path.join(args.directory, f"frame{frame_idx}")
         shutil.rmtree(directory, ignore_errors=True)
@@ -63,3 +77,4 @@ if __name__ == '__main__':
         os.makedirs(os.path.join(directory, "sparse/0"), exist_ok=True)
         initialized_point_cloud.save_ply(os.path.join(directory, "sparse/0/points3D.ply"))
         dataset.save_colmap_cameras(os.path.join(directory, "sparse/0"))
+        reinitialize("dust3r", directory, configs_reinit, args.device, known_cameras=initialized_cameras)
