@@ -84,7 +84,7 @@
                 "-d",
                 "data/car",
                 "--initializer",
-                "nodepth-colmap-dense",
+                "colmap-dense",
                 "-o",
                 "colmap_executable='.\\data\\colmap\\COLMAP.bat'",
                 "-oallow_undistortion_missing=1",
