@@ -4,6 +4,8 @@ import os
 import shutil
 import re
 
+from tqdm import tqdm
+
 from instantsplat.initialize import *
 
 default_image_folder = {
@@ -38,12 +40,15 @@ if __name__ == '__main__':
         if frame_idx not in frames:
             frames[frame_idx] = []
         frames[frame_idx].append(init_camera)
-    
-    for frame_idx, initialized_cameras in frames.items():
-        dataset = InitializedCameraDataset(initialized_cameras)
 
+    for frame_idx, initialized_cameras in tqdm(frames.items(), desc="Writing frames"):
         directory = os.path.join(args.directory, f"frame{frame_idx}")
-        shutil.rmtree(os.path.join(directory, "sparse/0"), ignore_errors=True)
+        shutil.rmtree(directory, ignore_errors=True)
+        for init_camera in initialized_cameras:
+            path = os.path.join(directory, os.path.relpath(init_camera.image_path, args.directory))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            shutil.copy2(init_camera.image_path, path)
+        dataset = InitializedCameraDataset(initialized_cameras)
         os.makedirs(os.path.join(directory, "sparse/0"), exist_ok=True)
         initialized_point_cloud.save_ply(os.path.join(directory, "sparse/0/points3D.ply"))
         dataset.save_colmap_cameras(os.path.join(directory, "sparse/0"))

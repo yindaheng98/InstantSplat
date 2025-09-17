@@ -87,8 +87,8 @@
                 "nodepth-colmap-dense",
                 "-o",
                 "colmap_executable='.\\data\\colmap\\COLMAP.bat'",
-                "-o",
-                "allow_undistortion_missing=1",
+                "-oallow_undistortion_missing=1",
+                "-ouse_fused=True"
             ]
         },
         {
