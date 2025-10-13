@@ -52,6 +52,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     configs = {o.split("=", 1)[0]: eval(o.split("=", 1)[1]) for o in args.option}
     initialized_cameras, initialized_point_cloud = initialize(args.initializer, args.directory, configs, args.device)
+    dataset = InitializedCameraDataset(initialized_cameras)
+
+    shutil.rmtree(os.path.join(args.directory, "sparse/0"), ignore_errors=True)
+    os.makedirs(os.path.join(args.directory, "sparse/0"), exist_ok=True)
+    initialized_point_cloud.save_ply(os.path.join(args.directory, "sparse/0/points3D.ply"))
+    dataset.save_colmap_cameras(os.path.join(args.directory, "sparse/0"))
 
     frames = {}
     for init_camera in initialized_cameras:
