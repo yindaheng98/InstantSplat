@@ -45,8 +45,8 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             "--workspace_format=COLMAP",
             "--input_type=photometric",
         ]
-        if os.path.exists(os.path.join(folder, "masks")):
-            cmd += ["--StereoFusion.mask_path", os.path.join(folder, "masks")]
+        if os.path.exists(os.path.join(folder, "sparse/mask/mask")):
+            cmd += ["--StereoFusion.mask_path", os.path.join(folder, "sparse/mask/mask")]
         return execute(cmd)
 
     def poisson_mesher(args, folder):
