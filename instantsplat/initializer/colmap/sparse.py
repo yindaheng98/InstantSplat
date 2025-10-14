@@ -66,8 +66,8 @@ class ColmapSparseInitializer(AbstractInitializer):
             "--SiftExtraction.use_gpu", args.use_gpu,
             "--ImageReader.single_camera_per_image", args.single_camera_per_image,
         ]
-        if os.path.exists(os.path.join(folder, "input_mask")):
-            cmd += ["--ImageReader.mask_path", os.path.join(folder, "input_mask")]
+        if os.path.exists(os.path.join(folder, "mask")):
+            cmd += ["--ImageReader.mask_path", os.path.join(folder, "mask")]
         return execute(cmd)
 
     def exhaustive_matcher(args, folder):
@@ -109,28 +109,31 @@ class ColmapSparseInitializer(AbstractInitializer):
         return execute(cmd)
 
     def mask_undistorter(args, folder):
-        if not os.path.exists(os.path.join(folder, "input_mask")):
+        if not os.path.exists(os.path.join(folder, "mask")):
             return 0
-        shutil.rmtree(os.path.join(folder, "input_mask_temp"), ignore_errors=True)
-        os.makedirs(os.path.join(folder, "input_mask_temp"), exist_ok=True)
-        for file in os.listdir(os.path.join(folder, "images")):
-            os.link(os.path.join(folder, "input_mask", file + ".png"), os.path.join(folder, "input_mask_temp", file))
+        shutil.rmtree(os.path.join(folder, "distorted/sparse/mask"), ignore_errors=True)
+        os.makedirs(os.path.join(folder, "distorted/sparse/mask"), exist_ok=True)
+        for file in os.listdir(os.path.join(folder, "input")):
+            os.link(os.path.join(folder, "mask", file + ".png"), os.path.join(folder, "distorted/sparse/mask", file))
         cmd = [
             args.colmap_executable, "image_undistorter",
-            "--image_path", os.path.join(folder, "input_mask_temp"),
+            "--image_path", os.path.join(folder, "distorted/sparse/mask"),
             "--input_path", os.path.join(folder, "distorted", "sparse", "0"),
-            "--output_path", os.path.join(folder, "input_mask_temp"),
+            "--output_path", os.path.join(folder, "sparse/mask"),
             "--output_type=COLMAP",
         ]
         ret = execute(cmd)
+        shutil.rmtree(os.path.join(folder, "distorted/sparse/mask"), ignore_errors=True)
         if ret != 0:
-            shutil.rmtree(os.path.join(folder, "input_mask_temp"), ignore_errors=True)
-            return -1
-        shutil.rmtree(os.path.join(folder, "masks"), ignore_errors=True)
-        os.makedirs(os.path.join(folder, "masks"), exist_ok=True)
-        for file in os.listdir(os.path.join(folder, "images")):
-            shutil.copy2(os.path.join(folder, "input_mask_temp/images", file), os.path.join(folder, "masks", file + ".png"))
-        shutil.rmtree(os.path.join(folder, "input_mask_temp"), ignore_errors=True)
+            return ret
+        shutil.rmtree(os.path.join(folder, "sparse/mask/mask"), ignore_errors=True)
+        os.makedirs(os.path.join(folder, "sparse/mask/mask"), exist_ok=True)
+        for file in os.listdir(os.path.join(folder, "sparse/mask/images")):
+            os.link(os.path.join(folder, "sparse/mask/images", file), os.path.join(folder, "sparse/mask/mask", file + ".png"))
+            image_mask_path = os.path.join(folder, "images", os.path.splitext(file)[0] + '_mask.png')
+            if os.path.exists(image_mask_path):
+                os.remove(image_mask_path)
+            shutil.copy2(os.path.join(folder, "sparse/mask/images", file), image_mask_path)
         return 0
 
     def sparse_reconstruct(self, folder, image_path_list):
