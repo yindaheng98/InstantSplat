@@ -66,8 +66,8 @@ class ColmapSparseInitializer(AbstractInitializer):
             "--SiftExtraction.use_gpu", args.use_gpu,
             "--ImageReader.single_camera_per_image", args.single_camera_per_image,
         ]
-        if os.path.exists(os.path.join(folder, "mask")):
-            cmd += ["--ImageReader.mask_path", os.path.join(folder, "mask")]
+        if os.path.exists(os.path.join(folder, "input_mask")):
+            cmd += ["--ImageReader.mask_path", os.path.join(folder, "input_mask")]
         return execute(cmd)
 
     def exhaustive_matcher(args, folder):
@@ -108,6 +108,31 @@ class ColmapSparseInitializer(AbstractInitializer):
         ]
         return execute(cmd)
 
+    def mask_undistorter(args, folder):
+        if not os.path.exists(os.path.join(folder, "input_mask")):
+            return 0
+        shutil.rmtree(os.path.join(folder, "input_mask_temp"), ignore_errors=True)
+        os.makedirs(os.path.join(folder, "input_mask_temp"), exist_ok=True)
+        for file in os.listdir(os.path.join(folder, "images")):
+            os.link(os.path.join(folder, "input_mask", file + ".png"), os.path.join(folder, "input_mask_temp", file))
+        cmd = [
+            args.colmap_executable, "image_undistorter",
+            "--image_path", os.path.join(folder, "input_mask_temp"),
+            "--input_path", os.path.join(folder, "distorted", "sparse", "0"),
+            "--output_path", os.path.join(folder, "input_mask_temp"),
+            "--output_type=COLMAP",
+        ]
+        ret = execute(cmd)
+        if ret != 0:
+            shutil.rmtree(os.path.join(folder, "input_mask_temp"), ignore_errors=True)
+            return -1
+        shutil.rmtree(os.path.join(folder, "masks"), ignore_errors=True)
+        os.makedirs(os.path.join(folder, "masks"), exist_ok=True)
+        for file in os.listdir(os.path.join(folder, "images")):
+            shutil.copy2(os.path.join(folder, "input_mask_temp/images", file), os.path.join(folder, "masks", file + ".png"))
+        shutil.rmtree(os.path.join(folder, "input_mask_temp"), ignore_errors=True)
+        return 0
+
     def sparse_reconstruct(self, folder, image_path_list):
         mapper_ok = True
         for file in ["cameras.bin", "images.bin", "points3D.bin"]:
@@ -123,6 +148,8 @@ class ColmapSparseInitializer(AbstractInitializer):
                 raise RuntimeError("Mapping failed")
             if self.image_undistorter(folder) != 0:
                 raise RuntimeError("Undistortion failed")
+            if self.mask_undistorter(folder) != 0:
+                raise RuntimeError("Mask undistortion failed")
             return
         undistorter_ok = True
         for image_path in image_path_list:
@@ -136,6 +163,8 @@ class ColmapSparseInitializer(AbstractInitializer):
         if not undistorter_ok:
             if self.image_undistorter(folder) != 0:
                 raise RuntimeError("Undistortion failed")
+            if self.mask_undistorter(folder) != 0:
+                raise RuntimeError("Mask undistortion failed")
             return
 
     def save_distorted(self, folder, image_path_list):

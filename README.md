@@ -9,7 +9,7 @@ Initialization methods:
 - [x] MAST3R (same method used in [Splatt3R](https://github.com/btsmart/splatt3r))
 - [x] COLMAP Sparse reconstruct (same method used in [gaussian-splatting](https://github.com/graphdeco-inria/gaussian-splatting))
 - [x] COLMAP Dense reconstruct (use `patch_match_stereo`, `stereo_fusion`, `poisson_mesher` and `delaunay_mesher` in COLMAP to reconstruct dense point cloud for initialization)
-- [x] Masking of keypoints during COLMAP feature extraction (just put your mask into `mask` folder, e.g. for an image `data/xxx/input/012.jpg`, the mask would be `data/xxx/mask/012.jpg`)
+- [x] Masking of keypoints during COLMAP feature extraction (just put your mask into `mask` folder, e.g. for an image `data/xxx/input/012.jpg`, the mask would be `data/xxx/input_mask/012.jpg.png`)
 
 ## Prerequisites
 
