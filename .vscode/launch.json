@@ -110,6 +110,23 @@
             "justMyCode": false
         },
         {
+            "name": "train_background",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "reduced_3dgs.train",
+            "console": "integratedTerminal",
+            "args": [
+                "-s",
+                "../output/aligned_frames7",
+                "-d",
+                "../output/aligned_frames7/background",
+                "-i",
+                "1000",
+                "--with_scale_reg",
+            ],
+            "justMyCode": false
+        },
+        {
             "name": "train initialized",
             "type": "debugpy",
             "request": "launch",
@@ -138,6 +155,8 @@
                 "data/sora/santorini/3_views",
                 "-d",
                 "output/sora/santorini/3_views",
+                "-b",
+                "../output/aligned_frames7/background",
                 "-i",
                 "1000",
                 "--load_camera",

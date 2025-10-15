@@ -78,18 +78,23 @@ if __name__ == "__main__":
         load_ply=args.load_ply, load_camera=args.load_camera, load_depth=not args.no_depth_data, with_scale_reg=args.with_scale_reg, configs=configs,
         init=args.init, init_configs=init_configs)
     dataset.save_cameras(os.path.join(args.destination, "cameras.json"))
+
     gaussians_background = CameraTrainableGaussianModel(args.sh_degree).to(args.device)
     gaussians_background.load_ply(args.load_background)
-    gaussians._xyz = nn.Parameter(torch.cat([gaussians._xyz.detach(), gaussians_background._xyz.detach()]))
-    
-    gaussians._features_dc = nn.Parameter(torch.cat([gaussians._features_dc.detach(), gaussians._features_dc.detach()]))
-    self._features_rest = nn.Parameter(self._features_rest.to(device))
-    self._opacity = nn.Parameter(self._opacity.to(device))
-    self._scaling = nn.Parameter(self._scaling.to(device))
-    self._rotation = nn.Parameter(self._rotation.to(device))
+
+    gaussians._xyz = nn.Parameter(torch.cat([gaussians._xyz.detach(),
+                                             gaussians_background._xyz.detach()]))
+    gaussians._features_dc = nn.Parameter(torch.cat([gaussians._features_dc.detach(),
+                                                     gaussians_background._features_dc.detach()]))
+    gaussians._features_rest = nn.Parameter(torch.cat([gaussians._features_rest.detach(),
+                                                       gaussians_background._features_rest.detach()]))
+    gaussians._opacity = nn.Parameter(torch.cat([gaussians._opacity.detach(),
+                                                 gaussians_background._opacity.detach()]))
+    gaussians._scaling = nn.Parameter(torch.cat([gaussians._scaling.detach(),
+                                                 gaussians_background._scaling.detach()]))
+    gaussians._rotation = nn.Parameter(torch.cat([gaussians._rotation.detach(),
+                                                  gaussians_background._rotation.detach()]))
     training(
         dataset=dataset, gaussians=gaussians, trainer=trainer,
         destination=args.destination, iteration=args.iteration, save_iterations=args.save_iterations,
         device=args.device)
-
-    
