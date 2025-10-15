@@ -82,11 +82,11 @@
             "console": "integratedTerminal",
             "args": [
                 "-d",
-                "data/car",
+                "../output/aligned_frames7",
                 "--initializer",
                 "colmap-dense",
                 "-o",
-                "colmap_executable='.\\data\\colmap\\COLMAP.bat'",
+                "colmap_executable='/home/isaac/miniconda3/envs/gs2/bin/colmap'",
                 "-oallow_undistortion_missing=1",
                 "-ouse_fused=True"
             ]

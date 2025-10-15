@@ -2,6 +2,7 @@ import os
 import shutil
 from typing import Tuple
 import torch
+import torch.nn as nn
 from gaussian_splatting import GaussianModel, CameraTrainableGaussianModel
 from gaussian_splatting.dataset import CameraDataset, TrainableCameraDataset
 from gaussian_splatting.trainer import AbstractTrainer
@@ -56,6 +57,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--destination", required=True, type=str)
     parser.add_argument("-i", "--iteration", default=1000, type=int)
     parser.add_argument("-l", "--load_ply", default=None, type=str)
+    parser.add_argument("-b", "--load_background", default=None, type=str)
     parser.add_argument("--load_camera", default=None, type=str)
     parser.add_argument("--no_depth_data", action='store_true')
     parser.add_argument("--with_scale_reg", action="store_true")
@@ -76,7 +78,18 @@ if __name__ == "__main__":
         load_ply=args.load_ply, load_camera=args.load_camera, load_depth=not args.no_depth_data, with_scale_reg=args.with_scale_reg, configs=configs,
         init=args.init, init_configs=init_configs)
     dataset.save_cameras(os.path.join(args.destination, "cameras.json"))
+    gaussians_background = CameraTrainableGaussianModel(args.sh_degree).to(args.device)
+    gaussians_background.load_ply(args.load_background)
+    gaussians._xyz = nn.Parameter(torch.cat([gaussians._xyz.detach(), gaussians_background._xyz.detach()]))
+    
+    gaussians._features_dc = nn.Parameter(torch.cat([gaussians._features_dc.detach(), gaussians._features_dc.detach()]))
+    self._features_rest = nn.Parameter(self._features_rest.to(device))
+    self._opacity = nn.Parameter(self._opacity.to(device))
+    self._scaling = nn.Parameter(self._scaling.to(device))
+    self._rotation = nn.Parameter(self._rotation.to(device))
     training(
         dataset=dataset, gaussians=gaussians, trainer=trainer,
         destination=args.destination, iteration=args.iteration, save_iterations=args.save_iterations,
         device=args.device)
+
+    
