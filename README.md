@@ -16,17 +16,6 @@ Initialization methods:
 * [Pytorch](https://pytorch.org/) (v2.4 or higher recommended)
 * [CUDA Toolkit](https://developer.nvidia.com/cuda-12-4-0-download-archive) (12.4 recommended, should match with PyTorch version)
 
-Install [`gaussian-splatting`](https://github.com/yindaheng98/gaussian-splatting).
-You can download the wheel from [PyPI](https://pypi.org/project/gaussian-splatting/):
-```shell
-pip install --upgrade gaussian-splatting
-```
-Alternatively, install the latest version from the source:
-```sh
-pip install wheel setuptools
-pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master --no-build-isolation
-```
-
 Install a colmap executable, e.g. using conda:
 ```sh
 conda install conda-forge::colmap
@@ -35,6 +24,12 @@ conda install conda-forge::colmap
 (Optional) Install `xformers` for faster depth anything:
 ```shell
 pip install xformers
+```
+
+(Optional) If you have trouble with [`gaussian-splatting`](https://github.com/yindaheng98/gaussian-splatting), try to install it from source:
+```sh
+pip install wheel setuptools
+pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master --no-build-isolation
 ```
 
 ## PyPI Install
