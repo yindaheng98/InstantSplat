@@ -46,7 +46,7 @@ or
 build latest from source:
 ```shell
 pip install wheel setuptools
-pip install --upgrade git+https://github.com/yindaheng98/InstantSplat.git@main
+pip install --upgrade git+https://github.com/yindaheng98/InstantSplat.git@main --no-build-isolation
 ```
 
 ### Development Install
@@ -105,15 +105,15 @@ Use `TrainableCameraDataset` in [yindaheng98/gaussian-splatting](https://github.
 ### Initialize coarse point cloud and cameras
 
 ```python
-from instant_splat.initializer import Dust3rInitializer
+from instantsplat.initializer import Dust3rInitializer
 image_path_list = [os.path.join(image_folder, file) for file in sorted(os.listdir(image_folder))]
-initializer = Dust3rInitializer(...).to(args.device) # see instant_splat/initializer/dust3r/dust3r.py for full options
+initializer = Dust3rInitializer(...).to(args.device) # see instantsplat/initializer/dust3r/dust3r.py for full options
 initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
 ```
 
 Create camera dataset from initialized cameras:
 ```python
-from instant_splat.initializer import TrainableInitializedCameraDataset
+from instantsplat.initializer import TrainableInitializedCameraDataset
 dataset = TrainableInitializedCameraDataset(initialized_cameras).to(device)
 ```
 
@@ -126,12 +126,12 @@ gaussians.create_from_pcd(initialized_point_cloud.points, initialized_point_clou
 
 `Trainer` jointly optimize the 3DGS parameters and cameras, without densification
 ```python
-from instant_splat.trainer import Trainer
+from instantsplat.trainer import Trainer
 trainer = Trainer(
     gaussians,
     scene_extent=dataset.scene_extent(),
     dataset=dataset,
-    ... # see instant_splat/trainer/trainer.py for full options
+    ... # see instantsplat/trainer/trainer.py for full options
 )
 ```
 
