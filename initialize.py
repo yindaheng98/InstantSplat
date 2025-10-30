@@ -82,10 +82,6 @@ if __name__ == '__main__':
             path = os.path.join(directory, os.path.relpath(init_camera.image_path, args.directory))
             os.makedirs(os.path.dirname(path), exist_ok=True)
             shutil.copy2(init_camera.image_path, path)
-        dataset = InitializedCameraDataset(initialized_cameras)
-        os.makedirs(os.path.join(directory, "sparse/0"), exist_ok=True)
-        initialized_point_cloud.save_ply(os.path.join(directory, "sparse/0/points3D.ply"))
-        dataset.save_colmap_cameras(os.path.join(directory, "sparse/0"))
         if refs:
             for ref in refs:
                 for i in range(len(initialized_cameras)):
@@ -98,6 +94,10 @@ if __name__ == '__main__':
                             R=ref.R,
                             T=ref.T,
                         )
+        dataset = InitializedCameraDataset(initialized_cameras)
+        os.makedirs(os.path.join(directory, "sparse/0"), exist_ok=True)
+        initialized_point_cloud.save_ply(os.path.join(directory, "sparse/0/points3D.ply"))
+        dataset.save_colmap_cameras(os.path.join(directory, "sparse/0"))
         if len(initialized_cameras) < 2:
             continue
         reinitialize("dust3r", directory, configs_reinit, args.device, known_cameras=initialized_cameras)
