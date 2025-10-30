@@ -92,6 +92,23 @@
             ]
         },
         {
+            "name": "reinitialize car",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "initialize.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-d",
+                "data/aligned_frames2",
+                "--initializer",
+                "colmap-dense",
+                "-oallow_undistortion_missing=1",
+                "-ouse_fused=True",
+                "--load_camera",
+                "output/aligned_frames2/cameras.json",
+            ]
+        },
+        {
             "name": "initialize and train",
             "type": "debugpy",
             "request": "launch",

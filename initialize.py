@@ -48,6 +48,7 @@ if __name__ == '__main__':
     parser.add_argument("--device", default="cuda", type=str)
     parser.add_argument("-o", "--option", default=[], action='append', type=str)
     parser.add_argument("-r", "--option_reinit", default=[], action='append', type=str)
+    parser.add_argument("--load_camera", default=None, type=str)
 
     args = parser.parse_args()
     configs = {o.split("=", 1)[0]: eval(o.split("=", 1)[1]) for o in args.option}
@@ -58,6 +59,8 @@ if __name__ == '__main__':
     os.makedirs(os.path.join(args.directory, "sparse/0"), exist_ok=True)
     initialized_point_cloud.save_ply(os.path.join(args.directory, "sparse/0/points3D.ply"))
     dataset.save_colmap_cameras(os.path.join(args.directory, "sparse/0"))
+
+    refs = TrainableCameraDataset.from_json(args.load_camera).to(args.device) if args.load_camera else None
 
     frames = {}
     for init_camera in initialized_cameras:
@@ -83,6 +86,18 @@ if __name__ == '__main__':
         os.makedirs(os.path.join(directory, "sparse/0"), exist_ok=True)
         initialized_point_cloud.save_ply(os.path.join(directory, "sparse/0/points3D.ply"))
         dataset.save_colmap_cameras(os.path.join(directory, "sparse/0"))
+        if refs:
+            for ref in refs:
+                for i in range(len(initialized_cameras)):
+                    if os.path.basename(ref.ground_truth_image_path) == os.path.basename(initialized_cameras[i].image_path):
+                        initialized_cameras[i] = initialized_cameras[i]._replace(
+                            image_height=ref.image_height,
+                            image_width=ref.image_width,
+                            FoVx=ref.FoVx,
+                            FoVy=ref.FoVy,
+                            R=ref.R,
+                            T=ref.T,
+                        )
         if len(initialized_cameras) < 2:
             continue
         reinitialize("dust3r", directory, configs_reinit, args.device, known_cameras=initialized_cameras)
