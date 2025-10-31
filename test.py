@@ -1,12 +1,5 @@
 import os
 import subprocess
-align_name = "aligned_frames5"
-base_folder = "./data"
-background_folder = "./data/backgrounds"
-output_folder = "./output"
-colmap_location = "/home/isaac/miniconda3/envs/gs2/bin/colmap"
-iterations = 3000
-
 
 def initialize(name, folder):
     input_path = os.path.join(folder, name)
@@ -20,10 +13,10 @@ def train_initialized(name, input_folder, output_folder, train_indices, iteratio
         source_location = os.path.join(input_folder, name, f"frame{index}")
         destination_location = os.path.join(output_folder, name, f"frame{index}")
         if background_folder is None:
-            command = f"python -m instantsplat.train -s {source_location} -d {destination_location} -i {iterations} --with_scale_reg"
+            command = f"python -m instantsplat.train -s {source_location} -d {destination_location} -i {iterations} --with_scale_reg "
         else:
             background_location = os.path.join(background_folder, name, "point_cloud/iteration_30000/point_cloud.ply")
-            command = f"python -m instantsplat.train -s {source_location} -d {destination_location} -b {background_location} -i {iterations} --with_scale_reg"
+            command = f"python -m instantsplat.train -s {source_location} -d {destination_location} -b {background_location} -i {iterations} -ocamera_position_lr_init=0.0 -ocamera_position_lr_final=0.0 -ocamera_rotation_lr_init=0.0 -ocamera_rotation_lr_final=0.0 -ocamera_exposure_lr_init=0.0 -ocamera_exposure_lr_final=0.0 --with_scale_reg"
         print("running command:")
         print(command)
         subprocess.check_call(command, shell=True)
@@ -40,6 +33,12 @@ def render(name, output_folder, train_indices, iterations):
 
 
 if __name__ == "__main__":
-    train_indices = [24]
-    train_initialized(align_name, base_folder, output_folder, train_indices, iterations)
+    align_name = "aligned_frames5"
+    base_folder = "./data"
+    background_folder = "./data/backgrounds"
+    output_folder = "./output"
+    colmap_location = "/home/isaac/miniconda3/envs/gs2/bin/colmap"
+    iterations = 3000
+    train_indices = [22]
+    train_initialized(align_name, base_folder, output_folder, train_indices, iterations, background_folder=background_folder)
     render(align_name, output_folder, train_indices, iterations)

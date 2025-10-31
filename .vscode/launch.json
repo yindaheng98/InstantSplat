@@ -92,6 +92,23 @@
             ]
         },
         {
+            "name": "reinitialize car",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "initialize.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-d",
+                "data/aligned_frames5",
+                "--initializer",
+                "colmap-dense",
+                "-oallow_undistortion_missing=1",
+                "-ouse_fused=True",
+                "--load_camera",
+                "data/backgrounds/aligned_frames5/cameras.json",
+            ]
+        },
+        {
             "name": "initialize and train",
             "type": "debugpy",
             "request": "launch",
@@ -134,11 +151,11 @@
             "console": "integratedTerminal",
             "args": [
                 "-s",
-                "data/aligned_frames2/frame2",
+                "data/aligned_frames5/frame23",
                 "-d",
-                "output/aligned_frames2/frame2",
+                "output/aligned_frames5/frame23",
                 "-b",
-                "data/backgrounds/aligned_frames2/point_cloud/iteration_30000/point_cloud.ply",
+                "data/backgrounds/aligned_frames5/point_cloud/iteration_30000/point_cloud.ply",
                 "-i",
                 "1000",
                 "--with_scale_reg",
