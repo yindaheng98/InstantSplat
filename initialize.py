@@ -94,10 +94,9 @@ if __name__ == '__main__':
                             R=ref.R,
                             T=ref.T,
                         )
-        dataset = InitializedCameraDataset(initialized_cameras)
-        os.makedirs(os.path.join(directory, "sparse/0"), exist_ok=True)
-        dataset.save_colmap_cameras(os.path.join(directory, "sparse/0"))
         if len(initialized_cameras) < 2:
             continue
         initialized_cameras, initialized_point_cloud = reinitialize("dust3r", directory, configs_reinit, args.device, known_cameras=initialized_cameras)
+        os.makedirs(os.path.join(directory, "sparse/0"), exist_ok=True)
         initialized_point_cloud.save_ply(os.path.join(directory, "sparse/0/points3D.ply"))
+        InitializedCameraDataset(initialized_cameras).save_colmap_cameras(os.path.join(directory, "sparse/0"))
