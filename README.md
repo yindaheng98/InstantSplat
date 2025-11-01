@@ -16,54 +16,41 @@ Initialization methods:
 * [Pytorch](https://pytorch.org/) (v2.4 or higher recommended)
 * [CUDA Toolkit](https://developer.nvidia.com/cuda-12-4-0-download-archive) (12.4 recommended, should match with PyTorch version)
 
-Install colmap executable:
+Install a colmap executable, e.g. using conda:
 ```sh
 conda install conda-forge::colmap
 ```
 
-## Install (PyPI)
+(Optional) Install `xformers` for faster depth anything:
+```shell
+pip install xformers
+```
 
+(Optional) If you have trouble with [`gaussian-splatting`](https://github.com/yindaheng98/gaussian-splatting), try to install it from source:
 ```sh
+pip install wheel setuptools
+pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master --no-build-isolation
+```
+
+## PyPI Install
+
+```shell
 pip install --upgrade instantsplat
 ```
-
-## Install (Build from source)
-
-```sh
-pip install --upgrade git+https://github.com/yindaheng98/InstantSplat.git@main
-```
-If you have trouble with [`gaussian-splatting`](https://github.com/yindaheng98/gaussian-splatting), you can install it from source:
-```sh
-pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master
-```
-
-## Install (Development)
-
-Install [`gaussian-splatting`](https://github.com/yindaheng98/gaussian-splatting).
-You can download the wheel from [PyPI](https://pypi.org/project/gaussian-splatting/):
+or
+build latest from source:
 ```shell
-pip install --upgrade gaussian-splatting
+pip install wheel setuptools
+pip install --upgrade git+https://github.com/yindaheng98/InstantSplat.git@main --no-build-isolation
 ```
-Alternatively, install the latest version from the source:
-```sh
-pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master
-```
+
+### Development Install
 
 ```shell
 git clone --recursive https://github.com/yindaheng98/InstantSplat
 cd InstantSplat
-pip install tqdm plyfile scikit-learn numpy tifffile triton xformers
+pip install scipy huggingface_hub einops roma scikit-learn
 pip install --target . --upgrade --no-deps .
-```
-
-(Optional) Install `xformers` and `triton` for faster depth anything:
-```shell
-pip install triton xformers
-```
-
-(Optional) If you prefer not to install `gaussian-splatting` in your environment, you can install it in your `InstantSplat` directory:
-```sh
-pip install --target . --no-deps --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master
 ```
 
 ## Download model
@@ -113,15 +100,15 @@ Use `TrainableCameraDataset` in [yindaheng98/gaussian-splatting](https://github.
 ### Initialize coarse point cloud and cameras
 
 ```python
-from instant_splat.initializer import Dust3rInitializer
+from instantsplat.initializer import Dust3rInitializer
 image_path_list = [os.path.join(image_folder, file) for file in sorted(os.listdir(image_folder))]
-initializer = Dust3rInitializer(...).to(args.device) # see instant_splat/initializer/dust3r/dust3r.py for full options
+initializer = Dust3rInitializer(...).to(args.device) # see instantsplat/initializer/dust3r/dust3r.py for full options
 initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
 ```
 
 Create camera dataset from initialized cameras:
 ```python
-from instant_splat.initializer import TrainableInitializedCameraDataset
+from instantsplat.initializer import TrainableInitializedCameraDataset
 dataset = TrainableInitializedCameraDataset(initialized_cameras).to(device)
 ```
 
@@ -134,12 +121,12 @@ gaussians.create_from_pcd(initialized_point_cloud.points, initialized_point_clou
 
 `Trainer` jointly optimize the 3DGS parameters and cameras, without densification
 ```python
-from instant_splat.trainer import Trainer
+from instantsplat.trainer import Trainer
 trainer = Trainer(
     gaussians,
     scene_extent=dataset.scene_extent(),
     dataset=dataset,
-    ... # see instant_splat/trainer/trainer.py for full options
+    ... # see instantsplat/trainer/trainer.py for full options
 )
 ```
 

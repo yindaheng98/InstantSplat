@@ -47,7 +47,7 @@ if os.name == 'nt':
 
 setup(
     name="instantsplat",
-    version='1.8.2',
+    version='1.8.6',
     author='yindaheng98',
     author_email='yindaheng98@gmail.com',
     url='https://github.com/yindaheng98/instantsplat',
@@ -78,13 +78,12 @@ setup(
         'build_ext': BuildExtension
     },
     install_requires=[
-        'opencv-python',
-        'roma',
+        'gaussian-splatting',
         'scipy',
         'huggingface_hub',
         'einops',
-        'open3d',
-        'gaussian-splatting',
+        'roma',
+        'scikit-learn',
     ]
 )
 
