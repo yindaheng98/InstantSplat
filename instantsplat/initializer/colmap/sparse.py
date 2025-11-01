@@ -83,7 +83,6 @@ class ColmapSparseInitializer(AbstractInitializer):
             args.colmap_executable, "mapper",
             "--database_path", os.path.join(folder, "distorted", "database.db"),
             "--image_path", os.path.join(folder, "input"),
-            "--Mapper.ba_global_function_tolerance=0.000001",
         ]
         if args.load_camera:
             os.makedirs(os.path.join(folder, "distorted", "sparse", "0"), exist_ok=True)
