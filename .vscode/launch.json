@@ -144,6 +144,24 @@
             "justMyCode": false
         },
         {
+            "name": "train car",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "instantsplat.train",
+            "console": "integratedTerminal",
+            "args": [
+                "-s",
+                "data/car",
+                "-d",
+                "output/car",
+                "-i",
+                "1000",
+                "--with_scale_reg",
+                "-omask mode='ignore'",
+            ],
+            "justMyCode": false
+        },
+        {
             "name": "render",
             "type": "debugpy",
             "request": "launch",
