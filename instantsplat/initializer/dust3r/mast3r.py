@@ -28,7 +28,7 @@ class Mast3rInitializer(AbstractInitializer):
                  fine_niter: int = 200,
                  min_conf_thr: float = 2.,
                  matching_conf_thr: float = 5.,
-                 scene_scale: float = 10.0,
+                 scene_scale: float = 1.0,
                  shared_intrinsics: bool = False,
                  resize: int = 512):
         self.coarse_lr = coarse_lr

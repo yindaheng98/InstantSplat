@@ -16,6 +16,7 @@ def BaseTrainer(
         camera_rotation_lr_final=0.000001,
         camera_rotation_lr_delay_mult=0.01,
         camera_rotation_lr_max_steps=1000,
+        camera_exposure_lr_max_steps=1000,
         opacity_lr=0.05,
         position_lr_max_steps=1000,
         *args, **kwargs):
@@ -31,6 +32,7 @@ def BaseTrainer(
         camera_rotation_lr_final=camera_rotation_lr_final,
         camera_rotation_lr_delay_mult=camera_rotation_lr_delay_mult,
         camera_rotation_lr_max_steps=camera_rotation_lr_max_steps,
+        camera_exposure_lr_max_steps=camera_exposure_lr_max_steps,
         *args, **kwargs
     )
 
