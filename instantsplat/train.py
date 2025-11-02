@@ -2,6 +2,7 @@ import os
 import shutil
 from typing import Tuple
 import torch
+import torch.nn as nn
 from gaussian_splatting import GaussianModel, CameraTrainableGaussianModel
 from gaussian_splatting.dataset import CameraDataset, TrainableCameraDataset
 from gaussian_splatting.trainer import AbstractTrainer
@@ -24,6 +25,7 @@ scaleregmodes = {
 
 def prepare_training(
         sh_degree: int, source: str, destination: str, device: str, mode: str, load_ply: str = None, load_camera: str = None,
+        load_background: str = None,
         load_mask=True, load_depth=True,
         with_scale_reg=False, configs={},
         init=None, init_configs={}) -> Tuple[CameraDataset, GaussianModel, AbstractTrainer]:
@@ -46,6 +48,16 @@ def prepare_training(
             os.remove(os.path.join(destination, "input.ply"))
         shutil.copy2(os.path.join(source, "sparse/0", "points3D.ply"), os.path.join(destination, "input.ply"))
 
+    if load_background is not None:
+        gaussians_background = CameraTrainableGaussianModel(sh_degree).to(device)
+        gaussians_background.load_ply(load_background)
+        gaussians._xyz = nn.Parameter(torch.cat([gaussians._xyz.detach(), gaussians_background._xyz.detach()]).requires_grad_(True))
+        gaussians._features_dc = nn.Parameter(torch.cat([gaussians._features_dc.detach(), gaussians_background._features_dc.detach()]).requires_grad_(True))
+        gaussians._features_rest = nn.Parameter(torch.cat([gaussians._features_rest.detach(), gaussians_background._features_rest.detach()]).requires_grad_(True))
+        gaussians._opacity = nn.Parameter(torch.cat([gaussians._opacity.detach(), gaussians_background._opacity.detach()]).requires_grad_(True))
+        gaussians._scaling = nn.Parameter(torch.cat([gaussians._scaling.detach(), gaussians_background._scaling.detach()]).requires_grad_(True))
+        gaussians._rotation = nn.Parameter(torch.cat([gaussians._rotation.detach(), gaussians_background._rotation.detach()]).requires_grad_(True))
+
     modes = basemodes if not with_scale_reg else scaleregmodes
     trainer = modes[mode](
         gaussians,
@@ -65,6 +77,7 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--iteration", default=1000, type=int)
     parser.add_argument("-l", "--load_ply", default=None, type=str)
     parser.add_argument("--load_camera", default=None, type=str)
+    parser.add_argument("--load_background", default=None, type=str)
     parser.add_argument("--no_image_mask", action="store_true")
     parser.add_argument("--no_depth_data", action='store_true')
     parser.add_argument("--with_scale_reg", action="store_true")
@@ -83,6 +96,7 @@ if __name__ == "__main__":
     dataset, gaussians, trainer = prepare_training(
         sh_degree=args.sh_degree, source=args.source, destination=args.destination, device=args.device, mode=args.mode,
         load_ply=args.load_ply, load_camera=args.load_camera,
+        load_background=args.load_background,
         load_mask=not args.no_image_mask, load_depth=not args.no_depth_data,
         with_scale_reg=args.with_scale_reg, configs=configs,
         init=args.init, init_configs=init_configs)
