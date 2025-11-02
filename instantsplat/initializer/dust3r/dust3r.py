@@ -35,7 +35,7 @@ class Dust3rInitializer(AbstractInitializer):
                  schedule: str = 'linear',
                  lr: float = 0.01,
                  focal_avg: bool = True,
-                 scene_scale: float = 10.0,
+                 scene_scale: float = 1.0,
                  resize: int = 512):
         self.batch_size = batch_size
         self.niter = niter
