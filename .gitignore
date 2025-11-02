@@ -18,6 +18,7 @@ checkpoints
 /mast3r
 /gaussian_splatting
 /depth_anything_v2
+/data_backup
 
 *.dist-info
 # Byte-compiled / optimized / DLL files

@@ -33,12 +33,12 @@ def render(name, output_folder, train_indices, iterations):
 
 
 if __name__ == "__main__":
-    align_name = "aligned_frames5"
+    align_name = "unaligned_frames3"
     base_folder = "./data"
     background_folder = "./data/backgrounds"
     output_folder = "./output"
     colmap_location = "/home/isaac/miniconda3/envs/gs2/bin/colmap"
-    iterations = 3000
-    train_indices = [22]
-    train_initialized(align_name, base_folder, output_folder, train_indices, iterations, background_folder=background_folder)
+    iterations = 1000
+    train_indices = range(0, 20)
+    train_initialized(align_name, base_folder, output_folder, train_indices, iterations)
     render(align_name, output_folder, train_indices, iterations)

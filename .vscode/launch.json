@@ -82,7 +82,7 @@
             "console": "integratedTerminal",
             "args": [
                 "-d",
-                "data/aligned_frames5",
+                "data/unaligned_frames3",
                 "--initializer",
                 "colmap-dense",
                 "-o",
@@ -99,13 +99,13 @@
             "console": "integratedTerminal",
             "args": [
                 "-d",
-                "data/aligned_frames5",
+                "data/aligned_frames2",
                 "--initializer",
                 "colmap-dense",
                 "-oallow_undistortion_missing=1",
                 "-ouse_fused=True",
                 "--load_camera",
-                "data/backgrounds/aligned_frames5/cameras.json",
+                "data/backgrounds/aligned_frames2/cameras.json",
             ]
         },
         {
@@ -116,13 +116,15 @@
             "console": "integratedTerminal",
             "args": [
                 "-s",
-                "data/sora/santorini/3_views",
+                "data/aligned_frames5",
                 "-d",
-                "output/sora/santorini/3_views",
+                "output/aligned_frames5dust3r",
                 "-i",
                 "1000",
                 "--init",
-                "dust3r",
+                "colmap-dense",
+                // "-o",
+                // "colmap_executable='/home/isaac/miniconda3/envs/gs2/bin/colmap'",
             ],
             "justMyCode": false
         },
@@ -171,13 +173,13 @@
             "justMyCode": false,
             "args": [
                 "-s",
-                "./output/aligned_frames2/frame2/",
+                "./output/aligned_frames5/frame22/",
                 "-d",
-                "./output/aligned_frames2/frame2/",
+                "./output/aligned_frames5/frame22/",
                 "-i",
                 "1000",
                 "--load_camera",
-                "./output/aligned_frames2/frame2/cameras.json",
+                "./output/aligned_frames5/frame22/cameras.json",
                 "--save_depth_pcd",
             ]
         },
