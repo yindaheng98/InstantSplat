@@ -105,7 +105,7 @@
                 "-oallow_undistortion_missing=1",
                 "-ouse_fused=True",
                 "--load_camera",
-                "data/backgrounds/aligned_frames2/cameras.json",
+                "data/aligned_frames2/background/cameras.json",
             ]
         },
         {

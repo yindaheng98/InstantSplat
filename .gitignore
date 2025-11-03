@@ -19,6 +19,7 @@ checkpoints
 /gaussian_splatting
 /depth_anything_v2
 /data_backup
+/output_backup
 /result_logs
 *.dist-info
 # Byte-compiled / optimized / DLL files

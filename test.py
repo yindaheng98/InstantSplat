@@ -1,21 +1,62 @@
 import os
 import subprocess
 
-def initialize(name, folder):
+def initialize(name, folder, clean = True):
+    colmap_location = "\'/home/isaac/miniconda3/envs/gs2/bin/colmap\'"
     input_path = os.path.join(folder, name)
-    command = f"python ./initialize.py -d {input_path} --initializer colmap-dense -o colmap_executable={colmap_location} -oallow_undistortion_missing=1 -ouse_fused=True"
+    if clean:
+        import shutil
+        directories = []
+        directories.append(os.path.join(input_path, "distorted"))
+        directories.append(os.path.join(input_path, "sparse"))
+        directories.append(os.path.join(input_path, "stereo"))
+        directories.append(os.path.join(input_path, "fused.ply"))
+        directories.append(os.path.join(input_path, "fused.ply.vis"))
+        directories.append(os.path.join(input_path, "fused.ply.vis"))
+        # TODO: finish function
+
+    command = f"python ./initialize.py -d {input_path} --initializer colmap-dense -ocolmap_executable={colmap_location} -oallow_undistortion_missing=1 -ouse_fused=True"
     print("running command:")
     print(command)
     subprocess.check_call(command, shell=True)
 
-def train_initialized(name, input_folder, output_folder, train_indices, iterations, background_folder=None):
+def reinitialize(name, data_folder, background_folder):
+    input_path = os.path.join(data_folder, name)
+    background_path = os.path.join(background_folder, name, "cameras.json")
+    command = f"python ./initialize.py -d {input_path} --initalizer colmap-dense -oallow_undistortion_missing=1 -ouse_fused=True --load_camera {background_path}"
+    print("running command:")
+    print(command)
+    subprocess.check_call(command, shell=True)
+
+def train_background(name, data_folder, background_folder, iterations):
+    input_path = os.path.join(data_folder, name)
+    output_path = os.path.join(background_folder, name)
+    command = f"python -m reduced_3dgs.train -s {input_path} -d {output_path} -i {iterations} --mode camera-densify-prun-shculling --with_scale_reg --empty_cache_every_step --no_depth_data"
+    print("running command:")
+    print(command)
+    subprocess.check_call(command, shell=True)
+
+def get_train_indices(name, data_folder, max_window = 255):
+    train_path = os.path.join(data_folder, name)
+    found_indices = []
+    for i in range(max_window):
+        train_folder = os.path.join(train_path, f"frame{i}")
+        if not os.path.exists(train_folder):
+            continue
+        files = os.listdir(os.path.join(train_folder, "images"))
+        if len(files) < 3:
+            continue
+        found_indices.append(i)
+    return found_indices
+
+def train_initialized(name, input_folder, output_folder, train_indices, iterations, background_folder=None, background_iterations=1000):
     for index in train_indices:
         source_location = os.path.join(input_folder, name, f"frame{index}")
         destination_location = os.path.join(output_folder, name, f"frame{index}")
         if background_folder is None:
             command = f"python -m instantsplat.train -s {source_location} -d {destination_location} -i {iterations} --with_scale_reg "
         else:
-            background_location = os.path.join(background_folder, name, "point_cloud/iteration_30000/point_cloud.ply")
+            background_location = os.path.join(background_folder, name, f"point_cloud/iteration_{background_iterations}/point_cloud.ply")
             command = f"python -m instantsplat.train -s {source_location} -d {destination_location} -b {background_location} -i {iterations} -ocamera_position_lr_init=0.0 -ocamera_position_lr_final=0.0 -ocamera_rotation_lr_init=0.0 -ocamera_rotation_lr_final=0.0 -ocamera_exposure_lr_init=0.0 -ocamera_exposure_lr_final=0.0 --with_scale_reg"
         print("running command:")
         print(command)
@@ -31,14 +72,17 @@ def render(name, output_folder, train_indices, iterations):
         print(command)
         subprocess.check_call(command, shell=True)
 
+def complete_process(name, data_folder, output_folder, background_folder, foreground_iterations = 1000, background_iterations = 1000):
+    initialize(name, data_folder)
+    train_background(name, data_folder, background_folder, background_iterations)
+    indices = get_train_indices(name, data_folder)
+    train_initialized(name, data_folder, output_folder, indices, foreground_iterations, background_folder, background_iterations)
+    render(name, output_folder, indices, foreground_iterations)
 
 if __name__ == "__main__":
-    align_name = "aligned_frames2"
-    base_folder = "./data"
+    align_name = "aligned_frames5"
+    data_folder = "./data"
     background_folder = "./data/backgrounds"
     output_folder = "./output"
-    colmap_location = "/home/isaac/miniconda3/envs/gs2/bin/colmap"
     iterations = 1000
-    train_indices = range(2, 26)
-    train_initialized(align_name, base_folder, output_folder, train_indices, iterations, background_folder=background_folder)
-    render(align_name, output_folder, train_indices, iterations)
+    complete_process()
