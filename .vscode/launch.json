@@ -109,6 +109,30 @@
             ]
         },
         {
+            "name": "train car",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "instantsplat.train",
+            "console": "integratedTerminal",
+            "args": [
+                "-d",
+                "output/aligned_frames2/frame2",
+                "-s",
+                "data/aligned_frames2/frame2",
+                "-i",
+                "1000",
+                "--with_scale_reg",
+                "-ocamera_position_lr_init=0",
+                "-ocamera_position_lr_final=0",
+                "-ocamera_rotation_lr_init=0",
+                "-ocamera_rotation_lr_final=0",
+                "--load_background",
+                "data/backgrounds/aligned_frames2/point_cloud/iteration_30000/point_cloud.ply",
+            ]
+        },
+
+
+        {
             "name": "initialize and train",
             "type": "debugpy",
             "request": "launch",
@@ -136,12 +160,17 @@
             "console": "integratedTerminal",
             "args": [
                 "-s",
-                "../output/aligned_frames7",
+                "data/aligned_frames2",
                 "-d",
-                "../output/aligned_frames7/background",
+                "data/aligned_frames2/background",
                 "-i",
                 "1000",
+                "--mode",
+                "camera-densify-prune-shculling",
                 "--with_scale_reg",
+                "--empty_cache_every_step",
+                "--no_depth_data",
+                // "-omask_mode='ignore'"
             ],
             "justMyCode": false
         },
@@ -173,13 +202,13 @@
             "justMyCode": false,
             "args": [
                 "-s",
-                "./output/aligned_frames5/frame22/",
+                "./output/aligned_frames2/frame2/",
                 "-d",
-                "./output/aligned_frames5/frame22/",
+                "./output/aligned_frames2/frame2/",
                 "-i",
                 "1000",
                 "--load_camera",
-                "./output/aligned_frames5/frame22/cameras.json",
+                "./output/aligned_frames2/frame2/cameras.json",
                 "--save_depth_pcd",
             ]
         },

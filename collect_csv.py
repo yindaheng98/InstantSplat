@@ -34,7 +34,7 @@ def collect_csv(folder_path, frame_indices):
     return per_name_avg, weighted_avg
 
 if __name__ == "__main__":
-    results, sum = collect_csv("output/unaligned_frames3", range(0, 20))
+    results, sum = collect_csv("output/aligned_frames2", range(2, 3))
     print(results)
     print("summary")
     print(sum)
