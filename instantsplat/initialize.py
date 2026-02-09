@@ -17,7 +17,7 @@ default_image_folder = {
 }
 
 
-def initialize(initializer, directory, configs, device):
+def initialize(initializer, directory, configs, device, scale=1.0):
     image_folder = os.path.join(directory, default_image_folder[initializer])
     image_path_list = [os.path.join(image_folder, file) for file in sorted(os.listdir(image_folder))]
     def convert_image_path(image_path): return os.path.join(os.path.dirname(os.path.dirname(image_path)), "images", os.path.basename(image_path))
@@ -45,6 +45,8 @@ def initialize(initializer, directory, configs, device):
         case _:
             raise ValueError(f"Unknown initializer {initializer}")
     initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
+    initialized_point_cloud._replace(points=initialized_point_cloud.points*scale)
+    initialized_cameras = [camera._replace(T=camera.T*scale) for camera in initialized_cameras]
     return initialized_cameras, initialized_point_cloud
 
 
@@ -53,12 +55,13 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("-i", "--initializer", choices=list(default_image_folder.keys()), default="dust3r", type=str)
     parser.add_argument("-d", "--directory", required=True, type=str)
+    parser.add_argument("--scale", default=1.0, type=float)
     parser.add_argument("--device", default="cuda", type=str)
     parser.add_argument("-o", "--option", default=[], action='append', type=str)
 
     args = parser.parse_args()
     configs = {o.split("=", 1)[0]: eval(o.split("=", 1)[1]) for o in args.option}
-    initialized_cameras, initialized_point_cloud = initialize(args.initializer, args.directory, configs, args.device)
+    initialized_cameras, initialized_point_cloud = initialize(args.initializer, args.directory, configs, args.device, scale=args.scale)
     dataset = InitializedCameraDataset(initialized_cameras)
 
     shutil.rmtree(os.path.join(args.directory, "sparse/0"), ignore_errors=True)

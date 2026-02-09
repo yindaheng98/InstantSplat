@@ -124,5 +124,19 @@
                 "--save_depth_pcd",
             ]
         },
+        {
+            "name": "viewer",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "gaussian_splatting.viewer",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "-d",
+                "output/sora/santorini/3_views",
+                "-i",
+                "1000",
+            ]
+        },
     ]
 }
