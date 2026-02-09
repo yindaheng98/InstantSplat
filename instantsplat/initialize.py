@@ -45,7 +45,7 @@ def initialize(initializer, directory, configs, device, scale=1.0):
         case _:
             raise ValueError(f"Unknown initializer {initializer}")
     initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
-    initialized_point_cloud._replace(points=initialized_point_cloud.points*scale)
+    initialized_point_cloud = initialized_point_cloud._replace(points=initialized_point_cloud.points*scale)
     initialized_cameras = [camera._replace(T=camera.T*scale) for camera in initialized_cameras]
     return initialized_cameras, initialized_point_cloud
 
