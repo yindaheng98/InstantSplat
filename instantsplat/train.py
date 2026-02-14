@@ -50,7 +50,6 @@ def prepare_training(
     modes = basemodes if not with_scale_reg else scaleregmodes
     trainer = modes[mode](
         gaussians,
-        scene_extent=dataset.scene_extent(),
         dataset=dataset,
         **configs
     )

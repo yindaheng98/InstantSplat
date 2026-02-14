@@ -6,7 +6,6 @@ from gaussian_splatting.trainer.extensions import ScaleRegularizeTrainerWrapper
 
 def BaseTrainer(
         model: CameraTrainableGaussianModel,
-        scene_extent: float,
         dataset: TrainableCameraDataset,
         camera_position_lr_init=0.001,
         camera_position_lr_final=0.00001,
@@ -19,9 +18,9 @@ def BaseTrainer(
         camera_exposure_lr_max_steps=1000,
         opacity_lr=0.05,
         position_lr_max_steps=1000,
-        *args, **kwargs):
+        **configs):
     return BaseCameraTrainer(
-        model, scene_extent, dataset,
+        model, dataset,
         opacity_lr=opacity_lr,
         position_lr_max_steps=position_lr_max_steps,
         camera_position_lr_init=camera_position_lr_init,
@@ -33,13 +32,12 @@ def BaseTrainer(
         camera_rotation_lr_delay_mult=camera_rotation_lr_delay_mult,
         camera_rotation_lr_max_steps=camera_rotation_lr_max_steps,
         camera_exposure_lr_max_steps=camera_exposure_lr_max_steps,
-        *args, **kwargs
+        **configs
     )
 
 
 def Trainer(
         model: CameraTrainableGaussianModel,
-        scene_extent: float,
         dataset: TrainableCameraDataset,
         camera_position_lr_init=0.001,
         camera_position_lr_final=0.00001,
@@ -53,9 +51,9 @@ def Trainer(
         position_lr_max_steps=1000,
         depth_from_iter=0,
         depth_l1_weight_max_steps=1000,
-        *args, **kwargs):
+        **configs):
     return CameraTrainer(
-        model, scene_extent, dataset,
+        model, dataset,
         opacity_lr=opacity_lr,
         position_lr_max_steps=position_lr_max_steps,
         depth_from_iter=depth_from_iter,
@@ -68,33 +66,29 @@ def Trainer(
         camera_rotation_lr_final=camera_rotation_lr_final,
         camera_rotation_lr_delay_mult=camera_rotation_lr_delay_mult,
         camera_rotation_lr_max_steps=camera_rotation_lr_max_steps,
-        *args, **kwargs
+        **configs
     )
 
 
 def BaseScaleRegularizeTrainer(
         model: CameraTrainableGaussianModel,
-        scene_extent: float,
         dataset: TrainableCameraDataset,
         scale_reg_from_iter=100,
-        *args, **kwargs):
+        **configs):
     return ScaleRegularizeTrainerWrapper(
         BaseTrainer,
-        model, scene_extent, dataset,
-        *args,
+        model, dataset,
         scale_reg_from_iter=scale_reg_from_iter,
-        **kwargs)
+        **configs)
 
 
 def ScaleRegularizeTrainer(
         model: CameraTrainableGaussianModel,
-        scene_extent: float,
         dataset: TrainableCameraDataset,
         scale_reg_from_iter=100,
-        *args, **kwargs):
+        **configs):
     return ScaleRegularizeTrainerWrapper(
         Trainer,
-        model, scene_extent, dataset,
-        *args,
+        model, dataset,
         scale_reg_from_iter=scale_reg_from_iter,
-        **kwargs)
+        **configs)

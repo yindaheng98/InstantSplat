@@ -124,7 +124,6 @@ gaussians.create_from_pcd(initialized_point_cloud.points, initialized_point_clou
 from instantsplat.trainer import Trainer
 trainer = Trainer(
     gaussians,
-    scene_extent=dataset.scene_extent(),
     dataset=dataset,
     ... # see instantsplat/trainer/trainer.py for full options
 )
