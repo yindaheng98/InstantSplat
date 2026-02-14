@@ -47,7 +47,7 @@ if os.name == 'nt':
 
 setup(
     name="instantsplat",
-    version='1.9.1',
+    version='1.9.2',
     author='yindaheng98',
     author_email='yindaheng98@gmail.com',
     url='https://github.com/yindaheng98/instantsplat',
@@ -78,7 +78,7 @@ setup(
         'build_ext': BuildExtension
     },
     install_requires=[
-        'gaussian-splatting',
+        'gaussian-splatting < 2.3.0',
         'scipy',
         'huggingface_hub',
         'einops',
