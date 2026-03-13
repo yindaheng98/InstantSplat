@@ -50,6 +50,7 @@ pip install --upgrade git+https://github.com/yindaheng98/InstantSplat.git@main -
 git clone --recursive https://github.com/yindaheng98/InstantSplat
 cd InstantSplat
 pip install scipy huggingface_hub einops roma scikit-learn
+pip install --upgrade git+https://github.com/facebookresearch/vggt.git@main
 pip install --target . --upgrade --no-deps .
 ```
 
@@ -63,6 +64,7 @@ wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/MASt3R
 wget -P checkpoints/ https://huggingface.co/depth-anything/Depth-Anything-V2-Small/resolve/main/depth_anything_v2_vits.pth
 wget -P checkpoints/ https://huggingface.co/depth-anything/Depth-Anything-V2-Base/resolve/main/depth_anything_v2_vitb.pth
 wget -P checkpoints/ https://huggingface.co/depth-anything/Depth-Anything-V2-Large/resolve/main/depth_anything_v2_vitl.pth
+wget -P checkpoints/ https://huggingface.co/facebook/VGGT-1B-Commercial/resolve/main/vggt_1B_commercial.pt --header="Authorization: Bearer $HF_TOKEN"
 ```
 
 ## Running
