@@ -64,7 +64,7 @@ class VGGTInitializer(AbstractInitializer):
 
         # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L113-L118
         self.model = VGGT()
-        self.model.load_state_dict(torch.hub.load_state_dict_from_url(model_url))
+        self.model.load_state_dict(torch.load(model_url))
         self.model.eval()
         self.to(self.device)
 
@@ -114,15 +114,15 @@ class VGGTInitializer(AbstractInitializer):
                     image_height=int(orig_h),
                     FoVx=focal2fov(fx_orig, orig_w),
                     FoVy=focal2fov(fy_orig, orig_h),
-                    R=torch.from_numpy(extrinsic[i][:3, :3]).float(),
-                    T=torch.from_numpy(extrinsic[i][:3, 3]).float() * self.scene_scale,
+                    R=torch.from_numpy(extrinsic[i][:3, :3]).float().to(device),
+                    T=torch.from_numpy(extrinsic[i][:3, 3]).float().to(device) * self.scene_scale,
                     image_path=image_path_list[i],
                 )
             )
 
         point_cloud = InitializedPointCloud(
-            points=torch.from_numpy(points_3d[conf_mask]).float() * self.scene_scale,
-            colors=torch.from_numpy(points_rgb[conf_mask]).float(),
+            points=torch.from_numpy(points_3d[conf_mask]).float().to(device) * self.scene_scale,
+            colors=torch.from_numpy(points_rgb[conf_mask]).float().to(device),
         )
 
         return point_cloud, cameras

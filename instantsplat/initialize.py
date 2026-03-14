@@ -6,11 +6,13 @@ from instantsplat.initializer import *
 default_image_folder = {
     "dust3r": "images",
     "mast3r": "images",
+    "vggt": "images",
     "colmap-sparse": "input",
     "colmap-dense": "input",
     "dust3r-align-colmap": "input",
     "nodepth-dust3r": "images",
     "nodepth-mast3r": "images",
+    "nodepth-vggt": "images",
     "nodepth-colmap-sparse": "input",
     "nodepth-colmap-dense": "input",
     "nodepth-dust3r-align-colmap": "input",
@@ -30,6 +32,10 @@ def initialize(initializer, directory, configs, device, scale=1.0):
             initializer = DepthAnythingV2Mast3rInitializer(**configs).to(device)
         case "nodepth-mast3r":
             initializer = Mast3rInitializer(**configs).to(device)
+        case "vggt":
+            initializer = DepthAnythingV2VGGTInitializer(**configs).to(device)
+        case "nodepth-vggt":
+            initializer = VGGTInitializer(**configs).to(device)
         case "colmap-sparse":
             initializer = DepthAnythingV2ColmapSparseInitializer(destination=directory, **configs).to(device)
         case "nodepth-colmap-sparse":

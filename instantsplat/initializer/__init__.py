@@ -1,6 +1,7 @@
 from .abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 from .dataset import InitializedCameraDataset, TrainableCameraDataset, TrainableInitializedCameraDataset
 from .dust3r import Dust3rInitializer, Mast3rInitializer
+from .vggt import VGGTInitializer
 from .colmap import ColmapSparseInitializer, ColmapDenseInitializer
 from .depth import DepthInitializerWrapper, DepthAnythingV2InitializerWrapper
 from .combinations import Dust3rAlign2ColmapDenseInitializer
@@ -8,3 +9,4 @@ from .combinations import ColmapDenseInitializer
 from .combinations import DepthAnythingV2ColmapDenseInitializer, DepthAnythingV2ColmapSparseInitializer
 from .combinations import DepthAnythingV2Dust3rInitializer, DepthAnythingV2Mast3rInitializer
 from .combinations import DepthAnythingV2Dust3rAlign2ColmapDenseInitializer
+from .combinations import DepthAnythingV2VGGTInitializer
