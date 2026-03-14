@@ -7,12 +7,14 @@ default_image_folder = {
     "dust3r": "images",
     "mast3r": "images",
     "vggt": "images",
+    "vggt-colmap-sparse": "input",
     "colmap-sparse": "input",
     "colmap-dense": "input",
     "dust3r-align-colmap": "input",
     "nodepth-dust3r": "images",
     "nodepth-mast3r": "images",
     "nodepth-vggt": "images",
+    "nodepth-vggt-colmap-sparse": "input",
     "nodepth-colmap-sparse": "input",
     "nodepth-colmap-dense": "input",
     "nodepth-dust3r-align-colmap": "input",
@@ -36,6 +38,10 @@ def initialize(initializer, directory, configs, device, scale=1.0):
             initializer = DepthAnythingV2VGGTInitializer(**configs).to(device)
         case "nodepth-vggt":
             initializer = VGGTInitializer(**configs).to(device)
+        case "vggt-colmap-sparse":
+            initializer = DepthAnythingV2VGGTColmapSparseInitializer(destination=directory, **configs).to(device)
+        case "nodepth-vggt-colmap-sparse":
+            initializer = VGGTColmapSparseInitializer(destination=directory, **configs).to(device)
         case "colmap-sparse":
             initializer = DepthAnythingV2ColmapSparseInitializer(destination=directory, **configs).to(device)
         case "nodepth-colmap-sparse":

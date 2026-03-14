@@ -1,6 +1,6 @@
 from .colmap import ColmapSparseInitializer, ColmapDenseInitializer
 from .dust3r import Dust3rInitializer, Dust3rAlign2Initializer, Mast3rInitializer
-from .vggt import VGGTInitializer
+from .vggt import VGGTInitializer, VGGTColmapSparseInitializer
 from .depth import AutoScaleDepthAnythingV2InitializerWrapper
 
 
@@ -84,6 +84,21 @@ def DepthAnythingV2Mast3rInitializer(
         *args, **kwargs):
     return AutoScaleDepthAnythingV2InitializerWrapper(
         Mast3rInitializer(*args, **kwargs),
+        input_size=input_size,
+        encoder=encoder,
+        checkpoints_folder=checkpoints_folder,
+        device=device,
+    )
+
+
+def DepthAnythingV2VGGTColmapSparseInitializer(
+        input_size=518,
+        encoder='vitl',
+        checkpoints_folder='checkpoints',
+        device="cuda",
+        *args, **kwargs):
+    return AutoScaleDepthAnythingV2InitializerWrapper(
+        VGGTColmapSparseInitializer(*args, **kwargs),
         input_size=input_size,
         encoder=encoder,
         checkpoints_folder=checkpoints_folder,
