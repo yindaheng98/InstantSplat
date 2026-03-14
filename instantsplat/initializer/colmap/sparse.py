@@ -136,11 +136,10 @@ class ColmapSparseInitializer(AbstractInitializer):
         return 0
 
     def sparse_reconstruct(self, folder, image_path_list):
-        mapper_ok = True
-        for file in ["cameras.bin", "images.bin", "points3D.bin"]:
-            if not os.path.exists(os.path.join(folder, "distorted", "sparse", "0", file)):
-                mapper_ok = False
-                break
+        mapper_ok = all(
+            os.path.exists(os.path.join(folder, "distorted", "sparse", "0", file))
+            for file in ("cameras.bin", "images.bin", "points3D.bin")
+        )
         if self.load_camera is not None or not mapper_ok:
             if self.feature_extractor(folder) != 0:
                 raise RuntimeError("Feature extraction failed")
@@ -153,15 +152,13 @@ class ColmapSparseInitializer(AbstractInitializer):
             if self.mask_undistorter(folder) != 0:
                 raise RuntimeError("Mask undistortion failed")
             return
-        undistorter_ok = True
-        for image_path in image_path_list:
-            if not os.path.exists(os.path.join(folder, "images", os.path.basename(image_path))):
-                undistorter_ok = False
-                break
-        for file in ["cameras.bin", "images.bin", "points3D.bin"]:
-            if not os.path.exists(os.path.join(folder, "sparse", file)):
-                undistorter_ok = False
-                break
+        undistorter_ok = all(
+            os.path.exists(os.path.join(folder, "images", os.path.basename(image_path)))
+            for image_path in image_path_list
+        ) and all(
+            os.path.exists(os.path.join(folder, "sparse", file))
+            for file in ("cameras.bin", "images.bin", "points3D.bin")
+        )
         if not undistorter_ok:
             if self.image_undistorter(folder) != 0:
                 raise RuntimeError("Undistortion failed")
