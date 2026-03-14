@@ -51,6 +51,8 @@ git clone --recursive https://github.com/yindaheng98/InstantSplat
 cd InstantSplat
 pip install scipy huggingface_hub einops roma scikit-learn
 pip install --upgrade git+https://github.com/facebookresearch/vggt.git@main
+pip install pycolmap # deps for vggt
+pip install git+https://github.com/jytime/LightGlue.git#egg=lightglue # deps for vggt
 pip install --target . --upgrade --no-deps .
 ```
 

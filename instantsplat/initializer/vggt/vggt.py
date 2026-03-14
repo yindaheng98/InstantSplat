@@ -89,6 +89,7 @@ class VGGTInitializer(AbstractInitializer):
 
         extrinsic, intrinsic, depth_map, depth_conf = run_VGGT(self.model, images, dtype, vggt_fixed_resolution)
         points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)  # (N, H, W, 3)
+        torch.cuda.empty_cache()
 
         # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L203-L218
         points_rgb = F.interpolate(
@@ -98,6 +99,7 @@ class VGGTInitializer(AbstractInitializer):
 
         conf_mask = depth_conf >= self.conf_thres_value
         conf_mask = randomly_limit_trues(conf_mask, self.max_points)
+        torch.cuda.empty_cache()
 
         cameras = []
         for i in range(len(image_path_list)):

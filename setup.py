@@ -47,7 +47,7 @@ if os.name == 'nt':
 
 setup(
     name="instantsplat",
-    version='1.11.1',
+    version='1.11.2',
     author='yindaheng98',
     author_email='yindaheng98@gmail.com',
     url='https://github.com/yindaheng98/instantsplat',
@@ -84,7 +84,10 @@ setup(
         'einops',
         'roma',
         'scikit-learn',
+        # VGGT and its dependencies
         'vggt @ git+https://github.com/facebookresearch/vggt.git',
+        'pycolmap',
+        'lightglue @ git+https://github.com/jytime/LightGlue.git#egg=lightglue',
     ]
 )
 
