@@ -58,6 +58,25 @@
             ]
         },
         {
+            "name": "initialize vggt colmap dense",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "instantsplat.initialize",
+            "console": "integratedTerminal",
+            "args": [
+                "-d",
+                "data/sora/santorini/3_views",
+                "-i",
+                "vggt-colmap-dense",
+                "-o",
+                "conf_thres_value=1",
+                "-o",
+                "colmap_executable='.\\data\\colmap\\COLMAP.bat'",
+                "-o",
+                "use_fused=True",
+            ]
+        },
+        {
             "name": "initialize dust3r align to colmap",
             "type": "debugpy",
             "request": "launch",

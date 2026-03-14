@@ -3,6 +3,7 @@ import torch
 
 from gaussian_splatting.dataset.colmap.read_write_model import write_model
 from instantsplat.initializer.colmap.sparse import ColmapSparseInitializer, execute
+from instantsplat.initializer.colmap.dense import ColmapDenseInitializer
 from vggt.models.vggt import VGGT
 from vggt.utils.load_fn import load_and_preprocess_images_square
 from vggt.utils.geometry import unproject_depth_map_to_point_map
@@ -152,3 +153,12 @@ class VGGTColmapSparseInitializer(ColmapSparseInitializer):
         sparse_dir = os.path.join(folder, "distorted", "sparse", "0")
         os.makedirs(sparse_dir, exist_ok=True)
         write_model(cameras, colmap_images, colmap_points3D, sparse_dir)
+
+
+class VGGTColmapDenseInitializer(ColmapDenseInitializer, VGGTColmapSparseInitializer):
+    """VGGT sparse reconstruction + COLMAP dense reconstruction.
+
+    Combines VGGTColmapSparseInitializer (VGGT + BA for sparse) with
+    ColmapDenseInitializer (PatchMatch + fusion + meshing for dense).
+    """
+    pass
