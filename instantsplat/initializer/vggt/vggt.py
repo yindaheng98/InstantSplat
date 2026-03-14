@@ -66,7 +66,7 @@ class VGGTInitializer(AbstractInitializer):
         self.model = VGGT()
         self.model.load_state_dict(torch.load(model_url))
         self.model.eval()
-        self.to(self.device)
+        self.model.to(self.device)
 
     def to(self, device):
         self.device = device
