@@ -1,5 +1,4 @@
 import math
-import numpy as np
 import torch
 import torch.nn.functional as F
 from typing import List, Tuple
@@ -90,3 +89,40 @@ class VGGTInitializer(AbstractInitializer):
 
         extrinsic, intrinsic, depth_map, depth_conf = run_VGGT(self.model, images, dtype, vggt_fixed_resolution)
         points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)  # (N, H, W, 3)
+
+        # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L203-L218
+        points_rgb = F.interpolate(
+            images, size=(vggt_fixed_resolution, vggt_fixed_resolution), mode="bilinear", align_corners=False
+        )
+        points_rgb = points_rgb.cpu().numpy().transpose(0, 2, 3, 1)  # (N, H, W, 3) [0, 1]
+
+        conf_mask = depth_conf >= self.conf_thres_value
+        conf_mask = randomly_limit_trues(conf_mask, self.max_points)
+
+        cameras = []
+        for i in range(len(image_path_list)):
+            orig_w = original_coords[i, 4]
+            orig_h = original_coords[i, 5]
+            resize_ratio = max(orig_w, orig_h) / vggt_fixed_resolution
+
+            fx_orig = intrinsic[i][0, 0] * resize_ratio
+            fy_orig = intrinsic[i][1, 1] * resize_ratio
+
+            cameras.append(
+                InitializingCamera(
+                    image_width=int(orig_w),
+                    image_height=int(orig_h),
+                    FoVx=focal2fov(fx_orig, orig_w),
+                    FoVy=focal2fov(fy_orig, orig_h),
+                    R=torch.from_numpy(extrinsic[i][:3, :3]).float(),
+                    T=torch.from_numpy(extrinsic[i][:3, 3]).float() * self.scene_scale,
+                    image_path=image_path_list[i],
+                )
+            )
+
+        point_cloud = InitializedPointCloud(
+            points=torch.from_numpy(points_3d[conf_mask]).float() * self.scene_scale,
+            colors=torch.from_numpy(points_rgb[conf_mask]).float(),
+        )
+
+        return point_cloud, cameras
