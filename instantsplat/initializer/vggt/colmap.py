@@ -1,22 +1,15 @@
 import os
-import numpy as np
 import torch
 
-from gaussian_splatting.dataset.colmap.read_write_model import (
-    Camera as ColmapCamera,
-    Image as ColmapImage,
-    Point3D as ColmapPoint3D,
-    write_model,
-    rotmat2qvec,
-)
+from gaussian_splatting.dataset.colmap.read_write_model import write_model
 from instantsplat.initializer.colmap.sparse import ColmapSparseInitializer, execute
 from vggt.models.vggt import VGGT
 from vggt.utils.load_fn import load_and_preprocess_images_square
 from vggt.utils.geometry import unproject_depth_map_to_point_map
 from vggt.dependency.track_predict import predict_tracks
-from vggt.dependency.projection import project_3D_points_np
 
 from .vggt import run_VGGT
+from .np_to_colmap import batch_np_matrix_to_colmap
 
 
 class VGGTColmapSparseInitializer(ColmapSparseInitializer):
@@ -114,3 +107,48 @@ class VGGTColmapSparseInitializer(ColmapSparseInitializer):
         extrinsic, intrinsic, depth_map, depth_conf = run_VGGT(self.model, images, dtype, vggt_fixed_resolution)
         points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)  # (N, H, W, 3)
         torch.cuda.empty_cache()
+
+        original_coords = original_coords.cpu().numpy()
+        # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L142-L191
+        img_load_resolution = self.img_load_resolution
+        scale = img_load_resolution / vggt_fixed_resolution
+
+        with torch.no_grad():
+            with torch.cuda.amp.autocast(dtype=dtype):
+                pred_tracks, pred_vis_scores, pred_confs, points_3d, points_rgb = predict_tracks(
+                    images,
+                    conf=depth_conf,
+                    points_3d=points_3d,
+                    masks=None,
+                    max_query_pts=self.max_query_pts,
+                    query_frame_num=self.query_frame_num,
+                    keypoint_extractor=self.keypoint_extractor,
+                    fine_tracking=self.fine_tracking,
+                )
+
+                torch.cuda.empty_cache()
+
+        # rescale the intrinsic matrix from 518 to 1024
+        intrinsic[:, :2, :] *= scale
+        track_mask = pred_vis_scores > self.vis_thresh
+
+        cameras, colmap_images, colmap_points3D, valid_track_mask = batch_np_matrix_to_colmap(
+            points_3d,
+            extrinsic,
+            intrinsic,
+            pred_tracks,
+            original_coords,
+            img_load_resolution,
+            [os.path.basename(p) for p in image_path_list],
+            masks=track_mask,
+            max_reproj_error=self.max_reproj_error,
+            camera_type=self.camera,
+            points_rgb=points_rgb,
+        )
+
+        if len(colmap_points3D) == 0:
+            raise RuntimeError("No valid tracks for bundle adjustment")
+
+        sparse_dir = os.path.join(folder, "distorted", "sparse", "0")
+        os.makedirs(sparse_dir, exist_ok=True)
+        write_model(cameras, colmap_images, colmap_points3D, sparse_dir)
