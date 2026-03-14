@@ -100,4 +100,17 @@ class VGGTColmapSparseInitializer(ColmapSparseInitializer):
                 raise RuntimeError("Mask undistortion failed")
 
     def vggt_mapper(self, folder, image_path_list):
-        pass
+        device = self.device
+        vggt_fixed_resolution = self.vggt_fixed_resolution
+
+        # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L107
+        dtype = torch.bfloat16 if torch.cuda.get_device_capability()[0] >= 8 else torch.float16
+
+        # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L132-L134
+        images, original_coords = load_and_preprocess_images_square(image_path_list, self.img_load_resolution)
+        images = images.to(device)
+        original_coords = original_coords.to(device)  # (N, 6): [x1, y1, x2, y2, orig_width, orig_height]
+
+        extrinsic, intrinsic, depth_map, depth_conf = run_VGGT(self.model, images, dtype, vggt_fixed_resolution)
+        points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)  # (N, H, W, 3)
+        torch.cuda.empty_cache()
