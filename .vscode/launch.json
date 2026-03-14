@@ -41,7 +41,7 @@
             ]
         },
         {
-            "name": "initialize vggt",
+            "name": "initialize vggt colmap sparse",
             "type": "debugpy",
             "request": "launch",
             "module": "instantsplat.initialize",
