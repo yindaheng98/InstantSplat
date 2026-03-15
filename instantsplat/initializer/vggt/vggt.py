@@ -1,6 +1,7 @@
 import math
 import torch
 import torch.nn.functional as F
+import numpy as np
 from typing import List, Tuple
 
 from vggt.models.vggt import VGGT
@@ -43,6 +44,30 @@ def run_VGGT(model, images, dtype, resolution=518):
     depth_map = depth_map.squeeze(0).cpu().numpy()
     depth_conf = depth_conf.squeeze(0).cpu().numpy()
     return extrinsic, intrinsic, depth_map, depth_conf
+
+
+def build_valid_image_area_mask(original_coords, src_resolution, dst_resolution):
+    """Build a mask that removes padded area after square-resize."""
+    n = int(original_coords.shape[0])
+    scale = float(dst_resolution) / float(src_resolution)
+    valid_mask = np.zeros((n, dst_resolution, dst_resolution), dtype=bool)
+
+    for i in range(n):
+        x1, y1, x2, y2 = original_coords[i, :4]
+        x1 = int(np.floor(x1 * scale))
+        y1 = int(np.floor(y1 * scale))
+        x2 = int(np.ceil(x2 * scale))
+        y2 = int(np.ceil(y2 * scale))
+
+        x1 = max(0, min(dst_resolution, x1))
+        y1 = max(0, min(dst_resolution, y1))
+        x2 = max(0, min(dst_resolution, x2))
+        y2 = max(0, min(dst_resolution, y2))
+
+        if x2 > x1 and y2 > y1:
+            valid_mask[i, y1:y2, x1:x2] = True
+
+    return valid_mask
 
 
 class VGGTInitializer(AbstractInitializer):
@@ -98,6 +123,12 @@ class VGGTInitializer(AbstractInitializer):
         points_rgb = points_rgb.cpu().numpy().transpose(0, 2, 3, 1)  # (N, H, W, 3) [0, 1]
 
         conf_mask = depth_conf >= self.conf_thres_value
+        valid_area_mask = build_valid_image_area_mask(
+            original_coords.cpu().numpy(),
+            src_resolution=self.img_load_resolution,
+            dst_resolution=vggt_fixed_resolution,
+        )
+        conf_mask = np.logical_and(conf_mask, valid_area_mask)
         conf_mask = randomly_limit_trues(conf_mask, self.max_points)
         torch.cuda.empty_cache()
 
