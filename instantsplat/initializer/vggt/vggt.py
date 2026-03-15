@@ -5,13 +5,13 @@ import numpy as np
 from typing import List, Tuple
 
 from vggt.models.vggt import VGGT
-from vggt.utils.geometry import unproject_depth_map_to_point_map
-from vggt.utils.helper import randomly_limit_trues
 
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 
 from .utils.load_fn import load_and_preprocess_images_square
 from .utils.pose_enc import pose_encoding_to_extri_intri
+from .utils.geometry import unproject_depth_map_to_point_map
+from .utils.helper import randomly_limit_trues
 
 
 def focal2fov(focal, pixels):
