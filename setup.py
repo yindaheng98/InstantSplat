@@ -45,9 +45,11 @@ if os.name == 'nt':
     cxx_compiler_flags.append("/wd4624")
     nvcc_compiler_flags.append("-allow-unsupported-compiler")
 
+MAP_ANYTHING_REPO = "git+https://github.com/facebookresearch/map-anything.git@main"
+
 setup(
     name="instantsplat",
-    version='1.12.2',
+    version='1.13.0',
     author='yindaheng98',
     author_email='yindaheng98@gmail.com',
     url='https://github.com/yindaheng98/instantsplat',
@@ -88,7 +90,19 @@ setup(
         'vggt @ git+https://github.com/facebookresearch/vggt.git',
         'pycolmap',
         'lightglue @ git+https://github.com/jytime/LightGlue.git#egg=lightglue',
-    ]
+        # mapanything and its dependencies
+        f'mapanything @ {MAP_ANYTHING_REPO}',
+    ],
+    extras_require={
+        'dust3r': [f'mapanything[dust3r] @ {MAP_ANYTHING_REPO}'],
+        'mast3r': [f'mapanything[mast3r] @ {MAP_ANYTHING_REPO}'],
+        'pi3': [f'mapanything[pi3] @ {MAP_ANYTHING_REPO}'],
+        'pow3r': [f'mapanything[pow3r] @ {MAP_ANYTHING_REPO}'],
+        'anycalib': [f'mapanything[anycalib] @ {MAP_ANYTHING_REPO}'],
+        'must3r': [f'mapanything[must3r] @ {MAP_ANYTHING_REPO}'],
+        'depth-anything-3': [f'mapanything[depth-anything-3] @ {MAP_ANYTHING_REPO}'],
+        'all': [f'mapanything[all] @ {MAP_ANYTHING_REPO}'],
+    },
 )
 
 os.remove("submodules/dust3r/dust3r/dust3r/__init__.py")  # ugly workaround for ugly MAST3R import
