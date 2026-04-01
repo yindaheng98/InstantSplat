@@ -6,9 +6,9 @@ from instantsplat.initializer import *
 default_image_folder = {
     "dust3r": "images",
     "mast3r": "images",
-    "vggt": "images",
     "mapanything": "images",
     "mapanything-external": "images",
+    "vggt": "images",
     "vggt-colmap-sparse": "input",
     "vggt-colmap-dense": "input",
     "colmap-sparse": "input",
@@ -16,6 +16,8 @@ default_image_folder = {
     "dust3r-align-colmap": "input",
     "nodepth-dust3r": "images",
     "nodepth-mast3r": "images",
+    "nodepth-mapanything": "images",
+    "nodepth-mapanything-external": "images",
     "nodepth-vggt": "images",
     "nodepth-vggt-colmap-sparse": "input",
     "nodepth-vggt-colmap-dense": "input",
@@ -43,8 +45,12 @@ def initialize(initializer, directory, configs, device, scale=1.0):
         case "nodepth-vggt":
             initializer = VGGTInitializer(**configs).to(device)
         case "mapanything":
+            initializer = DepthAnythingV2MapAnythingInitializer(**configs).to(device)
+        case "nodepth-mapanything":
             initializer = MapAnythingInitializer(**configs).to(device)
         case "mapanything-external":
+            initializer = DepthAnythingV2MapAnythingExternalInitializer(**configs).to(device)
+        case "nodepth-mapanything-external":
             initializer = MapAnythingExternalInitializer(**configs).to(device)
         case "vggt-colmap-sparse":
             initializer = DepthAnythingV2VGGTColmapSparseInitializer(destination=directory, **configs).to(device)
