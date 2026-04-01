@@ -77,13 +77,11 @@ class VGGTInitializer(AbstractInitializer):
         vggt_fixed_resolution: int = 518,
         img_load_resolution: int = 1024,
         conf_thres_value: float = 5.0,
-        max_points: int = 100000,
         scene_scale: float = 1.0,
     ):
         self.vggt_fixed_resolution = vggt_fixed_resolution
         self.img_load_resolution = img_load_resolution
         self.conf_thres_value = conf_thres_value
-        self.max_points = max_points
         self.scene_scale = scene_scale
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -129,7 +127,6 @@ class VGGTInitializer(AbstractInitializer):
             dst_resolution=vggt_fixed_resolution,
         )
         conf_mask = np.logical_and(conf_mask, valid_area_mask)
-        conf_mask = randomly_limit_trues(conf_mask, self.max_points)
         torch.cuda.empty_cache()
 
         cameras = []
