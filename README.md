@@ -11,6 +11,7 @@ Initialization methods:
 - [x] COLMAP Dense reconstruct (use `patch_match_stereo`, `stereo_fusion`, `poisson_mesher` and `delaunay_mesher` in COLMAP to reconstruct dense point cloud for initialization)
 - [x] Masking of keypoints during COLMAP feature extraction (just put your mask into `mask` folder, e.g. for an image `data/xxx/input/012.jpg`, the mask would be `data/xxx/input_mask/012.jpg.png`)
 - [x] VGGT and VGGT + Colmap Bundle Adjustment according to [`facebookresearch/vggt/demo_colmap.py`](https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py)
+- [x] Map-Anything and Map-Anything with external pose/depth priors
 
 ## Prerequisites
 
@@ -22,7 +23,7 @@ Install a colmap executable, e.g. using conda:
 conda install conda-forge::colmap
 ```
 
-(Optional) Install `xformers` for faster depth anything:
+(Optional) Install `xformers` for faster Depth-Anything V2 inference:
 ```shell
 pip install xformers
 ```
@@ -87,8 +88,14 @@ rm -rf /tmp/map-anything-configs
 # Option 1: init and train in one command
 python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --init dust3r
 # Option 2: init and train in two separate commands
-python -m instantsplat.train -i dust3r -d data/sora/santorini/3_views -i dust3r # init coarse point and save as a Colmap workspace at data/sora/santorini/3_views
+python -m instantsplat.initialize -d data/sora/santorini/3_views -i dust3r # init coarse point and save as a Colmap workspace at data/sora/santorini/3_views
 python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 # train
+```
+
+To enable the optional auto-scaled Depth-Anything V2 wrapper for any initializer, add `--with_depth_anything`:
+```shell
+python -m instantsplat.initialize -d data/sora/santorini/3_views -i vggt --with_depth_anything
+python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --init mapanything --with_depth_anything
 ```
 
 2. Render it

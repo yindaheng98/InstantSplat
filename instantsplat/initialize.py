@@ -2,6 +2,7 @@ import os
 import shutil
 
 from instantsplat.initializer import *
+from instantsplat.initializer.depth import AutoScaleDepthAnythingV2InitializerWrapper
 
 default_image_folder = {
     "dust3r": "images",
@@ -14,66 +15,40 @@ default_image_folder = {
     "colmap-sparse": "input",
     "colmap-dense": "input",
     "dust3r-align-colmap": "input",
-    "nodepth-dust3r": "images",
-    "nodepth-mast3r": "images",
-    "nodepth-mapanything": "images",
-    "nodepth-mapanything-external": "images",
-    "nodepth-vggt": "images",
-    "nodepth-vggt-colmap-sparse": "input",
-    "nodepth-vggt-colmap-dense": "input",
-    "nodepth-colmap-sparse": "input",
-    "nodepth-colmap-dense": "input",
-    "nodepth-dust3r-align-colmap": "input",
 }
 
 
-def initialize(initializer, directory, configs, device, scale=1.0):
+def initialize(initializer, directory, configs, device, scale=1.0, with_depth_anything=False):
     image_folder = os.path.join(directory, default_image_folder[initializer])
     image_path_list = [os.path.join(image_folder, file) for file in sorted(os.listdir(image_folder))]
     def convert_image_path(image_path): return os.path.join(os.path.dirname(os.path.dirname(image_path)), "images", os.path.basename(image_path))
     match initializer:
         case "dust3r":
-            initializer = DepthAnythingV2Dust3rInitializer(**configs).to(device)
-        case "nodepth-dust3r":
-            initializer = Dust3rInitializer(**configs).to(device)
+            constructor = Dust3rInitializer
         case "mast3r":
-            initializer = DepthAnythingV2Mast3rInitializer(**configs).to(device)
-        case "nodepth-mast3r":
-            initializer = Mast3rInitializer(**configs).to(device)
+            constructor = Mast3rInitializer
         case "vggt":
-            initializer = DepthAnythingV2VGGTInitializer(**configs).to(device)
-        case "nodepth-vggt":
-            initializer = VGGTInitializer(**configs).to(device)
+            constructor = VGGTInitializer
         case "mapanything":
-            initializer = DepthAnythingV2MapAnythingInitializer(**configs).to(device)
-        case "nodepth-mapanything":
-            initializer = MapAnythingInitializer(**configs).to(device)
+            constructor = MapAnythingInitializer
         case "mapanything-external":
-            initializer = DepthAnythingV2MapAnythingExternalInitializer(**configs).to(device)
-        case "nodepth-mapanything-external":
-            initializer = MapAnythingExternalInitializer(**configs).to(device)
+            constructor = MapAnythingExternalInitializer
         case "vggt-colmap-sparse":
-            initializer = DepthAnythingV2VGGTColmapSparseInitializer(destination=directory, **configs).to(device)
-        case "nodepth-vggt-colmap-sparse":
-            initializer = VGGTColmapSparseInitializer(destination=directory, **configs).to(device)
+            constructor = lambda **configs: VGGTColmapSparseInitializer(destination=directory, **configs)
         case "vggt-colmap-dense":
-            initializer = DepthAnythingV2VGGTColmapDenseInitializer(destination=directory, **configs).to(device)
-        case "nodepth-vggt-colmap-dense":
-            initializer = VGGTColmapDenseInitializer(destination=directory, **configs).to(device)
+            constructor = lambda **configs: VGGTColmapDenseInitializer(destination=directory, **configs)
         case "colmap-sparse":
-            initializer = DepthAnythingV2ColmapSparseInitializer(destination=directory, **configs).to(device)
-        case "nodepth-colmap-sparse":
-            initializer = ColmapSparseInitializer(destination=directory, **configs).to(device)
+            constructor = lambda **configs: ColmapSparseInitializer(destination=directory, **configs)
         case "colmap-dense":
-            initializer = DepthAnythingV2ColmapDenseInitializer(destination=directory, **configs).to(device)
-        case "nodepth-colmap-dense":
-            initializer = ColmapDenseInitializer(destination=directory, **configs).to(device)
+            constructor = lambda **configs: ColmapDenseInitializer(destination=directory, **configs)
         case "dust3r-align-colmap":
-            initializer = DepthAnythingV2Dust3rAlign2ColmapDenseInitializer(destination=directory, convert_image_path=convert_image_path, **configs).to(device)
-        case "nodepth-dust3r-align-colmap":
-            initializer = Dust3rAlign2ColmapDenseInitializer(destination=directory, convert_image_path=convert_image_path, **configs).to(device)
+            constructor = lambda **configs: Dust3rAlign2ColmapDenseInitializer(destination=directory, convert_image_path=convert_image_path, **configs)
         case _:
             raise ValueError(f"Unknown initializer {initializer}")
+    if with_depth_anything:
+        base_constructor = constructor
+        constructor = lambda *args, **configs: AutoScaleDepthAnythingV2InitializerWrapper(base_constructor, *args, **configs)
+    initializer = constructor(**configs).to(device)
     initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
     initialized_point_cloud = initialized_point_cloud._replace(points=initialized_point_cloud.points*scale)
     initialized_cameras = [camera._replace(T=camera.T*scale) for camera in initialized_cameras]
@@ -87,11 +62,12 @@ if __name__ == '__main__':
     parser.add_argument("-d", "--directory", required=True, type=str)
     parser.add_argument("--scale", default=1.0, type=float)
     parser.add_argument("--device", default="cuda", type=str)
+    parser.add_argument("--with_depth_anything", action="store_true", default=False)
     parser.add_argument("-o", "--option", default=[], action='append', type=str)
 
     args = parser.parse_args()
     configs = {o.split("=", 1)[0]: eval(o.split("=", 1)[1]) for o in args.option}
-    initialized_cameras, initialized_point_cloud = initialize(args.initializer, args.directory, configs, args.device, scale=args.scale)
+    initialized_cameras, initialized_point_cloud = initialize(args.initializer, args.directory, configs, args.device, scale=args.scale, with_depth_anything=args.with_depth_anything)
     dataset = InitializedCameraDataset(initialized_cameras)
 
     shutil.rmtree(os.path.join(args.directory, "sparse/0"), ignore_errors=True)

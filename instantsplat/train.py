@@ -27,10 +27,14 @@ def prepare_training(
         sh_degree: int, source: str, destination: str, device: str, mode: str, load_ply: str = None, load_camera: str = None,
         load_mask=True, load_depth=True, backend="inria",
         with_scale_reg=False, configs={},
-        init=None, init_configs={}, init_scale=1.0) -> Tuple[CameraDataset, GaussianModel, AbstractTrainer]:
+        init=None, init_configs={}, init_scale=1.0,
+        with_depth_anything=False) -> Tuple[CameraDataset, GaussianModel, AbstractTrainer]:
     gaussians = get_gaussian_model_class(backend, trainable_camera=True)(sh_degree).to(device)
     if init:  # initialize
-        initialized_cameras, initialized_point_cloud = initialize(initializer=init, directory=source, configs=init_configs, device=device, scale=init_scale)
+        initialized_cameras, initialized_point_cloud = initialize(
+            initializer=init, directory=source, configs=init_configs,  device=device, scale=init_scale,
+            with_depth_anything=with_depth_anything,
+        )
         dataset = TrainableInitializedCameraDataset(initialized_cameras).to(device)
         gaussians.create_from_pcd(initialized_point_cloud.points, initialized_point_cloud.colors)
         if os.path.exists(os.path.join(destination, "input.ply")):
@@ -74,6 +78,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", default="cuda", type=str)
     parser.add_argument("-o", "--option", default=[], action='append', type=str)
     parser.add_argument("--init", choices=list(default_image_folder.keys()), default=None, type=str)
+    parser.add_argument("--with_depth_anything", action="store_true")
     parser.add_argument("--init_option", default=[], action='append', type=str)
     parser.add_argument("--init_scale", default=1.0, type=float)
     args = parser.parse_args()
@@ -87,7 +92,8 @@ if __name__ == "__main__":
         load_ply=args.load_ply, load_camera=args.load_camera,
         load_mask=not args.no_image_mask, load_depth=not args.no_depth_data, backend=args.backend,
         with_scale_reg=args.with_scale_reg, configs=configs,
-        init=args.init, init_configs=init_configs, init_scale=args.init_scale)
+        init=args.init, init_configs=init_configs, init_scale=args.init_scale,
+        with_depth_anything=args.with_depth_anything)
     dataset.save_cameras(os.path.join(args.destination, "cameras.json"))
     training(
         dataset=dataset, gaussians=gaussians, trainer=trainer,
