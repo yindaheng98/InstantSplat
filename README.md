@@ -74,18 +74,10 @@ wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/Pow3R/
 
 Configs for `map-anything`:
 ```sh
-wget -P configs/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/anycalib.yaml
-wget -P configs/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/da3.yaml
-wget -P configs/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/dust3r.yaml
-wget -P configs/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/mast3r.yaml
-wget -P configs/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/moge_1.yaml
-wget -P configs/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/moge_2.yaml
-wget -P configs/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/must3r.yaml
-wget -P configs/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pi3.yaml
-wget -P configs/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pi3x.yaml
-wget -P configs/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pow3r.yaml
-wget -P configs/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pow3r_ba.yaml
-wget -P configs/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/vggt_commercial.yaml
+git clone --depth 1 --filter=blob:none --sparse https://github.com/facebookresearch/map-anything.git /tmp/map-anything-configs
+git -C /tmp/map-anything-configs sparse-checkout set configs
+cp -r /tmp/map-anything-configs/configs ./
+rm -rf /tmp/map-anything-configs
 ```
 
 ## Running
