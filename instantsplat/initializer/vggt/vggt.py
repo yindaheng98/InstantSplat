@@ -12,6 +12,8 @@ from vggt.utils.helper import randomly_limit_trues
 
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 
+from .save_depth import save_vggt_depth
+
 
 def focal2fov(focal, pixels):
     return 2 * math.atan(pixels / (2 * focal))
@@ -77,11 +79,13 @@ class VGGTInitializer(AbstractInitializer):
         vggt_fixed_resolution: int = 518,
         img_load_resolution: int = 1024,
         conf_thres_value: float = 5.0,
+        save_depth: bool = True,
         scene_scale: float = 1.0,
     ):
         self.vggt_fixed_resolution = vggt_fixed_resolution
         self.img_load_resolution = img_load_resolution
         self.conf_thres_value = conf_thres_value
+        self.save_depth = save_depth
         self.scene_scale = scene_scale
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -138,6 +142,20 @@ class VGGTInitializer(AbstractInitializer):
             fx_orig = intrinsic[i][0, 0] * resize_ratio
             fy_orig = intrinsic[i][1, 1] * resize_ratio
 
+            saved_depth_path = None
+            if self.save_depth:
+                saved_depth_path = save_vggt_depth(
+                    image_path=image_path_list[i],
+                    depth=torch.from_numpy(depth_map[i]).squeeze(-1),
+                    conf=torch.from_numpy(depth_conf[i]),
+                    original_coord=original_coords[i],
+                    src_resolution=self.img_load_resolution,
+                    dst_resolution=vggt_fixed_resolution,
+                    original_height=int(orig_h),
+                    original_width=int(orig_w),
+                    conf_threshold=self.conf_thres_value,
+                )
+
             cameras.append(
                 InitializingCamera(
                     image_width=int(orig_w),
@@ -147,6 +165,7 @@ class VGGTInitializer(AbstractInitializer):
                     R=torch.from_numpy(extrinsic[i][:3, :3]).float().to(device),
                     T=torch.from_numpy(extrinsic[i][:3, 3]).float().to(device) * self.scene_scale,
                     image_path=image_path_list[i],
+                    depth_path=saved_depth_path,
                 )
             )
 
