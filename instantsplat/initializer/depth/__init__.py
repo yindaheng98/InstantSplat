@@ -1,4 +1,4 @@
-from .abc import DepthInitializerWrapper
+from .abc import DepthInitializerWrapper, save_depth
 from .depth_anything_v2 import DepthAnythingV2InitializerWrapper
 from .autoscale import AutoScaleDepthInitializerWrapper
 from .combinations import AutoScaleDepthAnythingV2InitializerWrapper
