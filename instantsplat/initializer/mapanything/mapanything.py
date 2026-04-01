@@ -2,12 +2,14 @@ import math
 from typing import List, Tuple
 
 import torch
+import torch.nn.functional as F
 from PIL import Image, ImageOps
 from mapanything.models import MapAnything
 from mapanything.utils.colmap_export import closed_form_pose_inverse
 from mapanything.utils.image import load_images
 
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
+from instantsplat.initializer.depth import save_depth
 
 
 def focal2fov(focal, pixels):
@@ -27,6 +29,48 @@ def recover_original_intrinsics(intrinsics, original_width, original_height, tar
     original_intrinsics[0, :3] /= resize_scale
     original_intrinsics[1, :3] /= resize_scale
     return original_intrinsics
+
+
+def interpolate_dense_output(tensor: torch.Tensor, height: int, width: int, mode: str) -> torch.Tensor:
+    if tensor.ndim == 2:
+        tensor = tensor[None, None]
+    elif tensor.ndim == 3:
+        tensor = tensor.permute(2, 0, 1)[None]
+    else:
+        raise ValueError(f"Unsupported tensor shape for interpolation: {tuple(tensor.shape)}")
+
+    if mode == "nearest":
+        tensor = F.interpolate(tensor.float(), size=(height, width), mode=mode)
+    else:
+        tensor = F.interpolate(tensor.float(), size=(height, width), mode=mode, align_corners=False)
+
+    tensor = tensor[0]
+    if tensor.shape[0] == 1:
+        return tensor[0]
+    return tensor.permute(1, 2, 0)
+
+
+def save_resized_depth(
+    image_path: str,
+    depth: torch.Tensor,
+    mask: torch.Tensor,
+    conf: torch.Tensor,
+    original_height: int,
+    original_width: int,
+    save_conf_threshold: float,
+) -> str:
+    original_depth = interpolate_dense_output(depth, original_height, original_width, mode="bilinear")
+
+    save_mask = torch.ones_like(original_depth, dtype=original_depth.dtype)
+    if mask is not None:
+        save_mask = interpolate_dense_output(mask.float(), original_height, original_width, mode="nearest") > 0.5
+        save_mask = save_mask.float()
+
+    if conf is not None:
+        original_conf = interpolate_dense_output(conf, original_height, original_width, mode="bilinear")
+        save_mask = save_mask * original_conf.clamp(min=0.0, max=save_conf_threshold) / max(float(save_conf_threshold), 1e-8)
+
+    return save_depth(image_path=image_path, depth=original_depth, mask=save_mask)
 
 
 class MapAnythingInitializer(AbstractInitializer):
@@ -55,8 +99,12 @@ class MapAnythingInitializer(AbstractInitializer):
         multiview_conf_depth_abs_thresh: float = 0.02,
         multiview_conf_depth_rel_thresh: float = 0.02,
         ################################################################
+        save_depth: bool = True,
+        save_conf_threshold: float = 1.0,
         scene_scale: float = 1.0,
     ):
+        self.save_depth = save_depth
+        self.save_conf_threshold = save_conf_threshold
         self.scene_scale = scene_scale
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -129,6 +177,18 @@ class MapAnythingInitializer(AbstractInitializer):
                 target_height=target_height,
             )
 
+            saved_depth_path = None
+            if self.save_depth:
+                saved_depth_path = save_resized_depth(
+                    image_path=image_path,
+                    depth=depth_z,
+                    mask=mask,
+                    conf=output["conf"][0].detach() if "conf" in output else None,
+                    original_height=original_height,
+                    original_width=original_width,
+                    save_conf_threshold=self.save_conf_threshold,
+                )
+
             cameras.append(
                 InitializingCamera(
                     image_width=original_width,
@@ -138,6 +198,7 @@ class MapAnythingInitializer(AbstractInitializer):
                     R=world2cam[:3, :3].float(),
                     T=world2cam[:3, 3].float() * self.scene_scale,
                     image_path=image_path,
+                    depth_path=saved_depth_path,
                 )
             )
 

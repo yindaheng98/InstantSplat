@@ -15,7 +15,7 @@ from instantsplat.initializer.abc import (
     InitializingCamera,
 )
 
-from .mapanything import focal2fov, recover_original_intrinsics
+from .mapanything import focal2fov, recover_original_intrinsics, save_resized_depth
 
 # https://github.com/facebookresearch/map-anything/blob/main/scripts/profile_memory_runtime.py#L203-L219
 MODEL_CONFIG = {
@@ -91,6 +91,8 @@ class MapAnythingExternalInitializer(AbstractInitializer):
         multiview_conf_depth_abs_thresh: float = 0.02,
         multiview_conf_depth_rel_thresh: float = 0.02,
         ################################################################
+        save_depths: bool = True,
+        save_conf_threshold: float = 1.0,
         scene_scale: float = 1.0,
     ):
         if model_name not in MODEL_CONFIG:
@@ -106,6 +108,8 @@ class MapAnythingExternalInitializer(AbstractInitializer):
         self.resolution_set = int(defaults["resolution_set"])
         self.use_amp = use_amp
         self.amp_dtype = amp_dtype
+        self.save_depths = save_depths
+        self.save_conf_threshold = save_conf_threshold
         self.scene_scale = scene_scale
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -213,6 +217,18 @@ class MapAnythingExternalInitializer(AbstractInitializer):
                 target_height=target_height,
             )
 
+            saved_depth_path = None
+            if self.save_depths:
+                saved_depth_path = save_resized_depth(
+                    image_path=image_path,
+                    depth=depth_z,
+                    mask=output["mask"][0].squeeze(-1).detach() if "mask" in output else None,
+                    conf=output["conf"][0].detach() if "conf" in output else None,
+                    original_height=original_height,
+                    original_width=original_width,
+                    save_conf_threshold=self.save_conf_threshold,
+                )
+
             cameras.append(
                 InitializingCamera(
                     image_width=original_width,
@@ -222,6 +238,7 @@ class MapAnythingExternalInitializer(AbstractInitializer):
                     R=world2cam[:3, :3].float(),
                     T=world2cam[:3, 3].float() * self.scene_scale,
                     image_path=image_path,
+                    depth_path=saved_depth_path,
                 )
             )
 
