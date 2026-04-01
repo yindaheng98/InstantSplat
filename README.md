@@ -68,21 +68,24 @@ wget -P checkpoints/ https://huggingface.co/depth-anything/Depth-Anything-V2-Sma
 wget -P checkpoints/ https://huggingface.co/depth-anything/Depth-Anything-V2-Base/resolve/main/depth_anything_v2_vitb.pth
 wget -P checkpoints/ https://huggingface.co/depth-anything/Depth-Anything-V2-Large/resolve/main/depth_anything_v2_vitl.pth
 wget -P checkpoints/ https://huggingface.co/facebook/VGGT-1B-Commercial/resolve/main/vggt_1B_commercial.pt --header="Authorization: Bearer $HF_TOKEN"
+wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/MUSt3R/MUSt3R_512.pth
+wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/Pow3R/Pow3R_ViTLarge_BaseDecoder_512_linear.pth
 ```
 
 Configs for `map-anything`:
 ```sh
-wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/anycalib.yaml
-wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/da3.yaml
-wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/dust3r.yaml
-wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/mast3r.yaml
-wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/moge.yaml
-wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/must3r.yaml
-wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pi3.yaml
-wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pi3x.yaml
-wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pow3r.yaml
-wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pow3r_ba.yaml
-wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/vggt.yaml
+wget -P checkpoints/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/anycalib.yaml
+wget -P checkpoints/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/da3.yaml
+wget -P checkpoints/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/dust3r.yaml
+wget -P checkpoints/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/mast3r.yaml
+wget -P checkpoints/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/moge_1.yaml
+wget -P checkpoints/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/moge_2.yaml
+wget -P checkpoints/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/must3r.yaml
+wget -P checkpoints/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pi3.yaml
+wget -P checkpoints/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pi3x.yaml
+wget -P checkpoints/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pow3r.yaml
+wget -P checkpoints/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pow3r_ba.yaml
+wget -P checkpoints/ https://raw.githubusercontent.com/facebookresearch/map-anything/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/vggt_commercial.yaml
 ```
 
 ## Running
