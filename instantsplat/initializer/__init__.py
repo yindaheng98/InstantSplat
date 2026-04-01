@@ -2,7 +2,7 @@ from .abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 from .dataset import InitializedCameraDataset, TrainableCameraDataset, TrainableInitializedCameraDataset
 from .dust3r import Dust3rInitializer, Mast3rInitializer
 from .vggt import VGGTInitializer, VGGTColmapSparseInitializer, VGGTColmapDenseInitializer
-from .mapanything import MapAnythingInitializer
+from .mapanything import MapAnythingInitializer, MapAnythingExternalInitializer
 from .colmap import ColmapSparseInitializer, ColmapDenseInitializer
 from .depth import DepthInitializerWrapper, DepthAnythingV2InitializerWrapper
 from .combinations import Dust3rAlign2ColmapDenseInitializer

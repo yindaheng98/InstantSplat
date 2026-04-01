@@ -8,6 +8,7 @@ default_image_folder = {
     "mast3r": "images",
     "vggt": "images",
     "mapanything": "images",
+    "mapanything-external": "images",
     "vggt-colmap-sparse": "input",
     "vggt-colmap-dense": "input",
     "colmap-sparse": "input",
@@ -43,6 +44,8 @@ def initialize(initializer, directory, configs, device, scale=1.0):
             initializer = VGGTInitializer(**configs).to(device)
         case "mapanything":
             initializer = MapAnythingInitializer(**configs).to(device)
+        case "mapanything-external":
+            initializer = MapAnythingExternalInitializer(**configs).to(device)
         case "vggt-colmap-sparse":
             initializer = DepthAnythingV2VGGTColmapSparseInitializer(destination=directory, **configs).to(device)
         case "nodepth-vggt-colmap-sparse":
