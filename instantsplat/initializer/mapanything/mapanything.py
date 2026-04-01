@@ -1,8 +1,8 @@
 import math
 from typing import List, Tuple
 
-import numpy as np
 import torch
+from PIL import Image, ImageOps
 from mapanything.models import MapAnything
 from mapanything.utils.colmap_export import closed_form_pose_inverse
 from mapanything.utils.image import load_images
@@ -12,6 +12,21 @@ from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera
 
 def focal2fov(focal, pixels):
     return 2 * math.atan(pixels / (2 * focal))
+
+
+def recover_original_intrinsics(intrinsics, original_width, original_height, target_width, target_height):
+    resize_scale = max(target_width / original_width, target_height / original_height) + 1e-8
+    resized_width = math.floor(original_width * resize_scale)
+    resized_height = math.floor(original_height * resize_scale)
+    crop_left = (resized_width - target_width) // 2
+    crop_top = (resized_height - target_height) // 2
+
+    original_intrinsics = intrinsics.clone()
+    original_intrinsics[0, 2] += crop_left
+    original_intrinsics[1, 2] += crop_top
+    original_intrinsics[0, :3] /= resize_scale
+    original_intrinsics[1, :3] /= resize_scale
+    return original_intrinsics
 
 
 class MapAnythingInitializer(AbstractInitializer):
@@ -78,6 +93,11 @@ class MapAnythingInitializer(AbstractInitializer):
 
     def __call__(self, image_path_list: List[str]) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
         views = load_images(image_path_list, norm_type="dinov2")
+        target_height, target_width = map(int, views[0]["true_shape"][0])
+        original_sizes = []
+        for image_path in image_path_list:
+            with Image.open(image_path) as image:
+                original_sizes.append(ImageOps.exif_transpose(image).size)
 
         with torch.no_grad():
             outputs = self.model.infer(views, **self.infer_parameters)
@@ -86,7 +106,7 @@ class MapAnythingInitializer(AbstractInitializer):
         all_colors = []
         cameras = []
 
-        for output, image_path in zip(outputs, image_path_list):
+        for output, image_path, (original_width, original_height) in zip(outputs, image_path_list, original_sizes):
             depth_z = output["depth_z"][0].squeeze(-1).detach()
             mask = output["mask"][0].squeeze(-1).detach().type(torch.bool)
             valid_mask = mask & (depth_z > 0)
@@ -101,15 +121,20 @@ class MapAnythingInitializer(AbstractInitializer):
             intrinsics = output["intrinsics"][0].detach()
             cam2world = output["camera_poses"][0].detach()
             world2cam = closed_form_pose_inverse(cam2world[None])[0]
-
-            image_height, image_width = img_uint8.shape[:2]
+            original_intrinsics = recover_original_intrinsics(
+                intrinsics,
+                original_width=original_width,
+                original_height=original_height,
+                target_width=target_width,
+                target_height=target_height,
+            )
 
             cameras.append(
                 InitializingCamera(
-                    image_width=image_width,
-                    image_height=image_height,
-                    FoVx=focal2fov(intrinsics[0, 0].item(), image_width),
-                    FoVy=focal2fov(intrinsics[1, 1].item(), image_height),
+                    image_width=original_width,
+                    image_height=original_height,
+                    FoVx=focal2fov(original_intrinsics[0, 0].item(), original_width),
+                    FoVy=focal2fov(original_intrinsics[1, 1].item(), original_height),
                     R=world2cam[:3, :3].float(),
                     T=world2cam[:3, 3].float() * self.scene_scale,
                     image_path=image_path,
