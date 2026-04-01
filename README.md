@@ -70,6 +70,21 @@ wget -P checkpoints/ https://huggingface.co/depth-anything/Depth-Anything-V2-Lar
 wget -P checkpoints/ https://huggingface.co/facebook/VGGT-1B-Commercial/resolve/main/vggt_1B_commercial.pt --header="Authorization: Bearer $HF_TOKEN"
 ```
 
+Configs for `map-anything`:
+```sh
+wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/anycalib.yaml
+wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/da3.yaml
+wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/dust3r.yaml
+wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/mast3r.yaml
+wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/moge.yaml
+wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/must3r.yaml
+wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pi3.yaml
+wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pi3x.yaml
+wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pow3r.yaml
+wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/pow3r_ba.yaml
+wget -P checkpoints/ https://github.com/facebookresearch/map-anything/blob/f7ebafb4d8349776705aaa686cf928988d1bd7f4/configs/model/vggt.yaml
+```
+
 ## Running
 
 1. Initialize coarse point cloud and jointly train 3DGS & cameras
