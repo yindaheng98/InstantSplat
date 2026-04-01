@@ -7,8 +7,8 @@ from instantsplat.initializer.colmap.dense import ColmapDenseInitializer
 from vggt.models.vggt import VGGT
 from vggt.utils.load_fn import load_and_preprocess_images_square
 from vggt.utils.geometry import unproject_depth_map_to_point_map
-from vggt.dependency.track_predict import predict_tracks
 
+from .utils import predict_tracks
 from .vggt import run_VGGT
 from .np_to_colmap import batch_np_matrix_to_colmap
 

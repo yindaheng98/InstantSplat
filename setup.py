@@ -49,7 +49,7 @@ MAP_ANYTHING_REPO = "git+https://github.com/facebookresearch/map-anything.git@ma
 
 setup(
     name="instantsplat",
-    version='1.13.0',
+    version='1.13.1',
     author='yindaheng98',
     author_email='yindaheng98@gmail.com',
     url='https://github.com/yindaheng98/instantsplat',
@@ -88,7 +88,6 @@ setup(
         'scikit-learn',
         # VGGT and its dependencies
         'vggt @ git+https://github.com/facebookresearch/vggt.git',
-        'pycolmap',
         'lightglue @ git+https://github.com/jytime/LightGlue.git#egg=lightglue',
         # mapanything and its dependencies
         f'mapanything @ {MAP_ANYTHING_REPO}',
