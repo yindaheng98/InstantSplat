@@ -1,0 +1,1 @@
+from .mapanything import MapAnythingInitializer
