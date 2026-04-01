@@ -1,8 +1,10 @@
+import os
 from typing import List, Tuple
 
+import hydra
 import torch
 from PIL import Image, ImageOps
-from mapanything.models import init_model_from_config
+from mapanything.models import init_model
 from mapanything.utils.colmap_export import closed_form_pose_inverse
 from mapanything.utils.image import load_images
 from mapanything.utils.inference import postprocess_model_outputs_for_inference
@@ -30,12 +32,50 @@ MODEL_CONFIG = {
     "vggt": {"norm_type": "identity", "resolution_set": 518},
 }
 
+LOCAL_MODEL_CONFIG_NAME = {
+    "moge": "moge_2",
+    "vggt": "vggt_commercial",
+}
+
+
+def init_model_from_config(
+    model_name: str,
+    device: str,
+    machine: str = "default",
+    configs_dir: str = "./configs",
+    checkpoints_dir: str = "./checkpoints",
+):
+    configs_dir = os.path.abspath(configs_dir)
+    checkpoints_dir = os.path.abspath(checkpoints_dir)
+    config_name = LOCAL_MODEL_CONFIG_NAME.get(model_name, model_name)
+    config_path = os.path.join(configs_dir, "model", f"{config_name}.yaml")
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Model config not found: {config_path}")
+
+    hydra.core.global_hydra.GlobalHydra.instance().clear()
+    hydra.initialize_config_dir(version_base=None, config_dir=configs_dir)
+    config = hydra.compose(
+        config_name="train",
+        overrides=[f"model={config_name}", f"machine={machine}"],
+    )
+    config.machine.root_pretrained_checkpoints_dir = checkpoints_dir
+    config.machine.root_uniception_pretrained_checkpoints_dir = checkpoints_dir
+
+    model = init_model(
+        model_str=config.model.model_str,
+        model_config=config.model.model_config,
+        torch_hub_force_reload=False,
+    )
+    return model.to(device)
+
 
 class MapAnythingExternalInitializer(AbstractInitializer):
     def __init__(
         self,
         model_name: str = "vggt",
         machine: str = "default",
+        configs_dir: str = "./configs",
+        checkpoints_dir: str = "./checkpoints",
         use_amp: bool = True,
         amp_dtype: str = "bf16",
         ################################################################
@@ -73,6 +113,8 @@ class MapAnythingExternalInitializer(AbstractInitializer):
             model_name=self.model_name,
             device=str(self.device),
             machine=machine,
+            configs_dir=configs_dir,
+            checkpoints_dir=checkpoints_dir,
         )
         self.model.eval()
 
