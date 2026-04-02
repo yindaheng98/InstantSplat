@@ -98,6 +98,17 @@ python -m instantsplat.initialize -d data/sora/santorini/3_views -i vggt --with_
 python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --init mapanything --with_depth_anything
 ```
 
+Depth format note:
+- `Depth-Anything V2` saves inverse depth (`1 / depth`), which matches the default depth supervision used by 3DGS.
+- The native depth saved by `mapanything`, `mapanything-external`, and `vggt` is regular depth, not inverse depth.
+- When training from those native depth maps without `--with_depth_anything`, add `-o depth_ground_truth_is_inversed=False`.
+
+Example:
+```shell
+python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --init vggt -o depth_ground_truth_is_inversed=False
+python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --init mapanything-external -o depth_ground_truth_is_inversed=False
+```
+
 2. Render it
 ```shell
 python -m gaussian_splatting.render -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --load_camera output/sora/santorini/3_views/cameras.json
