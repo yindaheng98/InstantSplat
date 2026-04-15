@@ -137,12 +137,7 @@ class MapAnythingExternalInitializer(AbstractInitializer):
         self.model = self.model.to(self.device)
         return self
 
-    def __call__(
-        self, image_path_list: List[str]
-    ) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
-        views, original_sizes = load_views(image_path_list, self.device, norm_type=self.norm_type, resolution_set=self.resolution_set)
-        target_height, target_width = map(int, views[0]["true_shape"][0])
-
+    def infer(self, views):
         with torch.no_grad():
             if self.use_amp and self.device.type == "cuda" and self.amp_dtype != "fp32":
                 with torch.autocast(
@@ -161,6 +156,14 @@ class MapAnythingExternalInitializer(AbstractInitializer):
             views,
             **self.postprocess_parameters,
         )
+        return outputs
+
+    def __call__(
+        self, image_path_list: List[str]
+    ) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
+        views, original_sizes = load_views(image_path_list, self.device, norm_type=self.norm_type, resolution_set=self.resolution_set)
+        target_height, target_width = map(int, views[0]["true_shape"][0])
+        outputs = self.infer(views)
 
         all_points = []
         all_colors = []
