@@ -3,10 +3,8 @@ from typing import List, Tuple
 
 import hydra
 import torch
-from PIL import Image, ImageOps
 from mapanything.models import init_model
 from mapanything.utils.colmap_export import closed_form_pose_inverse
-from mapanything.utils.image import load_images
 from mapanything.utils.inference import postprocess_model_outputs_for_inference
 
 from instantsplat.initializer.abc import (
@@ -15,7 +13,7 @@ from instantsplat.initializer.abc import (
     InitializingCamera,
 )
 
-from .mapanything import focal2fov, recover_original_intrinsics, save_resized_depth
+from .mapanything import focal2fov, load_views, recover_original_intrinsics, save_resized_depth
 
 # https://github.com/facebookresearch/map-anything/blob/main/scripts/profile_memory_runtime.py#L203-L219
 MODEL_CONFIG = {
@@ -142,17 +140,8 @@ class MapAnythingExternalInitializer(AbstractInitializer):
     def __call__(
         self, image_path_list: List[str]
     ) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
-        views = load_images(image_path_list, norm_type=self.norm_type, resolution_set=self.resolution_set)
+        views, original_sizes = load_views(image_path_list, self.device, norm_type=self.norm_type, resolution_set=self.resolution_set)
         target_height, target_width = map(int, views[0]["true_shape"][0])
-        original_sizes = []
-
-        for view, image_path in zip(views, image_path_list):
-            for key, value in list(view.items()):
-                if torch.is_tensor(value):
-                    view[key] = value.to(self.device)
-
-            with Image.open(image_path) as image:
-                original_sizes.append(ImageOps.exif_transpose(image).size)
 
         with torch.no_grad():
             if self.use_amp and self.device.type == "cuda" and self.amp_dtype != "fp32":

@@ -73,6 +73,21 @@ def save_resized_depth(
     return save_depth(image_path=image_path, depth=original_depth, mask=save_mask)
 
 
+def load_views(image_path_list: List[str], device: torch.device, *args, **kwargs):
+    views = load_images(image_path_list, *args, **kwargs)
+    original_sizes = []
+
+    for view, image_path in zip(views, image_path_list):
+        for key, value in list(view.items()):
+            if torch.is_tensor(value):
+                view[key] = value.to(device)
+
+        with Image.open(image_path) as image:
+            original_sizes.append(ImageOps.exif_transpose(image).size)
+
+    return views, original_sizes
+
+
 class MapAnythingInitializer(AbstractInitializer):
     def __init__(
         self,
@@ -140,12 +155,8 @@ class MapAnythingInitializer(AbstractInitializer):
         return self
 
     def __call__(self, image_path_list: List[str]) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
-        views = load_images(image_path_list, norm_type="dinov2")
+        views, original_sizes = load_views(image_path_list, self.device, norm_type="dinov2")
         target_height, target_width = map(int, views[0]["true_shape"][0])
-        original_sizes = []
-        for image_path in image_path_list:
-            with Image.open(image_path) as image:
-                original_sizes.append(ImageOps.exif_transpose(image).size)
 
         with torch.no_grad():
             outputs = self.model.infer(views, **self.infer_parameters)
