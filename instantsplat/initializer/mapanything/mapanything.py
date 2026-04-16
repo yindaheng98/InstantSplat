@@ -8,16 +8,6 @@ from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera
 from .utils import focal2fov, load_views, recover_original_intrinsics, save_resized_depth
 
 
-def extract_valid_mask(pts3d, depth_z, mask=None, conf=None):
-    finite_mask = torch.isfinite(pts3d).all(dim=-1) & torch.isfinite(depth_z)
-    valid_mask = finite_mask & (depth_z > 0)
-    if mask is not None:
-        valid_mask = valid_mask & mask
-    if conf is not None:
-        valid_mask = valid_mask & torch.isfinite(conf)
-    return valid_mask
-
-
 def extract_point_cloud(output):
     pts3d = output["pts3d"][0].detach()
     depth_z = (
@@ -27,7 +17,12 @@ def extract_point_cloud(output):
     ).squeeze(-1)
     mask = output["mask"][0].squeeze(-1).detach().bool() if "mask" in output else None
     conf = output["conf"][0].detach() if "conf" in output else None
-    valid_mask = extract_valid_mask(pts3d, depth_z, mask, conf)
+    finite_mask = torch.isfinite(pts3d).all(dim=-1) & torch.isfinite(depth_z)
+    valid_mask = finite_mask & (depth_z > 0)
+    if mask is not None:
+        valid_mask = valid_mask & mask
+    if conf is not None:
+        valid_mask = valid_mask & torch.isfinite(conf)
     img_no_norm = output["img_no_norm"][0].detach()
     img_uint8 = (img_no_norm.clamp(0.0, 1.0) * 255).to(torch.uint8)
     return pts3d[valid_mask], img_uint8[valid_mask]
