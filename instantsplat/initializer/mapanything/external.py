@@ -177,12 +177,6 @@ class MapAnythingExternalInitializer(AbstractInitializer):
                     f"External model '{self.model_name}' did not return enough geometry to initialize cameras"
                 )
 
-            pts3d = output["pts3d"][0].detach()
-            depth_z = (
-                output["depth_z"][0].detach()
-                if "depth_z" in output
-                else pts3d[..., 2:].detach()
-            ).squeeze(-1)
             points, colors = extract_point_cloud(output)
             all_points.append(points)
             all_colors.append(colors)
@@ -202,7 +196,11 @@ class MapAnythingExternalInitializer(AbstractInitializer):
             if self.save_depths:
                 saved_depth_path = save_resized_depth(
                     image_path=image_path,
-                    depth=depth_z,
+                    depth=(
+                        output["depth_z"][0].detach()
+                        if "depth_z" in output
+                        else output["pts3d"][0][..., 2:].detach()
+                    ).squeeze(-1),
                     mask=output["mask"][0].squeeze(-1).detach() if "mask" in output else None,
                     conf=output["conf"][0].detach() if "conf" in output else None,
                     original_height=original_height,

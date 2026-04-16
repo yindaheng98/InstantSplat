@@ -191,8 +191,6 @@ class MapAnythingInitializer(AbstractInitializer):
         cameras = []
 
         for output, image_path, (original_width, original_height) in zip(outputs, image_path_list, original_sizes):
-            depth_z = output["depth_z"][0].squeeze(-1).detach()
-            mask = output["mask"][0].squeeze(-1).detach().type(torch.bool)
             points, colors = extract_point_cloud(output)
             all_points.append(points)
             all_colors.append(colors)
@@ -212,8 +210,8 @@ class MapAnythingInitializer(AbstractInitializer):
             if self.save_depth:
                 saved_depth_path = save_resized_depth(
                     image_path=image_path,
-                    depth=depth_z,
-                    mask=mask,
+                    depth=output["depth_z"][0].squeeze(-1).detach(),
+                    mask=output["mask"][0].squeeze(-1).detach().type(torch.bool),
                     conf=output["conf"][0].detach() if "conf" in output else None,
                     original_height=original_height,
                     original_width=original_width,
