@@ -88,6 +88,16 @@ def load_views(image_path_list: List[str], device: torch.device, *args, **kwargs
     return views, original_sizes
 
 
+def extract_valid_mask(pts3d, depth_z, mask=None, conf=None):
+    finite_mask = torch.isfinite(pts3d).all(dim=-1) & torch.isfinite(depth_z)
+    valid_mask = finite_mask & (depth_z > 0)
+    if mask is not None:
+        valid_mask = valid_mask & mask
+    if conf is not None:
+        valid_mask = valid_mask & torch.isfinite(conf)
+    return valid_mask
+
+
 class MapAnythingInitializer(AbstractInitializer):
     def __init__(
         self,
@@ -168,9 +178,8 @@ class MapAnythingInitializer(AbstractInitializer):
         for output, image_path, (original_width, original_height) in zip(outputs, image_path_list, original_sizes):
             depth_z = output["depth_z"][0].squeeze(-1).detach()
             mask = output["mask"][0].squeeze(-1).detach().type(torch.bool)
-            valid_mask = mask & (depth_z > 0)
-
             pts3d = output["pts3d"][0].detach()
+            valid_mask = extract_valid_mask(pts3d, depth_z, mask)
             all_points.append(pts3d[valid_mask])
 
             img_no_norm = output["img_no_norm"][0].detach()
