@@ -98,6 +98,21 @@ def extract_valid_mask(pts3d, depth_z, mask=None, conf=None):
     return valid_mask
 
 
+def extract_point_cloud(output):
+    pts3d = output["pts3d"][0].detach()
+    depth_z = (
+        output["depth_z"][0].detach()
+        if "depth_z" in output
+        else pts3d[..., 2:].detach()
+    ).squeeze(-1)
+    mask = output["mask"][0].squeeze(-1).detach().bool() if "mask" in output else None
+    conf = output["conf"][0].detach() if "conf" in output else None
+    valid_mask = extract_valid_mask(pts3d, depth_z, mask, conf)
+    img_no_norm = output["img_no_norm"][0].detach()
+    img_uint8 = (img_no_norm.clamp(0.0, 1.0) * 255).to(torch.uint8)
+    return pts3d[valid_mask], img_uint8[valid_mask]
+
+
 class MapAnythingInitializer(AbstractInitializer):
     def __init__(
         self,
@@ -178,13 +193,9 @@ class MapAnythingInitializer(AbstractInitializer):
         for output, image_path, (original_width, original_height) in zip(outputs, image_path_list, original_sizes):
             depth_z = output["depth_z"][0].squeeze(-1).detach()
             mask = output["mask"][0].squeeze(-1).detach().type(torch.bool)
-            pts3d = output["pts3d"][0].detach()
-            valid_mask = extract_valid_mask(pts3d, depth_z, mask)
-            all_points.append(pts3d[valid_mask])
-
-            img_no_norm = output["img_no_norm"][0].detach()
-            img_uint8 = (img_no_norm.clamp(0.0, 1.0) * 255).type(torch.uint8)
-            all_colors.append(img_uint8[valid_mask])
+            points, colors = extract_point_cloud(output)
+            all_points.append(points)
+            all_colors.append(colors)
 
             intrinsics = output["intrinsics"][0].detach()
             cam2world = output["camera_poses"][0].detach()

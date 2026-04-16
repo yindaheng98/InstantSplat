@@ -13,7 +13,7 @@ from instantsplat.initializer.abc import (
     InitializingCamera,
 )
 
-from .mapanything import extract_valid_mask, focal2fov, load_views, recover_original_intrinsics, save_resized_depth
+from .mapanything import extract_point_cloud, focal2fov, load_views, recover_original_intrinsics, save_resized_depth
 
 # https://github.com/facebookresearch/map-anything/blob/main/scripts/profile_memory_runtime.py#L203-L219
 MODEL_CONFIG = {
@@ -183,17 +183,9 @@ class MapAnythingExternalInitializer(AbstractInitializer):
                 if "depth_z" in output
                 else pts3d[..., 2:].detach()
             ).squeeze(-1)
-            valid_mask = extract_valid_mask(
-                pts3d, depth_z,
-                mask=output["mask"][0].squeeze(-1).detach().bool() if "mask" in output else None,
-                conf=output["conf"][0].detach() if "conf" in output else None,
-            )
-
-            all_points.append(pts3d[valid_mask])
-
-            img_no_norm = output["img_no_norm"][0].detach()
-            img_uint8 = (img_no_norm.clamp(0.0, 1.0) * 255).to(torch.uint8)
-            all_colors.append(img_uint8[valid_mask])
+            points, colors = extract_point_cloud(output)
+            all_points.append(points)
+            all_colors.append(colors)
 
             intrinsics = output["intrinsics"][0].detach()
             cam2world = output["camera_poses"][0].detach()
