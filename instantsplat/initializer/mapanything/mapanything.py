@@ -15,14 +15,12 @@ def extract_point_cloud(output):
         if "depth_z" in output
         else pts3d[..., 2:].detach()
     ).squeeze(-1)
-    mask = output["mask"][0].squeeze(-1).detach().bool() if "mask" in output else None
-    conf = output["conf"][0].detach() if "conf" in output else None
     finite_mask = torch.isfinite(pts3d).all(dim=-1) & torch.isfinite(depth_z)
     valid_mask = finite_mask & (depth_z > 0)
-    if mask is not None:
-        valid_mask = valid_mask & mask
-    if conf is not None:
-        valid_mask = valid_mask & torch.isfinite(conf)
+    if "mask" in output:
+        valid_mask = valid_mask & output["mask"][0].squeeze(-1).detach().bool()
+    if "conf" in output:
+        valid_mask = valid_mask & torch.isfinite(output["conf"][0].detach())
     img_no_norm = output["img_no_norm"][0].detach()
     img_uint8 = (img_no_norm.clamp(0.0, 1.0) * 255).to(torch.uint8)
     return pts3d[valid_mask], img_uint8[valid_mask]
