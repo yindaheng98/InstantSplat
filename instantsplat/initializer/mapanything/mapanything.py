@@ -40,6 +40,31 @@ def extract_camera(output, original_width, original_height, target_width, target
     return world2cam, original_intrinsics
 
 
+def extract_and_save_resized_depth(
+    output,
+    image_path,
+    original_height,
+    original_width,
+    save_conf_threshold,
+):
+    depth = (
+        output["depth_z"][0].detach()
+        if "depth_z" in output
+        else output["pts3d"][0][..., 2:].detach()
+    ).squeeze(-1)
+    mask = output["mask"][0].squeeze(-1).detach().bool() if "mask" in output else None
+    conf = output["conf"][0].detach() if "conf" in output else None
+    return save_resized_depth(
+        image_path=image_path,
+        depth=depth,
+        mask=mask,
+        conf=conf,
+        original_height=original_height,
+        original_width=original_width,
+        save_conf_threshold=save_conf_threshold,
+    )
+
+
 class MapAnythingInitializer(AbstractInitializer):
     def __init__(
         self,
@@ -132,11 +157,9 @@ class MapAnythingInitializer(AbstractInitializer):
 
             saved_depth_path = None
             if self.save_depth:
-                saved_depth_path = save_resized_depth(
+                saved_depth_path = extract_and_save_resized_depth(
+                    output=output,
                     image_path=image_path,
-                    depth=output["depth_z"][0].squeeze(-1).detach(),
-                    mask=output["mask"][0].squeeze(-1).detach().type(torch.bool),
-                    conf=output["conf"][0].detach() if "conf" in output else None,
                     original_height=original_height,
                     original_width=original_width,
                     save_conf_threshold=self.save_conf_threshold,

@@ -12,8 +12,8 @@ from instantsplat.initializer.abc import (
     InitializingCamera,
 )
 
-from .mapanything import extract_camera, extract_point_cloud
-from .utils import focal2fov, load_views, save_resized_depth
+from .mapanything import extract_and_save_resized_depth, extract_camera, extract_point_cloud
+from .utils import focal2fov, load_views
 
 # https://github.com/facebookresearch/map-anything/blob/main/scripts/profile_memory_runtime.py#L203-L219
 MODEL_CONFIG = {
@@ -191,15 +191,9 @@ class MapAnythingExternalInitializer(AbstractInitializer):
 
             saved_depth_path = None
             if self.save_depths:
-                saved_depth_path = save_resized_depth(
+                saved_depth_path = extract_and_save_resized_depth(
+                    output=output,
                     image_path=image_path,
-                    depth=(
-                        output["depth_z"][0].detach()
-                        if "depth_z" in output
-                        else output["pts3d"][0][..., 2:].detach()
-                    ).squeeze(-1),
-                    mask=output["mask"][0].squeeze(-1).detach() if "mask" in output else None,
-                    conf=output["conf"][0].detach() if "conf" in output else None,
                     original_height=original_height,
                     original_width=original_width,
                     save_conf_threshold=self.save_conf_threshold,
