@@ -12,7 +12,8 @@ from instantsplat.initializer.abc import (
     InitializingCamera,
 )
 
-from .mapanything import extract_camera, extract_point_cloud, focal2fov, load_views, save_resized_depth
+from .mapanything import extract_camera, extract_point_cloud
+from .utils import focal2fov, load_views, save_resized_depth
 
 # https://github.com/facebookresearch/map-anything/blob/main/scripts/profile_memory_runtime.py#L203-L219
 MODEL_CONFIG = {
