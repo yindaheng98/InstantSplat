@@ -5,4 +5,4 @@ from .vggt import VGGTInitializer, VGGTColmapSparseInitializer, VGGTColmapDenseI
 from .mapanything import MapAnythingInitializer, MapAnythingExternalInitializer
 from .colmap import ColmapSparseInitializer, ColmapDenseInitializer
 from .depth import DepthInitializerWrapper, DepthAnythingV2InitializerWrapper
-from .combinations import Dust3rAlign2ColmapDenseInitializer
+from .combinations import Dust3rAlign2ColmapSparseInitializer, Dust3rAlign2ColmapDenseInitializer

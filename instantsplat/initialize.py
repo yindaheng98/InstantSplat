@@ -14,7 +14,8 @@ default_image_folder = {
     "vggt-colmap-dense": "input",
     "colmap-sparse": "input",
     "colmap-dense": "input",
-    "dust3r-align-colmap": "input",
+    "dust3r-align-colmap-sparse": "input",
+    "dust3r-align-colmap-dense": "input",
 }
 
 
@@ -41,7 +42,9 @@ def initialize(initializer, directory, configs, device, scale=1.0, with_depth_an
             constructor = lambda **configs: ColmapSparseInitializer(destination=directory, **configs)
         case "colmap-dense":
             constructor = lambda **configs: ColmapDenseInitializer(destination=directory, **configs)
-        case "dust3r-align-colmap":
+        case "dust3r-align-colmap-sparse":
+            constructor = lambda **configs: Dust3rAlign2ColmapSparseInitializer(destination=directory, convert_image_path=convert_image_path, **configs)
+        case "dust3r-align-colmap-dense":
             constructor = lambda **configs: Dust3rAlign2ColmapDenseInitializer(destination=directory, convert_image_path=convert_image_path, **configs)
         case _:
             raise ValueError(f"Unknown initializer {initializer}")

@@ -86,7 +86,7 @@
                 "-d",
                 "data/sora/santorini/3_views",
                 "--initializer",
-                "dust3r-align-colmap",
+                "dust3r-align-colmap-dense",
                 "-o",
                 "colmap_executable='.\\data\\colmap\\COLMAP.bat'",
             ]
