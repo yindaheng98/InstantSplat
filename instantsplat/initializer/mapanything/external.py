@@ -4,7 +4,6 @@ from typing import List, Tuple
 import hydra
 import torch
 from mapanything.models import init_model
-from mapanything.utils.colmap_export import closed_form_pose_inverse
 from mapanything.utils.inference import postprocess_model_outputs_for_inference
 
 from instantsplat.initializer.abc import (
@@ -13,7 +12,7 @@ from instantsplat.initializer.abc import (
     InitializingCamera,
 )
 
-from .mapanything import extract_point_cloud, focal2fov, load_views, recover_original_intrinsics, save_resized_depth
+from .mapanything import extract_camera, extract_point_cloud, focal2fov, load_views, save_resized_depth
 
 # https://github.com/facebookresearch/map-anything/blob/main/scripts/profile_memory_runtime.py#L203-L219
 MODEL_CONFIG = {
@@ -181,11 +180,8 @@ class MapAnythingExternalInitializer(AbstractInitializer):
             all_points.append(points)
             all_colors.append(colors)
 
-            intrinsics = output["intrinsics"][0].detach()
-            cam2world = output["camera_poses"][0].detach()
-            world2cam = closed_form_pose_inverse(cam2world[None])[0]
-            original_intrinsics = recover_original_intrinsics(
-                intrinsics,
+            world2cam, original_intrinsics = extract_camera(
+                output,
                 original_width=original_width,
                 original_height=original_height,
                 target_width=target_width,

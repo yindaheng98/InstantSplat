@@ -113,6 +113,20 @@ def extract_point_cloud(output):
     return pts3d[valid_mask], img_uint8[valid_mask]
 
 
+def extract_camera(output, original_width, original_height, target_width, target_height):
+    intrinsics = output["intrinsics"][0].detach()
+    cam2world = output["camera_poses"][0].detach()
+    world2cam = closed_form_pose_inverse(cam2world[None])[0]
+    original_intrinsics = recover_original_intrinsics(
+        intrinsics,
+        original_width=original_width,
+        original_height=original_height,
+        target_width=target_width,
+        target_height=target_height,
+    )
+    return world2cam, original_intrinsics
+
+
 class MapAnythingInitializer(AbstractInitializer):
     def __init__(
         self,
@@ -195,11 +209,8 @@ class MapAnythingInitializer(AbstractInitializer):
             all_points.append(points)
             all_colors.append(colors)
 
-            intrinsics = output["intrinsics"][0].detach()
-            cam2world = output["camera_poses"][0].detach()
-            world2cam = closed_form_pose_inverse(cam2world[None])[0]
-            original_intrinsics = recover_original_intrinsics(
-                intrinsics,
+            world2cam, original_intrinsics = extract_camera(
+                output,
                 original_width=original_width,
                 original_height=original_height,
                 target_width=target_width,
