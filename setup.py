@@ -22,6 +22,18 @@ packages_dust3r = ['dust3r'] + ["dust3r." + package for package in find_packages
 packages_mast3r = ['mast3r'] + ["mast3r." + package for package in find_packages(where="submodules/mast3r/mast3r")]
 packages_croco = ['croco', 'croco.utils', 'croco.models', 'croco.models.curope']
 packages_depth_anything_v2 = ['depth_anything_v2'] + ["depth_anything_v2." + package for package in find_namespace_packages(where="submodules/Depth-Anything-V2/depth_anything_v2")]
+packages_vggt = find_namespace_packages(
+    where="submodules/vggt",
+    include=[
+        "vggt",
+        "vggt.models",
+        "vggt.heads",
+        "vggt.heads.track_modules",
+        "vggt.layers",
+        "vggt.dependency",
+        "vggt.dependency.track_modules",
+    ],
+)
 
 packages_dust3r += ["dust3r.dust3r"]  # ugly workaround for agly MAST3R import
 os.makedirs("submodules/dust3r/dust3r/dust3r", exist_ok=True)  # ugly workaround for ugly MAST3R import
@@ -49,20 +61,21 @@ MAP_ANYTHING_REPO = "git+https://github.com/facebookresearch/map-anything.git@ma
 
 setup(
     name="instantsplat",
-    version='1.15.2',
+    version='1.15.3',
     author='yindaheng98',
     author_email='yindaheng98@gmail.com',
     url='https://github.com/yindaheng98/instantsplat',
     description=u'Refactored python initialization and training code for InstantSplat',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=packages + packages_dust3r + packages_mast3r + packages_croco + packages_depth_anything_v2,
+    packages=packages + packages_dust3r + packages_mast3r + packages_croco + packages_depth_anything_v2 + packages_vggt,
     package_dir={
         'instantsplat': 'instantsplat',
         'dust3r': 'submodules/dust3r/dust3r',
         'mast3r': 'submodules/mast3r/mast3r',
         'croco': 'submodules/dust3r/croco',
         'depth_anything_v2': 'submodules/Depth-Anything-V2/depth_anything_v2',
+        'vggt': 'submodules/vggt/vggt',
     },
     ext_modules=[
         CUDAExtension(
@@ -86,8 +99,10 @@ setup(
         'einops',
         'roma',
         'scikit-learn',
-        # VGGT and its dependencies
-        'vggt @ git+https://github.com/facebookresearch/vggt.git',
+        # Local VGGT submodule dependencies
+        'Pillow',
+        'hydra-core',
+        'omegaconf',
         'lightglue @ git+https://github.com/jytime/LightGlue.git#egg=lightglue',
         # mapanything and its dependencies
         f'mapanything @ {MAP_ANYTHING_REPO}',
