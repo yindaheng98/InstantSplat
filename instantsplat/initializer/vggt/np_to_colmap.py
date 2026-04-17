@@ -1,6 +1,5 @@
 # Adapted from: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/vggt/dependency/np_to_pycolmap.py#L12-L145
 
-import os
 import numpy as np
 from gaussian_splatting.dataset.colmap.read_write_model import (
     Camera as ColmapCamera,
@@ -125,9 +124,9 @@ def batch_np_matrix_to_colmap(
             camera_id=fidx + 1,
             name=image_names[fidx],
             xys=np.array(xys_list) if xys_list
-                else np.zeros((0, 2)),
+            else np.zeros((0, 2)),
             point3D_ids=np.array(p3d_ids_list, dtype=np.int64)
-                if p3d_ids_list else np.array([], dtype=np.int64))
+            if p3d_ids_list else np.array([], dtype=np.int64))
 
     # ── Build Point3D entries ──
 
