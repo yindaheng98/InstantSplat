@@ -44,12 +44,13 @@ all_cuda_archs = cuda.get_gencode_flags().replace('compute=', 'arch=').split()
 if os.name == 'nt':
     cxx_compiler_flags.append("/wd4624")
     nvcc_compiler_flags.append("-allow-unsupported-compiler")
+pypi_build = os.environ.get("PYPI_BUILD", "").lower() in {"1", "true", "yes", "on"}
 
 MAP_ANYTHING_REPO = "git+https://github.com/facebookresearch/map-anything.git@main"
 
 setup(
     name="instantsplat",
-    version='1.15.3',
+    version='1.15.3.2',
     author='yindaheng98',
     author_email='yindaheng98@gmail.com',
     url='https://github.com/yindaheng98/instantsplat',
@@ -81,11 +82,13 @@ setup(
     },
     install_requires=[
         'gaussian-splatting >= 2.3.0',
+        'scikit-learn',
+        # deps for dust3r
         'scipy',
         'huggingface_hub',
         'einops',
         'roma',
-        'scikit-learn',
+    ]+([
         # VGGT and its dependencies
         'Pillow',
         'hydra-core',
@@ -94,7 +97,7 @@ setup(
         'lightglue @ git+https://github.com/jytime/LightGlue.git#egg=lightglue',
         # mapanything and its dependencies
         f'mapanything @ {MAP_ANYTHING_REPO}',
-    ],
+    ] if not pypi_build else []),
     extras_require={
         'dust3r': [f'mapanything[dust3r] @ {MAP_ANYTHING_REPO}'],
         'mast3r': [f'mapanything[mast3r] @ {MAP_ANYTHING_REPO}'],
@@ -104,7 +107,7 @@ setup(
         'must3r': [f'mapanything[must3r] @ {MAP_ANYTHING_REPO}'],
         'depth-anything-3': [f'mapanything[depth-anything-3] @ {MAP_ANYTHING_REPO}'],
         'all': [f'mapanything[all] @ {MAP_ANYTHING_REPO}'],
-    },
+    } if not pypi_build else {},
 )
 
 os.remove("submodules/dust3r/dust3r/dust3r/__init__.py")  # ugly workaround for ugly MAST3R import

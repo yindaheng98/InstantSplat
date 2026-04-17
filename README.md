@@ -23,6 +23,14 @@ Install a colmap executable, e.g. using conda:
 conda install conda-forge::colmap
 ```
 
+Install `mapanything` and `vggt`:
+```shell
+pip install --upgrade "mapanything[all] @ git+https://github.com/facebookresearch/map-anything.git@main"
+pip install --upgrade git+https://github.com/facebookresearch/vggt.git@main
+pip install --upgrade Pillow hydra-core omegaconf # deps for vggt
+pip install --upgrade git+https://github.com/jytime/LightGlue.git#egg=lightglue # deps for vggt
+```
+
 (Optional) Install `xformers` for faster Depth-Anything V2 inference:
 ```shell
 pip install xformers
@@ -51,9 +59,6 @@ pip install --upgrade git+https://github.com/yindaheng98/InstantSplat.git@main -
 ```shell
 git clone --recursive https://github.com/yindaheng98/InstantSplat
 cd InstantSplat
-pip install scipy huggingface_hub einops roma scikit-learn
-pip install --upgrade git+https://github.com/facebookresearch/vggt.git@main
-pip install git+https://github.com/jytime/LightGlue.git#egg=lightglue # deps for vggt
 pip install --target . --upgrade --no-deps .
 ```
 
