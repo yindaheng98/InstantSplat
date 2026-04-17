@@ -7,7 +7,7 @@ from gaussian_splatting.dataset.colmap.read_write_model import (
     Point3D as ColmapPoint3D,
     rotmat2qvec,
 )
-from .utils import project_3D_points_np
+from vggt.dependency.projection import project_3D_points_np
 
 
 def batch_np_matrix_to_colmap(

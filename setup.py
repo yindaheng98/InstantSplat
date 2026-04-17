@@ -22,18 +22,7 @@ packages_dust3r = ['dust3r'] + ["dust3r." + package for package in find_packages
 packages_mast3r = ['mast3r'] + ["mast3r." + package for package in find_packages(where="submodules/mast3r/mast3r")]
 packages_croco = ['croco', 'croco.utils', 'croco.models', 'croco.models.curope']
 packages_depth_anything_v2 = ['depth_anything_v2'] + ["depth_anything_v2." + package for package in find_namespace_packages(where="submodules/Depth-Anything-V2/depth_anything_v2")]
-packages_vggt = find_namespace_packages(
-    where="submodules/vggt",
-    include=[
-        "vggt",
-        "vggt.models",
-        "vggt.heads",
-        "vggt.heads.track_modules",
-        "vggt.layers",
-        "vggt.dependency",
-        "vggt.dependency.track_modules",
-    ],
-)
+packages_vggt = ["vggt"] + ["vggt." + package for package in find_namespace_packages(where="submodules/vggt/vggt")]
 
 packages_dust3r += ["dust3r.dust3r"]  # ugly workaround for agly MAST3R import
 os.makedirs("submodules/dust3r/dust3r/dust3r", exist_ok=True)  # ugly workaround for ugly MAST3R import
@@ -61,7 +50,7 @@ MAP_ANYTHING_REPO = "git+https://github.com/facebookresearch/map-anything.git@ma
 
 setup(
     name="instantsplat",
-    version='1.15.3',
+    version='1.15.4',
     author='yindaheng98',
     author_email='yindaheng98@gmail.com',
     url='https://github.com/yindaheng98/instantsplat',
