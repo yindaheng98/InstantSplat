@@ -97,5 +97,4 @@ if __name__ == "__main__":
     dataset.save_cameras(os.path.join(args.destination, "cameras.json"))
     training(
         dataset=dataset, gaussians=gaussians, trainer=trainer,
-        destination=args.destination, iteration=args.iteration, save_iterations=args.save_iterations,
-        device=args.device)
+        destination=args.destination, iteration=args.iteration, save_iterations=args.save_iterations)

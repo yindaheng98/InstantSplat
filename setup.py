@@ -50,7 +50,7 @@ MAP_ANYTHING_REPO = "git+https://github.com/facebookresearch/map-anything.git@ma
 
 setup(
     name="instantsplat",
-    version='1.15.3.2',
+    version='1.15.4',
     author='yindaheng98',
     author_email='yindaheng98@gmail.com',
     url='https://github.com/yindaheng98/instantsplat',
@@ -81,7 +81,7 @@ setup(
         'build_ext': BuildExtension
     },
     install_requires=[
-        'gaussian-splatting >= 2.3.0',
+        'gaussian-splatting >= 2.3.8',
         'scikit-learn',
         # deps for dust3r
         'scipy',
