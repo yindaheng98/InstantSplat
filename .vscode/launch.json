@@ -52,8 +52,6 @@
                 "-i",
                 "vggt-colmap-sparse",
                 "-o",
-                "conf_thres_value=1",
-                "-o",
                 "colmap_executable='.\\data\\colmap\\COLMAP.bat'",
             ]
         },
@@ -68,8 +66,6 @@
                 "data/sora/santorini/3_views",
                 "-i",
                 "vggt-colmap-dense",
-                "-o",
-                "conf_thres_value=1",
                 "-o",
                 "colmap_executable='.\\data\\colmap\\COLMAP.bat'",
                 "-o",
