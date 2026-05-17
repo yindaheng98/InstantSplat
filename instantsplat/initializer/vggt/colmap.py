@@ -1,5 +1,6 @@
 import os
 import torch
+import torch.nn.functional as F
 
 from gaussian_splatting.dataset.colmap.read_write_model import write_model
 from instantsplat.initializer.colmap.sparse import ColmapSparseInitializer, execute
@@ -7,10 +8,33 @@ from instantsplat.initializer.colmap.dense import ColmapDenseInitializer
 from vggt.models.vggt import VGGT
 from vggt.utils.load_fn import load_and_preprocess_images_square
 from vggt.utils.geometry import unproject_depth_map_to_point_map
+from vggt.utils.pose_enc import pose_encoding_to_extri_intri
 
 from .utils import predict_tracks
-from .vggt import run_VGGT
 from .np_to_colmap import batch_np_matrix_to_colmap
+
+
+def run_VGGT(model, images, dtype, resolution=518):
+    # images: [B, 3, H, W]
+    assert len(images.shape) == 4
+    assert images.shape[1] == 3
+
+    images = F.interpolate(images, size=(resolution, resolution), mode="bilinear", align_corners=False)
+
+    with torch.no_grad():
+        with torch.cuda.amp.autocast(dtype=dtype):
+            images = images[None]  # add batch dimension
+            aggregated_tokens_list, ps_idx = model.aggregator(images)
+
+            pose_enc = model.camera_head(aggregated_tokens_list)[-1]
+            extrinsic, intrinsic = pose_encoding_to_extri_intri(pose_enc, images.shape[-2:])
+            depth_map, depth_conf = model.depth_head(aggregated_tokens_list, images, ps_idx)
+
+    extrinsic = extrinsic.squeeze(0).cpu().numpy()
+    intrinsic = intrinsic.squeeze(0).cpu().numpy()
+    depth_map = depth_map.squeeze(0).cpu().numpy()
+    depth_conf = depth_conf.squeeze(0).cpu().numpy()
+    return extrinsic, intrinsic, depth_map, depth_conf
 
 
 class VGGTColmapSparseInitializer(ColmapSparseInitializer):

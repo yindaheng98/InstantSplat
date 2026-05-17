@@ -1,4 +1,3 @@
-import math
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -12,39 +11,9 @@ from vggt.utils.geometry import unproject_depth_map_to_point_map
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 
 from .save_depth import save_vggt_depth
+from .utils import focal2fov
 
-
-def focal2fov(focal, pixels):
-    return 2 * math.atan(pixels / (2 * focal))
-
-
-# From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L65-L90
-def run_VGGT(model, images, dtype, resolution=518):
-    # images: [B, 3, H, W]
-
-    assert len(images.shape) == 4
-    assert images.shape[1] == 3
-
-    # hard-coded to use 518 for VGGT
-    images = F.interpolate(images, size=(resolution, resolution), mode="bilinear", align_corners=False)
-
-    with torch.no_grad():
-        with torch.cuda.amp.autocast(dtype=dtype):
-            images = images[None]  # add batch dimension
-            aggregated_tokens_list, ps_idx = model.aggregator(images)
-
-        # Predict Cameras
-        pose_enc = model.camera_head(aggregated_tokens_list)[-1]
-        # Extrinsic and intrinsic matrices, following OpenCV convention (camera from world)
-        extrinsic, intrinsic = pose_encoding_to_extri_intri(pose_enc, images.shape[-2:])
-        # Predict Depth Maps
-        depth_map, depth_conf = model.depth_head(aggregated_tokens_list, images, ps_idx)
-
-    extrinsic = extrinsic.squeeze(0).cpu().numpy()
-    intrinsic = intrinsic.squeeze(0).cpu().numpy()
-    depth_map = depth_map.squeeze(0).cpu().numpy()
-    depth_conf = depth_conf.squeeze(0).cpu().numpy()
-    return extrinsic, intrinsic, depth_map, depth_conf
+RESOLUTION = 518
 
 
 def build_valid_image_area_mask(original_coords, src_resolution, dst_resolution):
@@ -75,13 +44,11 @@ class VGGTInitializer(AbstractInitializer):
     def __init__(
         self,
         model_url: str = "checkpoints/vggt_1B_commercial.pt",
-        vggt_fixed_resolution: int = 518,
         img_load_resolution: int = 1024,
         conf_thres_value: float = 5.0,
         save_depth: bool = True,
         scene_scale: float = 1.0,
     ):
-        self.vggt_fixed_resolution = vggt_fixed_resolution
         self.img_load_resolution = img_load_resolution
         self.conf_thres_value = conf_thres_value
         self.save_depth = save_depth
@@ -103,40 +70,57 @@ class VGGTInitializer(AbstractInitializer):
         self, image_path_list: List[str]
     ) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
         device = self.device
-        vggt_fixed_resolution = self.vggt_fixed_resolution
-
-        # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L107
-        dtype = torch.bfloat16 if torch.cuda.get_device_capability()[0] >= 8 else torch.float16
 
         # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L132-L134
         images, original_coords = load_and_preprocess_images_square(image_path_list, self.img_load_resolution)
         images = images.to(device)
         original_coords = original_coords.to(device)  # (N, 6): [x1, y1, x2, y2, orig_width, orig_height]
 
-        extrinsic, intrinsic, depth_map, depth_conf = run_VGGT(self.model, images, dtype, vggt_fixed_resolution)
+        # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L65-L90
+        batch = images
+        if images.shape[-2:] != (RESOLUTION, RESOLUTION):
+            batch = F.interpolate(images, size=(RESOLUTION, RESOLUTION), mode="bilinear", align_corners=False)
+        batch = batch.unsqueeze(0)
+        device = batch.device
+        # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L107
+        dtype = (
+            torch.bfloat16
+            if device.type == "cuda"
+            and torch.cuda.get_device_capability(device)[0] >= 8
+            else torch.float16
+        )
+
+        with torch.no_grad():
+            with torch.cuda.amp.autocast(dtype=dtype):
+                aggregated_tokens_list, ps_idx = self.model.aggregator(batch)
+                pose_enc = self.model.camera_head(aggregated_tokens_list)[-1]
+                extrinsic, intrinsic = pose_encoding_to_extri_intri(pose_enc, batch.shape[-2:])
+                depth_map, depth_conf = self.model.depth_head(aggregated_tokens_list, batch, ps_idx)
+
+        extrinsic = extrinsic.squeeze(0).cpu().numpy()
+        intrinsic = intrinsic.squeeze(0).cpu().numpy()
+        depth_map = depth_map.squeeze(0).cpu().numpy()
+        depth_conf = depth_conf.squeeze(0).cpu().numpy()
         points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)  # (N, H, W, 3)
         torch.cuda.empty_cache()
 
         # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L203-L218
-        points_rgb = F.interpolate(
-            images, size=(vggt_fixed_resolution, vggt_fixed_resolution), mode="bilinear", align_corners=False
-        )
-        points_rgb = points_rgb.cpu().numpy().transpose(0, 2, 3, 1)  # (N, H, W, 3) [0, 1]
+        points_rgb = batch.squeeze(0).cpu().numpy().transpose(0, 2, 3, 1)  # (N, H, W, 3) [0, 1]
 
         conf_mask = depth_conf >= self.conf_thres_value
         valid_area_mask = build_valid_image_area_mask(
             original_coords.cpu().numpy(),
             src_resolution=self.img_load_resolution,
-            dst_resolution=vggt_fixed_resolution,
+            dst_resolution=RESOLUTION,
         )
         conf_mask = np.logical_and(conf_mask, valid_area_mask)
         torch.cuda.empty_cache()
 
         cameras = []
         for i in range(len(image_path_list)):
-            orig_w = original_coords[i, 4]
-            orig_h = original_coords[i, 5]
-            resize_ratio = max(orig_w, orig_h) / vggt_fixed_resolution
+            orig_w = float(original_coords[i, 4].item())
+            orig_h = float(original_coords[i, 5].item())
+            resize_ratio = max(orig_w, orig_h) / RESOLUTION
 
             fx_orig = intrinsic[i][0, 0] * resize_ratio
             fy_orig = intrinsic[i][1, 1] * resize_ratio
@@ -149,7 +133,7 @@ class VGGTInitializer(AbstractInitializer):
                     conf=torch.from_numpy(depth_conf[i]),
                     original_coord=original_coords[i],
                     src_resolution=self.img_load_resolution,
-                    dst_resolution=vggt_fixed_resolution,
+                    dst_resolution=RESOLUTION,
                     original_height=int(orig_h),
                     original_width=int(orig_w),
                     conf_threshold=self.conf_thres_value,
