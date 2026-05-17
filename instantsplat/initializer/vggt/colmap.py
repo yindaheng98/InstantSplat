@@ -12,29 +12,7 @@ from vggt.utils.pose_enc import pose_encoding_to_extri_intri
 
 from .utils import predict_tracks
 from .np_to_colmap import batch_np_matrix_to_colmap
-
-
-def run_VGGT(model, images, dtype, resolution=518):
-    # images: [B, 3, H, W]
-    assert len(images.shape) == 4
-    assert images.shape[1] == 3
-
-    images = F.interpolate(images, size=(resolution, resolution), mode="bilinear", align_corners=False)
-
-    with torch.no_grad():
-        with torch.cuda.amp.autocast(dtype=dtype):
-            images = images[None]  # add batch dimension
-            aggregated_tokens_list, ps_idx = model.aggregator(images)
-
-            pose_enc = model.camera_head(aggregated_tokens_list)[-1]
-            extrinsic, intrinsic = pose_encoding_to_extri_intri(pose_enc, images.shape[-2:])
-            depth_map, depth_conf = model.depth_head(aggregated_tokens_list, images, ps_idx)
-
-    extrinsic = extrinsic.squeeze(0).cpu().numpy()
-    intrinsic = intrinsic.squeeze(0).cpu().numpy()
-    depth_map = depth_map.squeeze(0).cpu().numpy()
-    depth_conf = depth_conf.squeeze(0).cpu().numpy()
-    return extrinsic, intrinsic, depth_map, depth_conf
+from .vggt import RESOLUTION
 
 
 class VGGTColmapSparseInitializer(ColmapSparseInitializer):
@@ -47,7 +25,6 @@ class VGGTColmapSparseInitializer(ColmapSparseInitializer):
     def __init__(
         self,
         model_url="checkpoints/vggt_1B_commercial.pt",
-        vggt_fixed_resolution=518,
         img_load_resolution=1024,
         max_query_pts=4096,
         query_frame_num=8,
@@ -61,7 +38,6 @@ class VGGTColmapSparseInitializer(ColmapSparseInitializer):
         kwargs.pop("load_camera", None)
         super().__init__(camera=camera, load_camera=None, **kwargs)
 
-        self.vggt_fixed_resolution = vggt_fixed_resolution
         self.img_load_resolution = img_load_resolution
         self.max_query_pts = max_query_pts
         self.query_frame_num = query_frame_num
@@ -119,24 +95,44 @@ class VGGTColmapSparseInitializer(ColmapSparseInitializer):
 
     def vggt_mapper(self, folder, image_path_list):
         device = self.device
-        vggt_fixed_resolution = self.vggt_fixed_resolution
-
-        # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L107
-        dtype = torch.bfloat16 if torch.cuda.get_device_capability()[0] >= 8 else torch.float16
 
         # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L132-L134
         images, original_coords = load_and_preprocess_images_square(image_path_list, self.img_load_resolution)
         images = images.to(device)
         original_coords = original_coords.to(device)  # (N, 6): [x1, y1, x2, y2, orig_width, orig_height]
 
-        extrinsic, intrinsic, depth_map, depth_conf = run_VGGT(self.model, images, dtype, vggt_fixed_resolution)
+        # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L65-L90
+        batch = images
+        if images.shape[-2:] != (RESOLUTION, RESOLUTION):
+            batch = F.interpolate(images, size=(RESOLUTION, RESOLUTION), mode="bilinear", align_corners=False)
+        batch = batch.unsqueeze(0)
+        device = batch.device
+        # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L107
+        dtype = (
+            torch.bfloat16
+            if device.type == "cuda"
+            and torch.cuda.get_device_capability(device)[0] >= 8
+            else torch.float16
+        )
+
+        with torch.no_grad():
+            with torch.cuda.amp.autocast(dtype=dtype):
+                aggregated_tokens_list, ps_idx = self.model.aggregator(batch)
+                pose_enc = self.model.camera_head(aggregated_tokens_list)[-1]
+                extrinsic, intrinsic = pose_encoding_to_extri_intri(pose_enc, batch.shape[-2:])
+                depth_map, depth_conf = self.model.depth_head(aggregated_tokens_list, batch, ps_idx)
+
+        extrinsic = extrinsic.squeeze(0).cpu().numpy()
+        intrinsic = intrinsic.squeeze(0).cpu().numpy()
+        depth_map = depth_map.squeeze(0).cpu().numpy()
+        depth_conf = depth_conf.squeeze(0).cpu().numpy()
         points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)  # (N, H, W, 3)
         torch.cuda.empty_cache()
 
         original_coords = original_coords.cpu().numpy()
         # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L142-L191
         img_load_resolution = self.img_load_resolution
-        scale = img_load_resolution / vggt_fixed_resolution
+        scale = img_load_resolution / RESOLUTION
 
         with torch.no_grad():
             with torch.cuda.amp.autocast(dtype=dtype):
