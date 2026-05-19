@@ -1,5 +1,11 @@
 # packaged InstantSplat
 
+[![PyPI version](https://img.shields.io/pypi/v/InstantSplat.svg?logo=pypi)](https://pypi.org/project/InstantSplat/)
+[![Downloads](https://api.pepy.tech/personalized-badge/InstantSplat?period=month&left_color=grey&right_color=brightgreen&left_text=monthly%20downloads)](https://pepy.tech/project/InstantSplat)
+[![Total downloads](https://api.pepy.tech/personalized-badge/InstantSplat?period=total&left_color=grey&right_color=brightgreen&left_text=total%20downloads)](https://pepy.tech/project/InstantSplat)
+[![CI](https://github.com/yindaheng98/InstantSplat/actions/workflows/build-release-linux.yml/badge.svg)](https://github.com/yindaheng98/InstantSplat/actions/workflows/ci.yml)
+[![CI](https://github.com/yindaheng98/InstantSplat/actions/workflows/build-release-win.yml/badge.svg)](https://github.com/yindaheng98/InstantSplat/actions/workflows/ci.yml)
+
 This repo is the **refactored python training and inference code for [InstantSplat](https://github.com/NVlabs/InstantSplat)**.
 Forked from commit [2c5006d41894d06464da53d5495300860f432872](https://github.com/NVlabs/InstantSplat/tree/2c5006d41894d06464da53d5495300860f432872).
 We **refactored the original code following the standard Python package structure**, while **keeping the algorithms used in the code identical to the original version**.
