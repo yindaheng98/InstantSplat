@@ -1,6 +1,7 @@
 from .abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 from .dataset import InitializedCameraDataset, TrainableCameraDataset, TrainableInitializedCameraDataset
 from .dust3r import Dust3rInitializer, Mast3rInitializer
+from .ttt3r import Ttt3rInitializer
 from .vggt import VGGTInitializer, VGGTColmapSparseInitializer, VGGTColmapDenseInitializer
 from .mapanything import MapAnythingInitializer, MapAnythingExternalInitializer
 from .colmap import ColmapSparseInitializer, ColmapDenseInitializer

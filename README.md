@@ -12,6 +12,7 @@ We **refactored the original code following the standard Python package structur
 
 Initialization methods:
 - [x] DUST3R (same method used in [InstantSplat](https://github.com/NVlabs/InstantSplat))
+- [x] TTT3R (via a dedicated bridge env to avoid namespace conflicts with DUSt3R)
 - [x] MAST3R (same method used in [Splatt3R](https://github.com/btsmart/splatt3r))
 - [x] COLMAP Sparse reconstruct (same method used in [gaussian-splatting](https://github.com/graphdeco-inria/gaussian-splatting))
 - [x] COLMAP Dense reconstruct (use `patch_match_stereo`, `stereo_fusion`, `poisson_mesher` and `delaunay_mesher` in COLMAP to reconstruct dense point cloud for initialization)
@@ -35,6 +36,16 @@ pip install --upgrade "mapanything[all] @ git+https://github.com/facebookresearc
 pip install --upgrade git+https://github.com/facebookresearch/vggt.git@main
 pip install --upgrade Pillow hydra-core omegaconf # deps for vggt
 pip install --upgrade git+https://github.com/jytime/LightGlue.git#egg=lightglue # deps for vggt
+```
+
+Install `TTT3R` in a separate conda environment so its bundled `dust3r` package does not collide with InstantSplat's DUSt3R stack:
+```shell
+git clone https://github.com/Inception3D/TTT3R.git submodules/ttt3r
+conda create -n instantsplat-ttt3r python=3.11 cmake=3.14.0 -y
+conda run -n instantsplat-ttt3r conda install -y pytorch torchvision pytorch-cuda=12.1 -c pytorch -c nvidia
+conda run -n instantsplat-ttt3r pip install -r submodules/ttt3r/requirements.txt
+conda run -n instantsplat-ttt3r conda install -y "llvm-openmp<16"
+conda run -n instantsplat-ttt3r bash -lc "cd submodules/ttt3r/src/croco/models/curope && python setup.py build_ext --inplace"
 ```
 
 (Optional) Install `xformers` for faster Depth-Anything V2 inference:
@@ -81,6 +92,7 @@ wget -P checkpoints/ https://huggingface.co/depth-anything/Depth-Anything-V2-Lar
 wget -P checkpoints/ https://huggingface.co/facebook/VGGT-1B-Commercial/resolve/main/vggt_1B_commercial.pt --header="Authorization: Bearer $HF_TOKEN"
 wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/MUSt3R/MUSt3R_512.pth
 wget -P checkpoints/ https://download.europe.naverlabs.com/ComputerVision/Pow3R/Pow3R_ViTLarge_BaseDecoder_512_linear.pth
+wget -P submodules/ttt3r/src/ https://drive.google.com/uc?id=1Asz-ZB3FfpzZYwunhQvNPZEUA8XUNAYD
 ```
 
 Configs for `map-anything`:
@@ -106,6 +118,12 @@ To enable the optional auto-scaled Depth-Anything V2 wrapper for any initializer
 ```shell
 python -m instantsplat.initialize -d data/sora/santorini/3_views -i vggt --with_depth_anything
 python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --init mapanything --with_depth_anything
+```
+
+TTT3R initialization example:
+```shell
+python -m instantsplat.initialize -d data/sora/santorini/3_views -i ttt3r
+python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --init ttt3r
 ```
 
 Depth format note:

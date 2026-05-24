@@ -6,6 +6,7 @@ from instantsplat.initializer.depth import AutoScaleDepthAnythingV2InitializerWr
 
 default_image_folder = {
     "dust3r": "images",
+    "ttt3r": "images",
     "mast3r": "images",
     "mapanything": "images",
     "mapanything-external": "images",
@@ -26,6 +27,8 @@ def initialize(initializer, directory, configs, device, scale=1.0, with_depth_an
     match initializer:
         case "dust3r":
             constructor = Dust3rInitializer
+        case "ttt3r":
+            constructor = Ttt3rInitializer
         case "mast3r":
             constructor = Mast3rInitializer
         case "vggt":
