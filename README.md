@@ -111,7 +111,7 @@ python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santo
 
 Depth format note:
 - `Depth-Anything V2` saves inverse depth (`1 / depth`), which matches the default depth supervision used by 3DGS.
-- The native depth saved by `mapanything`, `mapanything-external`, and `vggt` is regular depth, not inverse depth.
+- The native depth saved by `mapanything`, `mapanything-external`, `vggt`, and `vggttt` is regular depth, not inverse depth.
 - When training from those native depth maps without `--with_depth_anything`, add `-o depth_ground_truth_is_inversed=False`.
 
 Example:
