@@ -21,6 +21,7 @@ packages = ['instantsplat'] + ["instantsplat." + package for package in find_pac
 packages_dust3r = ['dust3r'] + ["dust3r." + package for package in find_packages(where="submodules/dust3r/dust3r")]
 packages_mast3r = ['mast3r'] + ["mast3r." + package for package in find_packages(where="submodules/mast3r/mast3r")]
 packages_croco = ['croco', 'croco.utils', 'croco.models', 'croco.models.curope']
+packages_vggt = ['vggt'] + ["vggt." + package for package in find_namespace_packages(where="submodules/vggt/vggt")]
 packages_depth_anything_v2 = ['depth_anything_v2'] + ["depth_anything_v2." + package for package in find_namespace_packages(where="submodules/Depth-Anything-V2/depth_anything_v2")]
 
 packages_dust3r += ["dust3r.dust3r"]  # ugly workaround for agly MAST3R import
@@ -50,19 +51,20 @@ MAP_ANYTHING_REPO = "git+https://github.com/facebookresearch/map-anything.git@ma
 
 setup(
     name="instantsplat",
-    version='1.15.5',
+    version='1.15.6',
     author='yindaheng98',
     author_email='yindaheng98@gmail.com',
     url='https://github.com/yindaheng98/instantsplat',
     description=u'Refactored python initialization and training code for InstantSplat',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=packages + packages_dust3r + packages_mast3r + packages_croco + packages_depth_anything_v2,
+    packages=packages + packages_dust3r + packages_mast3r + packages_croco + packages_depth_anything_v2 + packages_vggt,
     package_dir={
         'instantsplat': 'instantsplat',
         'dust3r': 'submodules/dust3r/dust3r',
         'mast3r': 'submodules/mast3r/mast3r',
         'croco': 'submodules/dust3r/croco',
+        'vggt': 'submodules/vggt/vggt',
         'depth_anything_v2': 'submodules/Depth-Anything-V2/depth_anything_v2',
     },
     ext_modules=[
@@ -88,12 +90,15 @@ setup(
         'huggingface_hub',
         'einops',
         'roma',
-    ]+([
         # VGGT and its dependencies
+        'numpy',
         'Pillow',
         'hydra-core',
         'omegaconf',
-        'vggt @ git+https://github.com/facebookresearch/vggt.git',
+        'safetensors',
+        'opencv-python',
+    ]+([
+        # VGGT dependencies
         'lightglue @ git+https://github.com/jytime/LightGlue.git#egg=lightglue',
         # mapanything and its dependencies
         f'mapanything @ {MAP_ANYTHING_REPO}',
