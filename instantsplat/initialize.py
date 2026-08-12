@@ -12,6 +12,9 @@ default_image_folder = {
     "vggt": "images",
     "vggt-colmap-sparse": "input",
     "vggt-colmap-dense": "input",
+    "vggttt": "images",
+    "vggttt-colmap-sparse": "input",
+    "vggttt-colmap-dense": "input",
     "colmap-sparse": "input",
     "colmap-dense": "input",
     "dust3r-align-colmap-sparse": "input",
@@ -38,6 +41,12 @@ def initialize(initializer, directory, configs, device, scale=1.0, with_depth_an
             constructor = lambda **configs: VGGTColmapSparseInitializer(destination=directory, **configs)
         case "vggt-colmap-dense":
             constructor = lambda **configs: VGGTColmapDenseInitializer(destination=directory, **configs)
+        case "vggttt":
+            constructor = VGGTTTInitializer
+        case "vggttt-colmap-sparse":
+            constructor = lambda **configs: VGGTTTColmapSparseInitializer(destination=directory, **configs)
+        case "vggttt-colmap-dense":
+            constructor = lambda **configs: VGGTTTColmapDenseInitializer(destination=directory, **configs)
         case "colmap-sparse":
             constructor = lambda **configs: ColmapSparseInitializer(destination=directory, **configs)
         case "colmap-dense":
