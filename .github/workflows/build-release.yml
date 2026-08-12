@@ -72,7 +72,7 @@ jobs:
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
           CIBW_BEFORE_BUILD: >
             yum install -y dnf-plugins-core &&
-            yum-config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo &&
+            dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo &&
             yum install --setopt=obsoletes=0 -y cuda-nvcc-12-6-12.6.85-1 cuda-cudart-devel-12-6-12.6.77-1 &&
             export LD_LIBRARY_PATH="/usr/local/lib:/usr/local/cuda/lib64:$LD_LIBRARY_PATH" && export BUILD_WITH_CUDA=1 &&
             python -m pip install -U torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cu126 &&

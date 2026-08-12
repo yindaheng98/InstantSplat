@@ -62,10 +62,9 @@ class VGGTTTInitializer(AbstractInitializer):
         conf_thres_value: float = 5.0,
         save_depth: bool = True,
         scene_scale: float = 1.0,
-        num_ttt_steps: int = 2,
+        num_ttt_steps: int | None = 2,
         memory_efficient_inference: bool = True,
         use_global_pred: bool = True,
-        offload_to_cpu: bool = False,
     ):
         self.conf_thres_value = conf_thres_value
         self.save_depth = save_depth
@@ -73,7 +72,6 @@ class VGGTTTInitializer(AbstractInitializer):
         self.num_ttt_steps = num_ttt_steps
         self.memory_efficient_inference = memory_efficient_inference
         self.use_global_pred = use_global_pred
-        self.offload_to_cpu = offload_to_cpu
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # From: https://github.com/nv-dvl/vgg-ttt/blob/5b2d02d0598da9544e1dfa3b13a24ba09257a07f/vggttt/demo.py#L71-L79
@@ -89,20 +87,26 @@ class VGGTTTInitializer(AbstractInitializer):
     def __call__(
         self, image_path_list: List[str]
     ) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
-        device = self.device
+        device = torch.device(self.device)
 
-        # From: https://github.com/nv-dvl/vgg-ttt/blob/5b2d02d0598da9544e1dfa3b13a24ba09257a07f/vggttt/demo.py#L368-L376
-        images = load_and_preprocess_images(image_path_list)
-        images = images.to(device)
+        with torch.cuda.device(device):
+            # From: https://github.com/nv-dvl/vgg-ttt/blob/5b2d02d0598da9544e1dfa3b13a24ba09257a07f/vggttt/demo.py#L368-L376
+            images = load_and_preprocess_images(
+                image_path_list,
+                mode="crop",
+                target_size=RESOLUTION,
+                patch_size=PATCH_SIZE,
+                pad_value=1.0,
+            )
+            images = images.to(device)
 
-        # From: https://github.com/nv-dvl/vgg-ttt/blob/5b2d02d0598da9544e1dfa3b13a24ba09257a07f/vggttt/demo.py#L383-L391
-        predictions = self.model.infer(
-            images,
-            num_ttt_steps=self.num_ttt_steps,
-            memory_efficient_inference=self.memory_efficient_inference,
-            use_global_pred=self.use_global_pred,
-            offload_to_cpu=self.offload_to_cpu,
-        )
+            # From: https://github.com/nv-dvl/vgg-ttt/blob/5b2d02d0598da9544e1dfa3b13a24ba09257a07f/vggttt/demo.py#L383-L391
+            predictions = self.model.infer(
+                images,
+                num_ttt_steps=self.num_ttt_steps,
+                memory_efficient_inference=self.memory_efficient_inference,
+                use_global_pred=self.use_global_pred,
+            )
 
         # Adapted from: https://github.com/nv-dvl/vgg-ttt/blob/5b2d02d0598da9544e1dfa3b13a24ba09257a07f/vggttt/nets/vggt/models/vggt.py#L331-L363
         extrinsic = closed_form_inverse_se3(predictions["pose"])[:, :3, :].cpu().numpy()
