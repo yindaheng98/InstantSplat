@@ -17,6 +17,7 @@ Initialization methods:
 - [x] COLMAP Dense reconstruct (use `patch_match_stereo`, `stereo_fusion`, `poisson_mesher` and `delaunay_mesher` in COLMAP to reconstruct dense point cloud for initialization)
 - [x] Masking of keypoints during COLMAP feature extraction (just put your mask into `mask` folder, e.g. for an image `data/xxx/input/012.jpg`, the mask would be `data/xxx/input_mask/012.jpg.png`)
 - [x] VGGT and VGGT + Colmap Bundle Adjustment according to [`facebookresearch/vggt/demo_colmap.py`](https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py)
+- [x] [VGG-T³](https://github.com/nv-dvl/vgg-ttt), VGG-T³ + COLMAP Bundle Adjustment, and VGG-T³ + COLMAP dense reconstruction
 - [x] Map-Anything and Map-Anything with external pose/depth priors
 
 ## Prerequisites
@@ -118,6 +119,46 @@ Example:
 python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --init vggt -o depth_ground_truth_is_inversed=False
 python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santorini/3_views -i 1000 --init mapanything-external -o depth_ground_truth_is_inversed=False
 ```
+
+### VGG-T³ initialization
+
+VGG-T³ is available through three initializer names:
+- `vggttt`: directly initializes cameras, a point cloud, and native depth maps. Put images in `<scene>/images`.
+- `vggttt-colmap-sparse`: runs VGG-T³, VGGSfM tracking, and COLMAP bundle adjustment. Put images in `<scene>/input`.
+- `vggttt-colmap-dense`: additionally runs COLMAP dense reconstruction. Put images in `<scene>/input`.
+
+The model weights are downloaded automatically from [`nvidia/vgg-ttt`](https://huggingface.co/nvidia/vgg-ttt) on first use. For a source checkout, clone with `--recursive` as shown in [Development Install](#development-install) so that the `submodules/vgg-ttt` submodule is available.
+
+Direct initialization:
+```shell
+python -m instantsplat.initialize -d data/my_scene -i vggttt
+```
+
+The VGG-T³ inference options can be passed with `-o`:
+```shell
+python -m instantsplat.initialize -d data/my_scene -i vggttt \
+  -o num_ttt_steps=2 \
+  -o memory_efficient_inference=True \
+  -o use_global_pred=True \
+  -o offload_to_cpu=True
+```
+
+COLMAP bundle adjustment and dense reconstruction:
+```shell
+python -m instantsplat.initialize -d data/my_scene -i vggttt-colmap-sparse \
+  -o colmap_executable="'colmap'"
+
+python -m instantsplat.initialize -d data/my_scene -i vggttt-colmap-dense \
+  -o colmap_executable="'colmap'"
+```
+
+VGG-T³ saves regular depth rather than inverse depth. When training without `--with_depth_anything`, use:
+```shell
+python -m instantsplat.train -s data/my_scene -d output/my_scene -i 1000 \
+  --init vggttt -o depth_ground_truth_is_inversed=False
+```
+
+VGG-T³ code and weights are subject to the [NVIDIA OneWay Noncommercial License](https://github.com/nv-dvl/vgg-ttt/blob/main/LICENSE).
 
 2. Render it
 ```shell
