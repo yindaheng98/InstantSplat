@@ -10,6 +10,8 @@ jobs:
   build:
     name: Build ${{ matrix.platform }} Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
+    env:
+      PYPI_BUILD: "1"
     strategy:
       fail-fast: false
       matrix:
@@ -80,7 +82,7 @@ jobs:
             python -c "import torch,os;print(os.path.join(os.path.dirname(torch.__file__),'lib'))" > /etc/ld.so.conf.d/999_torch.conf &&
             python -m pip install -U auditwheel setuptools wheel meson-python
           CIBW_BUILD: ${{ matrix.cibw-version }}
-          CIBW_ENVIRONMENT: TORCH_CUDA_ARCH_LIST=Turing
+          CIBW_ENVIRONMENT: TORCH_CUDA_ARCH_LIST=Turing PYPI_BUILD=1
           CIBW_BUILD_VERBOSITY: 1
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: "python -m auditwheel repair --exclude 'libtorch*.so' -w {dest_dir} {wheel}"
 
