@@ -16,6 +16,7 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             delaunay2ply_reference_batch=512*512,
             poisson2ply_thresh=0.2,
             use_fused=False,
+            use_mask=False,
             *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.PatchMatchStereo_max_image_size = PatchMatchStereo_max_image_size
@@ -25,6 +26,7 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
         self.delaunay2ply_reference_batch = delaunay2ply_reference_batch
         self.poisson2ply_thresh = poisson2ply_thresh
         self.use_fused = use_fused
+        self.use_mask = use_mask
 
     def patch_match_stereo(args, folder):
         cmd = [
@@ -45,7 +47,8 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             "--workspace_format=COLMAP",
             "--input_type=photometric",
         ]
-        if os.path.exists(os.path.join(folder, "sparse/mask/mask")):
+        if args.use_mask:
+            assert os.path.exists(os.path.join(folder, "sparse/mask/mask"))
             cmd += ["--StereoFusion.mask_path", os.path.join(folder, "sparse/mask/mask")]
         return execute(cmd)
 
