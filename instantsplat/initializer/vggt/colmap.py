@@ -32,7 +32,7 @@ class VGGTColmapSparseInitializer(ColmapSparseInitializer):
         max_reproj_error=8.0,
         keypoint_extractor="aliked+sp",
         fine_tracking=True,
-        camera="PINHOLE",
+        camera="SIMPLE_PINHOLE",
         **kwargs,
     ):
         kwargs.pop("load_camera", None)
@@ -72,7 +72,7 @@ class VGGTColmapSparseInitializer(ColmapSparseInitializer):
         )
         if not mapper_ok:
             # Override: replace feature_extractor + matcher + mapper
-            self.vggt_mapper(folder, image_path_list)
+            original_coords = self.vggt_mapper(folder, image_path_list)
             if self.bundle_adjuster(folder) != 0:
                 raise RuntimeError("Bundle adjustment failed")
             if self.image_undistorter(folder) != 0:
@@ -173,6 +173,7 @@ class VGGTColmapSparseInitializer(ColmapSparseInitializer):
         sparse_dir = os.path.join(folder, "distorted", "sparse", "0")
         os.makedirs(sparse_dir, exist_ok=True)
         write_model(cameras, colmap_images, colmap_points3D, sparse_dir)
+        return original_coords
 
 
 class VGGTColmapDenseInitializer(ColmapDenseInitializer, VGGTColmapSparseInitializer):

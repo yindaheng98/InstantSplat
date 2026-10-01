@@ -134,6 +134,7 @@ class VGGTTTColmapSparseInitializer(VGGTColmapSparseInitializer):
         sparse_dir = os.path.join(folder, "distorted", "sparse", "0")
         os.makedirs(sparse_dir, exist_ok=True)
         write_model(cameras, colmap_images, colmap_points3D, sparse_dir)
+        return original_coords
 
 
 class VGGTTTColmapDenseInitializer(ColmapDenseInitializer, VGGTTTColmapSparseInitializer):
