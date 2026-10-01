@@ -100,6 +100,7 @@ class ColmapSparseInitializer(AbstractInitializer):
         return execute(cmd)
 
     def image_undistorter(args, folder):
+        shutil.rmtree(os.path.join(folder, "images"), ignore_errors=True)
         cmd = [
             args.colmap_executable, "image_undistorter",
             "--image_path", os.path.join(folder, "input"),
