@@ -29,7 +29,7 @@ class ColmapSparseInitializer(AbstractInitializer):
                  load_camera: str = None,
                  scene_scale: float = 1.0,
                  allow_undistortion_missing: bool = False,
-                 use_mask: bool = False):
+                 feature_extractor_mask_dir=None):
         self.destination = destination
         self.run_at_destination = run_at_destination
         self.colmap_executable = colmap_executable
@@ -40,7 +40,7 @@ class ColmapSparseInitializer(AbstractInitializer):
         self.use_gpu = "1"
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.allow_undistortion_missing = allow_undistortion_missing
-        self.use_mask = use_mask
+        self.feature_extractor_mask_dir = feature_extractor_mask_dir
 
     def to(self, device):
         self.use_gpu = "0" if device == "cpu" else "1"
@@ -68,9 +68,8 @@ class ColmapSparseInitializer(AbstractInitializer):
             "--SiftExtraction.use_gpu", args.use_gpu,
             "--ImageReader.single_camera_per_image", args.single_camera_per_image,
         ]
-        if args.use_mask:
-            assert os.path.exists(os.path.join(folder, "mask"))
-            cmd += ["--ImageReader.mask_path", os.path.join(folder, "mask")]
+        if args.feature_extractor_mask_dir is not None:
+            cmd += ["--ImageReader.mask_path", os.path.join(folder, args.feature_extractor_mask_dir)]
         return execute(cmd)
 
     def exhaustive_matcher(args, folder):
