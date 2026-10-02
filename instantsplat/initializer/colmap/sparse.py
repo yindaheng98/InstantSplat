@@ -47,7 +47,8 @@ class ColmapSparseInitializer(AbstractInitializer):
                  load_camera: str = None,
                  scene_scale: float = 1.0,
                  allow_undistortion_missing: bool = False,
-                 feature_extractor_mask_dir=None):
+                 image_mask_dirname: str = "input_mask",
+                 feature_mask_dirname: str = "feature_mask"):
         self.destination = destination
         self.run_at_destination = run_at_destination
         self.colmap_executable = colmap_executable
@@ -58,7 +59,8 @@ class ColmapSparseInitializer(AbstractInitializer):
         self.use_gpu = "1"
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.allow_undistortion_missing = allow_undistortion_missing
-        self.feature_extractor_mask_dir = feature_extractor_mask_dir
+        self.image_mask_dirname = image_mask_dirname
+        self.feature_mask_dirname = feature_mask_dirname
 
     def to(self, device):
         self.use_gpu = "0" if device == "cpu" else "1"
@@ -66,15 +68,18 @@ class ColmapSparseInitializer(AbstractInitializer):
         return self
 
     def put_distorted(self, image_path_list, folder):
-        os.makedirs(os.path.join(folder, "input"), exist_ok=True)
-        for image_path in image_path_list:
-            if not os.path.samefile(image_path, os.path.join(folder, "input", os.path.basename(image_path))):
-                shutil.copy2(image_path, os.path.join(folder, "input", os.path.basename(image_path)))
-            mask_path = os.path.join(os.path.dirname(os.path.dirname(image_path)), "mask", os.path.basename(image_path) + ".png")
-            if not os.path.exists(mask_path):
-                continue
-            if not os.path.samefile(mask_path, os.path.join(folder, "mask", os.path.basename(image_path) + ".png")):
-                shutil.copy2(mask_path, os.path.join(folder, "mask", os.path.basename(image_path) + ".png"))
+        prefix, image_names = relative_image_names(image_path_list)
+        folder = Path(folder)
+        image_mask_root = prefix.parent / self.image_mask_dirname
+        feature_mask_root = prefix.parent / self.feature_mask_dirname
+        for image_path, image_name in zip(image_path_list, image_names):
+            copy2(image_path, folder / "input" / image_name)
+            image_mask_path = image_mask_root / image_name.with_name(image_name.name + ".png")
+            if image_mask_path.exists():
+                copy2(image_mask_path, folder / "input_mask" / image_name.with_name(image_name.name + ".png"))
+            feature_mask_path = feature_mask_root / image_name.with_name(image_name.name + ".png")
+            if feature_mask_path.exists():
+                copy2(feature_mask_path, folder / "feature_mask" / image_name.with_name(image_name.name + ".png"))
 
     def feature_extractor(args, folder):
         os.makedirs(os.path.join(folder, "distorted"), exist_ok=True)
@@ -86,8 +91,9 @@ class ColmapSparseInitializer(AbstractInitializer):
             "--SiftExtraction.use_gpu", args.use_gpu,
             "--ImageReader.single_camera_per_image", args.single_camera_per_image,
         ]
-        if args.feature_extractor_mask_dir is not None:
-            cmd += ["--ImageReader.mask_path", os.path.join(folder, args.feature_extractor_mask_dir)]
+        feature_mask_dir = os.path.join(folder, "feature_mask")
+        if os.path.isdir(feature_mask_dir):
+            cmd += ["--ImageReader.mask_path", feature_mask_dir]
         return execute(cmd)
 
     def exhaustive_matcher(args, folder):
