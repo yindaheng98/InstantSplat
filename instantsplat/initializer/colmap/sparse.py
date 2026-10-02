@@ -18,8 +18,9 @@ def output_image_paths(destination: str, image_name: Path):
     image_name = Path(image_name)
     root = Path(destination)
     image_path = root / "images" / image_name
+    assert image_path.is_file(), f"Image does not exist: {image_path}"
     image_mask_path = root / "image_masks" / image_name.with_name(image_name.name + ".png")
-    return str(image_path), str(image_mask_path)
+    return str(image_path), str(image_mask_path) if image_mask_path.is_file() else None
 
 
 def relative_image_names(image_path_list):
@@ -57,7 +58,6 @@ class ColmapSparseInitializer(AbstractInitializer):
                  allow_undistortion_missing: bool = False,
                  image_mask_dirname: str = "input_mask",
                  feature_mask_dirname: str = "feature_mask"):
-        self.destination = destination
         self.run_at_destination = run_at_destination
         self.colmap_executable = colmap_executable
         self.camera = camera
@@ -221,7 +221,7 @@ class ColmapSparseInitializer(AbstractInitializer):
                 if self.mask_undistorter(folder, image_names) != 0:
                     raise RuntimeError("Mask undistortion failed")
 
-    def save_distorted(self, folder, image_names: list[Path]):
+    def save_distorted(self, folder, image_names: list[Path], destination: str):
         for image_name in image_names:
             src = Path(folder) / "images" / image_name
             if not src.exists():
@@ -229,11 +229,11 @@ class ColmapSparseInitializer(AbstractInitializer):
                     continue
                 else:
                     raise RuntimeError("Undistortion incomplete")
-            copy2(src, Path(self.destination) / "images" / image_name)
+            copy2(src, Path(destination) / "images" / image_name)
             mask_src = Path(folder) / "image_masks" / image_name.with_name(image_name.name + ".png")
             if not mask_src.exists():
                 continue
-            copy2(mask_src, Path(self.destination) / "image_masks" / image_name.with_name(image_name.name + ".png"))
+            copy2(mask_src, Path(destination) / "image_masks" / image_name.with_name(image_name.name + ".png"))
 
     def read_points3D(self, folder):
         points3D = read_points3D_binary(os.path.join(folder, "sparse", "points3D.bin"))
@@ -241,7 +241,7 @@ class ColmapSparseInitializer(AbstractInitializer):
         rgb = torch.from_numpy(np.array([points3D[key].rgb for key in points3D])).to(device=self.device, dtype=torch.float)
         return InitializedPointCloud(points=xyz*self.scene_scale, colors=rgb/255.0)
 
-    def read_camera(self, folder):
+    def read_camera(self, folder, destination: str):
         image_dir = Path(folder) / "images"
         cameras_extrinsic_file = os.path.join(folder, "sparse", "images.bin")
         cameras_intrinsic_file = os.path.join(folder, "sparse", "cameras.bin")
@@ -253,21 +253,22 @@ class ColmapSparseInitializer(AbstractInitializer):
                 FoVx=camera.FoVx, FoVy=camera.FoVy,
                 R=camera.R.to(device=self.device, dtype=torch.float),
                 T=camera.T.to(device=self.device, dtype=torch.float)*self.scene_scale,
-                image_path=str(Path(self.destination) / "images" / Path(camera.image_path).relative_to(image_dir))
+                image_path=image_path, image_mask_path=image_mask_path,
+                depth_path=depth_path, depth_mask_path=depth_mask_path,
             )
             for camera in parse_colmap_camera(cam_extrinsics, cam_intrinsics, image_dir, load_mask=False)]
 
-    def run(self, image_path_list, tempdir):
-        image_names = self.put_distorted(image_path_list, tempdir)
-        self.sparse_reconstruct(tempdir, image_names)
-        self.save_distorted(tempdir, image_names)
+    def run(self, image_path_list, folder, destination: str):
+        image_names = self.put_distorted(image_path_list, folder)
+        self.sparse_reconstruct(folder, image_names)
+        self.save_distorted(folder, image_names, destination)
         return image_names
 
-    def __call__(self, image_path_list):
+    def __call__(self, image_path_list, destination: str):
         if self.run_at_destination:
-            self.run(image_path_list, self.destination)
-            return self.read_points3D(self.destination), self.read_camera(self.destination)
+            self.run(image_path_list, destination, destination)
+            return self.read_points3D(destination), self.read_camera(destination, destination)
         else:
             with tempfile.TemporaryDirectory() as tempdir:
-                self.run(image_path_list, tempdir)
-                return self.read_points3D(tempdir), self.read_camera(tempdir)
+                self.run(image_path_list, tempdir, destination)
+                return self.read_points3D(tempdir), self.read_camera(tempdir, destination)
