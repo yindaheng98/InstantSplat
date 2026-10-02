@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -24,12 +25,12 @@ class VGGTTTColmapSparseInitializer(VGGTColmapSparseInitializer):
         self,
         model_url="nvidia/vgg-ttt",
         img_load_resolution=1024,
-        max_query_pts=4096,
+        max_query_pts=256,
         query_frame_num=8,
         vis_thresh=0.2,
         max_reproj_error=8.0,
         keypoint_extractor="aliked+sp",
-        fine_tracking=True,
+        fine_tracking=False,
         camera="PINHOLE",
         num_ttt_steps=2,
         memory_efficient_inference=True,
@@ -114,22 +115,23 @@ class VGGTTTColmapSparseInitializer(VGGTColmapSparseInitializer):
         intrinsic[:, :2, :] *= scale
         track_mask = pred_vis_scores > self.vis_thresh
 
+        # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L143-L187
+        image_size = np.array(images.shape[-2:])
         cameras, colmap_images, colmap_points3D, valid_track_mask = batch_np_matrix_to_colmap(
             points_3d,
             extrinsic,
             intrinsic,
             pred_tracks,
-            original_coords,
-            img_load_resolution,
-            [os.path.basename(p) for p in image_path_list],
+            image_size,
             masks=track_mask,
             max_reproj_error=self.max_reproj_error,
+            shared_camera=False,
             camera_type=self.camera,
             points_rgb=points_rgb,
         )
 
-        if len(colmap_points3D) == 0:
-            raise RuntimeError("No valid tracks for bundle adjustment")
+        if cameras is None:
+            raise ValueError("No reconstruction can be built with BA")
 
         sparse_dir = os.path.join(folder, "distorted", "sparse", "0")
         os.makedirs(sparse_dir, exist_ok=True)
