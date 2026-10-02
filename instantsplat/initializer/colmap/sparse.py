@@ -30,6 +30,13 @@ def relative_image_names(image_path_list):
     return prefix, [path.relative_to(prefix) for path in paths]
 
 
+def save_image(image_path, destination: str, image_name: Path):
+    image_name = Path(image_name)
+    dst = Path(destination) / "images" / image_name
+    copy2(image_path, dst)
+    return dst
+
+
 def copy2(src, dst):
     dst = Path(dst)
     dst.parent.mkdir(parents=True, exist_ok=True)
@@ -48,7 +55,6 @@ def execute(cmd):
 
 class ColmapSparseInitializer(AbstractInitializer):
     def __init__(self,
-                 destination: str,
                  run_at_destination: bool = True,
                  colmap_executable: str = "colmap",
                  camera: str = "OPENCV",
@@ -229,7 +235,7 @@ class ColmapSparseInitializer(AbstractInitializer):
                     continue
                 else:
                     raise RuntimeError("Undistortion incomplete")
-            copy2(src, Path(destination) / "images" / image_name)
+            save_image(src, destination, image_name)
             mask_src = Path(folder) / "image_masks" / image_name.with_name(image_name.name + ".png")
             if not mask_src.exists():
                 continue
