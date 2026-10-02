@@ -1,7 +1,6 @@
 import os
-import shutil
 import tempfile
-from typing import NamedTuple
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -24,26 +23,6 @@ def read_colmap_depth_map(path):
                 delimiter_count += 1
         depth = np.fromfile(fid, np.float32)
     return np.transpose(depth.reshape((width, height, channels), order="F"), (1, 0, 2)).squeeze()
-
-
-class ImageMask(NamedTuple):
-    image_filename: str
-    mask_filename: str | None = None
-
-
-def list_image_masks(image_dir: str) -> list[ImageMask]:
-    files = set(os.listdir(image_dir))
-    mask_of = {}
-    for file in files:
-        mask_filename = os.path.splitext(file)[0] + "_mask.png"
-        if mask_filename != file and mask_filename in files:
-            mask_of[file] = mask_filename
-    mask_filenames = set(mask_of.values())
-    return [
-        ImageMask(image_filename=file, mask_filename=mask_of.get(file))
-        for file in sorted(files)
-        if file not in mask_filenames
-    ]
 
 
 class ColmapDenseInitializer(ColmapSparseInitializer):
@@ -88,22 +67,8 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             "--input_type=photometric",
         ]
         if args.use_mask:
-            tmp_mask = os.path.join(folder, "tmp_mask")
-            shutil.rmtree(tmp_mask, ignore_errors=True)
-            os.makedirs(tmp_mask, exist_ok=True)
-            for image_mask in list_image_masks(os.path.join(folder, "images")):
-                if image_mask.mask_filename is None:
-                    continue
-                os.link(
-                    os.path.join(folder, "images", image_mask.mask_filename),
-                    os.path.join(tmp_mask, image_mask.image_filename + ".png"),
-                )
-            cmd += ["--StereoFusion.mask_path", tmp_mask]
-            ret = execute(cmd)
-            shutil.rmtree(tmp_mask, ignore_errors=True)
-        else:
-            ret = execute(cmd)
-        return ret
+            cmd += ["--StereoFusion.mask_path", os.path.join(folder, "image_masks")]
+        return execute(cmd)
 
     def poisson_mesher(args, folder):
         cmd = [
@@ -136,22 +101,23 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             threshold=args.poisson2ply_thresh)
 
     @staticmethod
-    def verify_patch_match_stereo(folder, image_path_list):
-        for image_path in image_path_list:
-            if not os.path.exists(os.path.join(folder, "stereo", "depth_maps", os.path.basename(image_path) + ".geometric.bin")):
+    def verify_patch_match_stereo(folder, image_names):
+        folder = Path(folder)
+        for image_name in image_names:
+            if not (folder / "stereo" / "depth_maps" / image_name.with_name(image_name.name + ".geometric.bin")).exists():
                 return False
-            if not os.path.exists(os.path.join(folder, "stereo", "depth_maps", os.path.basename(image_path) + ".photometric.bin")):
+            if not (folder / "stereo" / "depth_maps" / image_name.with_name(image_name.name + ".photometric.bin")).exists():
                 return False
-            if not os.path.exists(os.path.join(folder, "stereo", "normal_maps", os.path.basename(image_path) + ".geometric.bin")):
+            if not (folder / "stereo" / "normal_maps" / image_name.with_name(image_name.name + ".geometric.bin")).exists():
                 return False
-            if not os.path.exists(os.path.join(folder, "stereo", "normal_maps", os.path.basename(image_path) + ".photometric.bin")):
+            if not (folder / "stereo" / "normal_maps" / image_name.with_name(image_name.name + ".photometric.bin")).exists():
                 return False
         return True
 
-    def dense_reconstruct(self, folder, image_path_list):
+    def dense_reconstruct(self, folder, image_names):
         ok = True
 
-        ok = ok and self.verify_patch_match_stereo(folder, image_path_list)
+        ok = ok and self.verify_patch_match_stereo(folder, image_names)
         if not ok:
             if self.patch_match_stereo(folder) != 0:
                 raise ValueError("Patch match stereo failed")
@@ -183,7 +149,8 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             self.poisson2ply(folder).write(os.path.join(folder, "filtered-poisson.ply"))
 
     def export_depth(self, folder, camera: InitializingCamera):
-        bin_path = os.path.join(folder, "stereo", "depth_maps", os.path.basename(camera.image_path) + ".geometric.bin")
+        image_name = Path(camera.image_path).relative_to(Path(self.destination) / "images")
+        bin_path = Path(folder) / "stereo" / "depth_maps" / image_name.with_name(image_name.name + ".geometric.bin")
         if not os.path.exists(bin_path):
             return camera
         depth = read_colmap_depth_map(bin_path)
@@ -205,8 +172,9 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
         return [self.export_depth(folder, camera) for camera in super().read_camera(folder)]
 
     def run(self, image_path_list, tempdir):
-        super().run(image_path_list, tempdir)
-        self.dense_reconstruct(tempdir, image_path_list)
+        image_names = super().run(image_path_list, tempdir)
+        self.dense_reconstruct(tempdir, image_names)
+        return image_names
 
     def __call__(self, image_path_list):
         use_file = "fused.ply" if self.use_fused else "filtered-poisson.ply"

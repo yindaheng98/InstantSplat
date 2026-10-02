@@ -253,6 +253,7 @@ class ColmapSparseInitializer(AbstractInitializer):
         image_names = self.put_distorted(image_path_list, tempdir)
         self.sparse_reconstruct(tempdir, image_names)
         self.save_distorted(tempdir, image_names)
+        return image_names
 
     def __call__(self, image_path_list):
         if self.run_at_destination:
