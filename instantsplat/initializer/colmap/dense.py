@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 from instantsplat.initializer.abc import InitializedPointCloud
 from .sparse import ColmapSparseInitializer, execute
@@ -48,9 +49,20 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             "--input_type=photometric",
         ]
         if args.use_mask:
-            assert os.path.exists(os.path.join(folder, "sparse/mask/mask"))
-            cmd += ["--StereoFusion.mask_path", os.path.join(folder, "sparse/mask/mask")]
-        return execute(cmd)
+            tmp_mask = os.path.join(folder, "tmp_mask")
+            shutil.rmtree(tmp_mask, ignore_errors=True)
+            os.makedirs(tmp_mask, exist_ok=True)
+            for file in os.listdir(os.path.join(folder, "images")):
+                mask_src = os.path.join(folder, "images", os.path.splitext(file)[0] + "_mask.png")
+                if not os.path.exists(mask_src):
+                    continue
+                os.link(mask_src, os.path.join(tmp_mask, file + ".png"))
+            cmd += ["--StereoFusion.mask_path", tmp_mask]
+            ret = execute(cmd)
+            shutil.rmtree(tmp_mask, ignore_errors=True)
+        else:
+            ret = execute(cmd)
+        return ret
 
     def poisson_mesher(args, folder):
         cmd = [
