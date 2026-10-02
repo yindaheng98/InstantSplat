@@ -135,34 +135,48 @@ class ColmapSparseInitializer(AbstractInitializer):
         ]
         return execute(cmd)
 
-    def mask_undistorter(args, folder):
-        if not os.path.exists(os.path.join(folder, "mask")):
+    def mask_undistorter(args, folder, image_names: list[Path]):
+        folder = Path(folder)
+        if not (folder / "input_mask").is_dir():
             return 0
-        shutil.rmtree(os.path.join(folder, "tmp_mask"), ignore_errors=True)
-        os.makedirs(os.path.join(folder, "tmp_mask"), exist_ok=True)
-        for file in os.listdir(os.path.join(folder, "input")):
-            os.link(os.path.join(folder, "mask", file + ".png"), os.path.join(folder, "tmp_mask", file))
-        shutil.rmtree(os.path.join(folder, "tmp_mask_sparse"), ignore_errors=True)
-        cmd = [
+        shutil.rmtree(folder / "tmp_mask", ignore_errors=True)
+        exists = False
+        for image_name in image_names:
+            src = folder / "input_mask" / image_name.with_name(image_name.name + ".png")
+            dst = folder / "tmp_mask" / image_name
+            if not src.exists():
+                continue
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            os.link(src, dst)
+            exists = True
+        if not exists:
+            shutil.rmtree(folder / "tmp_mask", ignore_errors=True)
+            return 0
+        shutil.rmtree(folder / "tmp_mask_sparse", ignore_errors=True)
+        ret = execute([
             args.colmap_executable, "image_undistorter",
-            "--image_path", os.path.join(folder, "tmp_mask"),
-            "--input_path", os.path.join(folder, "distorted", "sparse", "0"),
-            "--output_path", os.path.join(folder, "tmp_mask_sparse"),
+            "--image_path", os.fspath(folder / "tmp_mask"),
+            "--input_path", os.fspath(folder / "distorted" / "sparse" / "0"),
+            "--output_path", os.fspath(folder / "tmp_mask_sparse"),
             "--output_type=COLMAP",
-        ]
-        ret = execute(cmd)
-        shutil.rmtree(os.path.join(folder, "tmp_mask"), ignore_errors=True)
+        ])
+        shutil.rmtree(folder / "tmp_mask", ignore_errors=True)
         if ret != 0:
+            shutil.rmtree(folder / "tmp_mask_sparse", ignore_errors=True)
             return ret
-        for file in os.listdir(os.path.join(folder, "tmp_mask_sparse/images")):
-            image_mask_path = os.path.join(folder, "images", os.path.splitext(file)[0] + '_mask.png')
-            if os.path.exists(image_mask_path):
-                os.remove(image_mask_path)
-            shutil.copy2(os.path.join(folder, "tmp_mask_sparse/images", file), image_mask_path)
-        shutil.rmtree(os.path.join(folder, "tmp_mask_sparse"), ignore_errors=True)
+        for image_name in image_names:
+            src = folder / "tmp_mask_sparse" / "images" / image_name
+            dst = folder / "image_masks" / image_name.with_name(image_name.name + ".png")
+            if not src.exists():
+                continue
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            if dst.exists():
+                dst.unlink()
+            os.link(src, dst)
+        shutil.rmtree(folder / "tmp_mask_sparse", ignore_errors=True)
         return 0
 
-    def sparse_reconstruct(self, folder, image_path_list):
+    def sparse_reconstruct(self, folder, image_names: list[Path]):
         mapper_ok = all(
             os.path.exists(os.path.join(folder, "distorted", "sparse", "0", file))
             for file in ("cameras.bin", "images.bin", "points3D.bin")
@@ -176,12 +190,12 @@ class ColmapSparseInitializer(AbstractInitializer):
                 raise RuntimeError("Mapping failed")
             if self.image_undistorter(folder) != 0:
                 raise RuntimeError("Undistortion failed")
-            if self.mask_undistorter(folder) != 0:
+            if self.mask_undistorter(folder, image_names) != 0:
                 raise RuntimeError("Mask undistortion failed")
             return
         undistorter_ok = all(
-            os.path.exists(os.path.join(folder, "images", os.path.basename(image_path)))
-            for image_path in image_path_list
+            (Path(folder) / "images" / image_name).exists()
+            for image_name in image_names
         ) and all(
             os.path.exists(os.path.join(folder, "sparse", file))
             for file in ("cameras.bin", "images.bin", "points3D.bin")
@@ -189,40 +203,29 @@ class ColmapSparseInitializer(AbstractInitializer):
         if not undistorter_ok:
             if self.image_undistorter(folder) != 0:
                 raise RuntimeError("Undistortion failed")
-        if os.path.exists(os.path.join(folder, "mask")):
+        if (Path(folder) / "input_mask").is_dir():
             mask_undistorter_ok = all(
-                not os.path.exists(os.path.join(folder, "mask", os.path.basename(image_path) + ".png"))
-                or os.path.exists(os.path.join(folder, "images", os.path.splitext(os.path.basename(image_path))[0] + "_mask.png"))
-                for image_path in image_path_list
+                not (Path(folder) / "input_mask" / image_name.with_name(image_name.name + ".png")).exists()
+                or (Path(folder) / "image_masks" / image_name.with_name(image_name.name + ".png")).exists()
+                for image_name in image_names
             )
             if not mask_undistorter_ok:
-                if self.mask_undistorter(folder) != 0:
+                if self.mask_undistorter(folder, image_names) != 0:
                     raise RuntimeError("Mask undistortion failed")
 
-    def save_distorted(self, folder, image_path_list):
-        os.makedirs(os.path.join(self.destination, "images"), exist_ok=True)
-        for image_path in image_path_list:
-            src = os.path.join(folder, "images", os.path.basename(image_path))
-            if not os.path.exists(src):
+    def save_distorted(self, folder, image_names: list[Path]):
+        for image_name in image_names:
+            src = Path(folder) / "images" / image_name
+            if not src.exists():
                 if self.allow_undistortion_missing:
                     continue
                 else:
                     raise RuntimeError("Undistortion incomplete")
-            dst = os.path.join(self.destination, "images", os.path.basename(image_path))
-            if os.path.exists(dst):
-                if os.path.samefile(src, dst):
-                    continue
-                os.remove(dst)
-            shutil.copy2(src, dst)
-            mask_src = os.path.join(folder, "images", os.path.splitext(os.path.basename(image_path))[0] + "_mask.png")
-            if not os.path.exists(mask_src):
+            copy2(src, Path(self.destination) / "images" / image_name)
+            mask_src = Path(folder) / "image_masks" / image_name.with_name(image_name.name + ".png")
+            if not mask_src.exists():
                 continue
-            mask_dst = os.path.join(self.destination, "images", os.path.basename(mask_src))
-            if os.path.exists(mask_dst):
-                if os.path.samefile(mask_src, mask_dst):
-                    continue
-                os.remove(mask_dst)
-            shutil.copy2(mask_src, mask_dst)
+            copy2(mask_src, Path(self.destination) / "image_masks" / image_name.with_name(image_name.name + ".png"))
 
     def read_points3D(self, folder):
         points3D = read_points3D_binary(os.path.join(folder, "sparse", "points3D.bin"))
@@ -231,7 +234,7 @@ class ColmapSparseInitializer(AbstractInitializer):
         return InitializedPointCloud(points=xyz*self.scene_scale, colors=rgb/255.0)
 
     def read_camera(self, folder):
-        image_dir = os.path.join(folder, "images")
+        image_dir = Path(folder) / "images"
         cameras_extrinsic_file = os.path.join(folder, "sparse", "images.bin")
         cameras_intrinsic_file = os.path.join(folder, "sparse", "cameras.bin")
         cam_extrinsics = read_images_binary(cameras_extrinsic_file)
@@ -242,14 +245,14 @@ class ColmapSparseInitializer(AbstractInitializer):
                 FoVx=camera.FoVx, FoVy=camera.FoVy,
                 R=camera.R.to(device=self.device, dtype=torch.float),
                 T=camera.T.to(device=self.device, dtype=torch.float)*self.scene_scale,
-                image_path=os.path.join(self.destination, "images", os.path.basename(camera.image_path))
+                image_path=str(Path(self.destination) / "images" / Path(camera.image_path).relative_to(image_dir))
             )
-            for camera in parse_colmap_camera(cam_extrinsics, cam_intrinsics, image_dir, os.path.join(folder, "depths"))]
+            for camera in parse_colmap_camera(cam_extrinsics, cam_intrinsics, image_dir, load_mask=False)]
 
     def run(self, image_path_list, tempdir):
         image_names = self.put_distorted(image_path_list, tempdir)
-        self.sparse_reconstruct(tempdir, image_path_list)
-        self.save_distorted(tempdir, image_path_list)
+        self.sparse_reconstruct(tempdir, image_names)
+        self.save_distorted(tempdir, image_names)
 
     def __call__(self, image_path_list):
         if self.run_at_destination:
