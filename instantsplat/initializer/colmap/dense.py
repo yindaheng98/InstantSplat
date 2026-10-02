@@ -10,16 +10,22 @@ from .poisson2ply import poisson2ply
 
 class ImageMask(NamedTuple):
     image_filename: str
-    mask_filename: str
+    mask_filename: str | None = None
 
 
 def list_image_masks(image_dir: str) -> list[ImageMask]:
-    image_masks = []
-    for file in os.listdir(image_dir):
+    files = set(os.listdir(image_dir))
+    mask_of = {}
+    for file in files:
         mask_filename = os.path.splitext(file)[0] + "_mask.png"
-        if os.path.exists(os.path.join(image_dir, mask_filename)):
-            image_masks.append(ImageMask(image_filename=file, mask_filename=mask_filename))
-    return image_masks
+        if mask_filename != file and mask_filename in files:
+            mask_of[file] = mask_filename
+    mask_filenames = set(mask_of.values())
+    return [
+        ImageMask(image_filename=file, mask_filename=mask_of.get(file))
+        for file in sorted(files)
+        if file not in mask_filenames
+    ]
 
 
 class ColmapDenseInitializer(ColmapSparseInitializer):
@@ -68,6 +74,8 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             shutil.rmtree(tmp_mask, ignore_errors=True)
             os.makedirs(tmp_mask, exist_ok=True)
             for image_mask in list_image_masks(os.path.join(folder, "images")):
+                if image_mask.mask_filename is None:
+                    continue
                 os.link(
                     os.path.join(folder, "images", image_mask.mask_filename),
                     os.path.join(tmp_mask, image_mask.image_filename + ".png"),

@@ -24,7 +24,7 @@ default_image_folder = {
 
 def initialize(initializer, directory, configs, device, scale=1.0, with_depth_anything=False):
     image_folder = os.path.join(directory, default_image_folder[initializer])
-    image_path_list = [os.path.join(image_folder, file) for file in sorted(os.listdir(image_folder))]
+    image_path_list = [os.path.join(image_folder, image_mask.image_filename) for image_mask in list_image_masks(image_folder)]
     def convert_image_path(image_path): return os.path.join(os.path.dirname(os.path.dirname(image_path)), "images", os.path.basename(image_path))
     match initializer:
         case "dust3r":
