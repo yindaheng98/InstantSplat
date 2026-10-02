@@ -113,29 +113,28 @@ class ColmapSparseInitializer(AbstractInitializer):
     def mask_undistorter(args, folder):
         if not os.path.exists(os.path.join(folder, "mask")):
             return 0
-        shutil.rmtree(os.path.join(folder, "tmp/mask"), ignore_errors=True)
-        os.makedirs(os.path.join(folder, "tmp/mask"), exist_ok=True)
+        shutil.rmtree(os.path.join(folder, "tmp_mask"), ignore_errors=True)
+        os.makedirs(os.path.join(folder, "tmp_mask"), exist_ok=True)
         for file in os.listdir(os.path.join(folder, "input")):
-            os.link(os.path.join(folder, "mask", file + ".png"), os.path.join(folder, "tmp/mask", file))
+            os.link(os.path.join(folder, "mask", file + ".png"), os.path.join(folder, "tmp_mask", file))
+        shutil.rmtree(os.path.join(folder, "tmp_mask_sparse"), ignore_errors=True)
         cmd = [
             args.colmap_executable, "image_undistorter",
-            "--image_path", os.path.join(folder, "tmp/mask"),
+            "--image_path", os.path.join(folder, "tmp_mask"),
             "--input_path", os.path.join(folder, "distorted", "sparse", "0"),
-            "--output_path", os.path.join(folder, "sparse/mask"),
+            "--output_path", os.path.join(folder, "tmp_mask_sparse"),
             "--output_type=COLMAP",
         ]
         ret = execute(cmd)
-        shutil.rmtree(os.path.join(folder, "tmp/mask"), ignore_errors=True)
+        shutil.rmtree(os.path.join(folder, "tmp_mask"), ignore_errors=True)
         if ret != 0:
             return ret
-        shutil.rmtree(os.path.join(folder, "sparse/mask/mask"), ignore_errors=True)
-        os.makedirs(os.path.join(folder, "sparse/mask/mask"), exist_ok=True)
-        for file in os.listdir(os.path.join(folder, "sparse/mask/images")):
-            os.link(os.path.join(folder, "sparse/mask/images", file), os.path.join(folder, "sparse/mask/mask", file + ".png"))
+        for file in os.listdir(os.path.join(folder, "tmp_mask_sparse/images")):
             image_mask_path = os.path.join(folder, "images", os.path.splitext(file)[0] + '_mask.png')
             if os.path.exists(image_mask_path):
                 os.remove(image_mask_path)
-            shutil.copy2(os.path.join(folder, "sparse/mask/images", file), image_mask_path)
+            shutil.copy2(os.path.join(folder, "tmp_mask_sparse/images", file), image_mask_path)
+        shutil.rmtree(os.path.join(folder, "tmp_mask_sparse"), ignore_errors=True)
         return 0
 
     def sparse_reconstruct(self, folder, image_path_list):
@@ -165,9 +164,15 @@ class ColmapSparseInitializer(AbstractInitializer):
         if not undistorter_ok:
             if self.image_undistorter(folder) != 0:
                 raise RuntimeError("Undistortion failed")
-            if self.mask_undistorter(folder) != 0:
-                raise RuntimeError("Mask undistortion failed")
-            return
+        if os.path.exists(os.path.join(folder, "mask")):
+            mask_undistorter_ok = all(
+                not os.path.exists(os.path.join(folder, "mask", os.path.basename(image_path) + ".png"))
+                or os.path.exists(os.path.join(folder, "images", os.path.splitext(os.path.basename(image_path))[0] + "_mask.png"))
+                for image_path in image_path_list
+            )
+            if not mask_undistorter_ok:
+                if self.mask_undistorter(folder) != 0:
+                    raise RuntimeError("Mask undistortion failed")
 
     def save_distorted(self, folder, image_path_list):
         os.makedirs(os.path.join(self.destination, "images"), exist_ok=True)
