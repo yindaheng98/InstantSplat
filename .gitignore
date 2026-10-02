@@ -19,6 +19,8 @@ configs
 /mast3r
 /gaussian_splatting
 /depth_anything_v2
+/vggt
+/vggttt
 
 *.dist-info
 # Byte-compiled / optimized / DLL files

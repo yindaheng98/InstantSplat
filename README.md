@@ -66,7 +66,7 @@ pip install --upgrade git+https://github.com/yindaheng98/InstantSplat.git@main -
 ```shell
 git clone --recursive https://github.com/yindaheng98/InstantSplat
 cd InstantSplat
-pip install --target . --upgrade --no-deps .
+pip install --target . --upgrade --no-deps . --no-build-isolation
 ```
 
 ## Download model
