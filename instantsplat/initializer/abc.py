@@ -57,5 +57,5 @@ class AbstractInitializer(ABC):
         return self
 
     @abstractmethod
-    def __call__(self, image_path_list: List[str]) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
+    def __call__(self, image_path_list: List[str], destination: str) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
         return InitializedPointCloud(points=torch.empty(0), colors=torch.empty(0)), []

@@ -5,6 +5,8 @@ from dust3r.model import AsymmetricCroCo3DStereo
 from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
+from instantsplat.initializer.colmap import relative_image_names
+from instantsplat.initializer.colmap.sparse import output_image_paths
 
 from .utils import load_images, focal2fov, fov2focal
 from .alignment import compute_global_alignment
@@ -52,7 +54,7 @@ class Dust3rInitializer(AbstractInitializer):
         self.model = self.model.to(device)
         return self
 
-    def __call__(args, image_path_list, known_cameras: List[InitializingCamera] = []):
+    def __call__(args, image_path_list, destination: str, known_cameras: List[InitializingCamera] = []):
         device = args.device
         images, ori_sizes = load_images(image_path_list, size=args.resize)
         model = args.model
@@ -74,6 +76,7 @@ class Dust3rInitializer(AbstractInitializer):
         confidence_masks = scene.get_masks()
         intrinsics = scene.get_intrinsics()
         #######################################################################################################################################
+        _, image_names = relative_image_names(image_path_list)
         return InitializedPointCloud(
             points=torch.concatenate([p[m] for p, m in zip(pts3d, confidence_masks)])*args.scene_scale,
             colors=torch.concatenate([p[m] for p, m in zip(imgs, confidence_masks)])
@@ -83,22 +86,25 @@ class Dust3rInitializer(AbstractInitializer):
                 FoVx=focal2fov(intrinsics[i][0, 0], intrinsics[i][0, 2]*2),
                 FoVy=focal2fov(intrinsics[i][1, 1], intrinsics[i][1, 2]*2),
                 R=poses[i][:3, :3], T=poses[i][:3, 3]*args.scene_scale,
-                image_path=image_path_list[i]
+                image_path=image_path,
+                image_mask_path=image_mask_path,
             )
-            for i in range(len(image_path_list))
+            for i, (image_path, image_mask_path) in enumerate(
+                output_image_paths(destination, image_name) for image_name in image_names
+            )
         ]
 
 
 class Dust3rAlign2Initializer(Dust3rInitializer):
-    def __init__(self, another_initializer: AbstractInitializer, *args, convert_image_path=lambda image_path: image_path, update_camera=False, scene_scale=1., **kwargs):
+    def __init__(self, another_initializer: AbstractInitializer, *args, convert_image_path=lambda image_path_list, destination: image_path_list, update_camera=False, scene_scale=1., **kwargs):
         super().__init__(*args, scene_scale=scene_scale, **kwargs)
         self.convert_image_path = convert_image_path
         self.update_camera = update_camera
         self.another_initializer = another_initializer
 
-    def __call__(self, image_path_list):
-        another_point_cloud, another_cameras = self.another_initializer([self.convert_image_path(image_path) for image_path in image_path_list])
-        point_cloud, cameras = super().__call__([camera.image_path for camera in another_cameras], known_cameras=another_cameras)
+    def __call__(self, image_path_list, destination: str):
+        another_point_cloud, another_cameras = self.another_initializer(self.convert_image_path(image_path_list, destination), destination)
+        point_cloud, cameras = super().__call__([camera.image_path for camera in another_cameras], destination, known_cameras=another_cameras)
         return InitializedPointCloud(
             points=torch.concatenate((point_cloud.points, another_point_cloud.points*self.scene_scale)),
             colors=torch.concatenate((point_cloud.colors, another_point_cloud.colors))

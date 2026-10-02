@@ -46,10 +46,10 @@ class AlignInitializer(AbstractInitializer):
         self.initializers = [initializer.to(device) for initializer in self.initializers]
         return self
 
-    def __call__(self, image_path_list: List[str]):
-        pointcloud, cameras = self.initializers[0](image_path_list)
+    def __call__(self, image_path_list: List[str], destination: str):
+        pointcloud, cameras = self.initializers[0](image_path_list, destination)
         for initializer in self.initializers[1:]:
-            pcd, cams = initializer(image_path_list)
+            pcd, cams = initializer(image_path_list, destination)
             points = global_registration_by_cameras(pcd.points, cameras, cams)
             points = registration_by_ICP(pointcloud.points, points)
             pointcloud = pointcloud._replace(

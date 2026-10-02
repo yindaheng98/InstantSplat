@@ -4,6 +4,8 @@ from mast3r.model import AsymmetricMASt3R
 from dust3r.image_pairs import make_pairs
 from mast3r.cloud_opt.sparse_ga import sparse_global_alignment, SparseGA
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
+from instantsplat.initializer.colmap import relative_image_names
+from instantsplat.initializer.colmap.sparse import output_image_paths
 
 from .utils import load_images, focal2fov
 
@@ -52,7 +54,7 @@ class Mast3rInitializer(AbstractInitializer):
         self.model = self.model.to(device)
         return self
 
-    def __call__(args, image_path_list):
+    def __call__(args, image_path_list, destination: str):
         device = args.device
         images, ori_sizes = load_images(image_path_list, size=args.resize)
         model = args.model
@@ -70,6 +72,7 @@ class Mast3rInitializer(AbstractInitializer):
         confidence_masks = [(c > args.min_conf_thr) for c in confs]
         intrinsics = get_intrinsics(scene, device=device)
         #######################################################################################################################################
+        _, image_names = relative_image_names(image_path_list)
         return InitializedPointCloud(
             points=torch.concatenate([p.view(*m.shape, 3)[m] for p, m in zip(pts3d, confidence_masks)])*args.scene_scale,
             colors=torch.concatenate([p[m] for p, m in zip(imgs, confidence_masks)])
@@ -79,7 +82,10 @@ class Mast3rInitializer(AbstractInitializer):
                 FoVx=focal2fov(intrinsics[i][0, 0], intrinsics[i][0, 2]*2),
                 FoVy=focal2fov(intrinsics[i][1, 1], intrinsics[i][1, 2]*2),
                 R=poses[i][:3, :3], T=poses[i][:3, 3]*args.scene_scale,
-                image_path=image_path_list[i]
+                image_path=image_path,
+                image_mask_path=image_mask_path,
             )
-            for i in range(len(image_path_list))
+            for i, (image_path, image_mask_path) in enumerate(
+                output_image_paths(destination, image_name) for image_name in image_names
+            )
         ]

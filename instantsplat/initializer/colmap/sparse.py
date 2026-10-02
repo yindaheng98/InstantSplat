@@ -14,6 +14,14 @@ from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera
 from .load_cameras import load_colmap_cameras
 
 
+def output_image_paths(destination: str, image_name: Path):
+    image_name = Path(image_name)
+    root = Path(destination)
+    image_path = root / "images" / image_name
+    image_mask_path = root / "image_masks" / image_name.with_name(image_name.name + ".png")
+    return str(image_path), str(image_mask_path)
+
+
 def relative_image_names(image_path_list):
     """Paths relative to the common directory of every image in the list."""
     paths = [Path(path).resolve() for path in image_path_list]

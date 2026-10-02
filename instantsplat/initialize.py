@@ -2,6 +2,7 @@ import os
 import shutil
 
 from instantsplat.initializer import *
+from instantsplat.initializer.colmap import relative_image_names
 from instantsplat.initializer.depth import AutoScaleDepthAnythingV2InitializerWrapper
 
 default_image_folder = {
@@ -22,10 +23,18 @@ default_image_folder = {
 }
 
 
+def convert_image_path(image_path_list, destination):
+    _, image_names = relative_image_names(image_path_list)
+    return [os.path.join(destination, "images", image_name) for image_name in image_names]
+
+
 def initialize(initializer, directory, configs, device, scale=1.0, with_depth_anything=False):
     image_folder = os.path.join(directory, default_image_folder[initializer])
-    image_path_list = [os.path.join(image_folder, image_mask.image_filename) for image_mask in list_image_masks(image_folder)]
-    def convert_image_path(image_path): return os.path.join(os.path.dirname(os.path.dirname(image_path)), "images", os.path.basename(image_path))
+    image_path_list = sorted(
+        os.path.join(dirpath, filename)
+        for dirpath, _, filenames in os.walk(image_folder)
+        for filename in filenames
+    )
     match initializer:
         case "dust3r":
             constructor = Dust3rInitializer
@@ -38,30 +47,30 @@ def initialize(initializer, directory, configs, device, scale=1.0, with_depth_an
         case "mapanything-external":
             constructor = MapAnythingExternalInitializer
         case "vggt-colmap-sparse":
-            constructor = lambda **configs: VGGTColmapSparseInitializer(destination=directory, **configs)
+            constructor = VGGTColmapSparseInitializer
         case "vggt-colmap-dense":
-            constructor = lambda **configs: VGGTColmapDenseInitializer(destination=directory, **configs)
+            constructor = VGGTColmapDenseInitializer
         case "vggttt":
             constructor = VGGTTTInitializer
         case "vggttt-colmap-sparse":
-            constructor = lambda **configs: VGGTTTColmapSparseInitializer(destination=directory, **configs)
+            constructor = VGGTTTColmapSparseInitializer
         case "vggttt-colmap-dense":
-            constructor = lambda **configs: VGGTTTColmapDenseInitializer(destination=directory, **configs)
+            constructor = VGGTTTColmapDenseInitializer
         case "colmap-sparse":
-            constructor = lambda **configs: ColmapSparseInitializer(destination=directory, **configs)
+            constructor = ColmapSparseInitializer
         case "colmap-dense":
-            constructor = lambda **configs: ColmapDenseInitializer(destination=directory, **configs)
+            constructor = ColmapDenseInitializer
         case "dust3r-align-colmap-sparse":
-            constructor = lambda **configs: Dust3rAlign2ColmapSparseInitializer(destination=directory, convert_image_path=convert_image_path, **configs)
+            constructor = lambda **configs: Dust3rAlign2ColmapSparseInitializer(convert_image_path=convert_image_path, **configs)
         case "dust3r-align-colmap-dense":
-            constructor = lambda **configs: Dust3rAlign2ColmapDenseInitializer(destination=directory, convert_image_path=convert_image_path, **configs)
+            constructor = lambda **configs: Dust3rAlign2ColmapDenseInitializer(convert_image_path=convert_image_path, **configs)
         case _:
             raise ValueError(f"Unknown initializer {initializer}")
     if with_depth_anything:
         base_constructor = constructor
         constructor = lambda *args, **configs: AutoScaleDepthAnythingV2InitializerWrapper(base_constructor, *args, **configs)
     initializer = constructor(**configs).to(device)
-    initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
+    initialized_point_cloud, initialized_cameras = initializer(image_path_list, directory)
     initialized_point_cloud = initialized_point_cloud._replace(points=initialized_point_cloud.points*scale)
     initialized_cameras = [camera._replace(T=camera.T*scale) for camera in initialized_cameras]
     return initialized_cameras, initialized_point_cloud
