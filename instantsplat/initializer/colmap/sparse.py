@@ -80,6 +80,7 @@ class ColmapSparseInitializer(AbstractInitializer):
             feature_mask_path = feature_mask_root / image_name.with_name(image_name.name + ".png")
             if feature_mask_path.exists():
                 copy2(feature_mask_path, folder / "feature_mask" / image_name.with_name(image_name.name + ".png"))
+        return image_names
 
     def feature_extractor(args, folder):
         os.makedirs(os.path.join(folder, "distorted"), exist_ok=True)
@@ -246,7 +247,7 @@ class ColmapSparseInitializer(AbstractInitializer):
             for camera in parse_colmap_camera(cam_extrinsics, cam_intrinsics, image_dir, os.path.join(folder, "depths"))]
 
     def run(self, image_path_list, tempdir):
-        self.put_distorted(image_path_list, tempdir)
+        image_names = self.put_distorted(image_path_list, tempdir)
         self.sparse_reconstruct(tempdir, image_path_list)
         self.save_distorted(tempdir, image_path_list)
 
