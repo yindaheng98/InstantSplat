@@ -21,6 +21,16 @@ def relative_image_names(image_path_list):
     return prefix, [path.relative_to(prefix) for path in paths]
 
 
+def copy2(src, dst):
+    dst = Path(dst)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    if dst.exists():
+        if dst.samefile(src):
+            return
+        dst.unlink()
+    shutil.copy2(src, dst)
+
+
 def execute(cmd):
     proc = subprocess.Popen(cmd, shell=False)
     proc.communicate()
