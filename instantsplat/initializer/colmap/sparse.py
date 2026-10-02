@@ -2,6 +2,7 @@ import os
 import tempfile
 import subprocess
 import shutil
+from pathlib import Path
 import numpy as np
 import torch
 
@@ -11,6 +12,13 @@ from gaussian_splatting.dataset.colmap.read_write_model import read_points3D_bin
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 
 from .load_cameras import load_colmap_cameras
+
+
+def relative_image_names(image_path_list):
+    """Paths relative to the common directory of every image in the list."""
+    paths = [Path(path).resolve() for path in image_path_list]
+    prefix = Path(os.path.commonpath(path.parent for path in paths))
+    return prefix, [path.relative_to(prefix) for path in paths]
 
 
 def execute(cmd):
