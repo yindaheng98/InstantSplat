@@ -189,6 +189,15 @@ class ColmapSparseInitializer(AbstractInitializer):
                     continue
                 os.remove(dst)
             shutil.copy2(src, dst)
+            mask_src = os.path.join(folder, "images", os.path.splitext(os.path.basename(image_path))[0] + "_mask.png")
+            if not os.path.exists(mask_src):
+                continue
+            mask_dst = os.path.join(self.destination, "images", os.path.basename(mask_src))
+            if os.path.exists(mask_dst):
+                if os.path.samefile(mask_src, mask_dst):
+                    continue
+                os.remove(mask_dst)
+            shutil.copy2(mask_src, mask_dst)
 
     def read_points3D(self, folder):
         points3D = read_points3D_binary(os.path.join(folder, "sparse", "points3D.bin"))
