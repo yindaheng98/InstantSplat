@@ -2,10 +2,28 @@ import os
 import shutil
 import tempfile
 from typing import NamedTuple
-from instantsplat.initializer.abc import InitializedPointCloud
+
+import cv2
+import numpy as np
+import torch
+
+from instantsplat.initializer.abc import InitializedPointCloud, InitializingCamera
+from instantsplat.initializer.depth.abc import save_depth
 from .sparse import ColmapSparseInitializer, execute
 from .delaunay2ply import read_ply, delaunay2ply
 from .poisson2ply import poisson2ply
+
+
+def read_colmap_depth_map(path):
+    with open(path, "rb") as fid:
+        width, height, channels = np.genfromtxt(fid, delimiter="&", max_rows=1, usecols=(0, 1, 2), dtype=int)
+        fid.seek(0)
+        delimiter_count = 0
+        while delimiter_count < 3:
+            if fid.read(1) == b"&":
+                delimiter_count += 1
+        depth = np.fromfile(fid, np.float32)
+    return np.transpose(depth.reshape((width, height, channels), order="F"), (1, 0, 2)).squeeze()
 
 
 class ImageMask(NamedTuple):
@@ -163,6 +181,28 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
         ok = ok and os.path.exists(os.path.join(folder, "filtered-poisson.ply"))
         if not ok:
             self.poisson2ply(folder).write(os.path.join(folder, "filtered-poisson.ply"))
+
+    def export_depth(self, folder, camera: InitializingCamera):
+        bin_path = os.path.join(folder, "stereo", "depth_maps", os.path.basename(camera.image_path) + ".geometric.bin")
+        if not os.path.exists(bin_path):
+            return camera
+        depth = read_colmap_depth_map(bin_path)
+        mask = depth > 0
+        if not mask.any():
+            return camera
+        height, width = camera.image_height, camera.image_width
+        if depth.shape[:2] != (height, width):
+            depth = cv2.resize(depth, (width, height), interpolation=cv2.INTER_LINEAR)
+            mask = cv2.resize(mask.astype(np.uint8), (width, height), interpolation=cv2.INTER_NEAREST) > 0
+        depth = np.where(mask, depth, 0).astype(np.float32) * self.scene_scale
+        return camera._replace(depth_path=save_depth(
+            camera.image_path,
+            torch.from_numpy(depth),
+            torch.from_numpy(mask.astype(np.float32)),
+        ))
+
+    def read_camera(self, folder):
+        return [self.export_depth(folder, camera) for camera in super().read_camera(folder)]
 
     def run(self, image_path_list, tempdir):
         super().run(image_path_list, tempdir)
