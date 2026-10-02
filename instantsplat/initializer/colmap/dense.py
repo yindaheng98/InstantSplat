@@ -1,10 +1,25 @@
 import os
 import shutil
 import tempfile
+from typing import NamedTuple
 from instantsplat.initializer.abc import InitializedPointCloud
 from .sparse import ColmapSparseInitializer, execute
 from .delaunay2ply import read_ply, delaunay2ply
 from .poisson2ply import poisson2ply
+
+
+class ImageMask(NamedTuple):
+    image_filename: str
+    mask_filename: str
+
+
+def list_image_masks(image_dir: str) -> list[ImageMask]:
+    image_masks = []
+    for file in os.listdir(image_dir):
+        mask_filename = os.path.splitext(file)[0] + "_mask.png"
+        if os.path.exists(os.path.join(image_dir, mask_filename)):
+            image_masks.append(ImageMask(image_filename=file, mask_filename=mask_filename))
+    return image_masks
 
 
 class ColmapDenseInitializer(ColmapSparseInitializer):
@@ -52,11 +67,11 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             tmp_mask = os.path.join(folder, "tmp_mask")
             shutil.rmtree(tmp_mask, ignore_errors=True)
             os.makedirs(tmp_mask, exist_ok=True)
-            for file in os.listdir(os.path.join(folder, "images")):
-                mask_src = os.path.join(folder, "images", os.path.splitext(file)[0] + "_mask.png")
-                if not os.path.exists(mask_src):
-                    continue
-                os.link(mask_src, os.path.join(tmp_mask, file + ".png"))
+            for image_mask in list_image_masks(os.path.join(folder, "images")):
+                os.link(
+                    os.path.join(folder, "images", image_mask.mask_filename),
+                    os.path.join(tmp_mask, image_mask.image_filename + ".png"),
+                )
             cmd += ["--StereoFusion.mask_path", tmp_mask]
             ret = execute(cmd)
             shutil.rmtree(tmp_mask, ignore_errors=True)
