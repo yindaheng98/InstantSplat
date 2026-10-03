@@ -1,11 +1,18 @@
-from .colmap import ColmapSparseInitializer, ColmapDenseInitializer
+import os
+
+from .colmap import ColmapSparseInitializer, ColmapDenseInitializer, relative_image_names
 from .dust3r import Dust3rAlign2Initializer
+
+
+def convert_image_path(image_path_list, destination):
+    _, image_names = relative_image_names(image_path_list)
+    return [os.path.join(destination, "images", image_name) for image_name in image_names]
 
 
 # Dust3r align to Colmap dense
 
 def Dust3rAlign2ColmapSparseInitializer(
-        convert_image_path=lambda image_path_list, destination: image_path_list,
+        convert_image_path=convert_image_path,
         model_path: str = "checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth",
         batch_size: int = 1,
         niter: int = 300,
@@ -32,7 +39,7 @@ def Dust3rAlign2ColmapSparseInitializer(
 # Dust3r align to Colmap dense
 
 def Dust3rAlign2ColmapDenseInitializer(
-        convert_image_path=lambda image_path_list, destination: image_path_list,
+        convert_image_path=convert_image_path,
         model_path: str = "checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth",
         batch_size: int = 1,
         niter: int = 300,

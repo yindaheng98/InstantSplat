@@ -2,7 +2,6 @@ import os
 import shutil
 
 from instantsplat.initializer import *
-from instantsplat.initializer.colmap import relative_image_names
 from instantsplat.initializer.depth import AutoScaleDepthAnythingV2InitializerWrapper
 
 default_image_folder = {
@@ -21,11 +20,6 @@ default_image_folder = {
     "dust3r-align-colmap-sparse": "input",
     "dust3r-align-colmap-dense": "input",
 }
-
-
-def convert_image_path(image_path_list, destination):
-    _, image_names = relative_image_names(image_path_list)
-    return [os.path.join(destination, "images", image_name) for image_name in image_names]
 
 
 def initialize(initializer, directory, configs, device, scale=1.0, with_depth_anything=False):
@@ -61,9 +55,9 @@ def initialize(initializer, directory, configs, device, scale=1.0, with_depth_an
         case "colmap-dense":
             constructor = ColmapDenseInitializer
         case "dust3r-align-colmap-sparse":
-            constructor = lambda **configs: Dust3rAlign2ColmapSparseInitializer(convert_image_path=convert_image_path, **configs)
+            constructor = Dust3rAlign2ColmapSparseInitializer
         case "dust3r-align-colmap-dense":
-            constructor = lambda **configs: Dust3rAlign2ColmapDenseInitializer(convert_image_path=convert_image_path, **configs)
+            constructor = Dust3rAlign2ColmapDenseInitializer
         case _:
             raise ValueError(f"Unknown initializer {initializer}")
     if with_depth_anything:
