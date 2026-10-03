@@ -15,7 +15,7 @@ Initialization methods:
 - [x] MAST3R (same method used in [Splatt3R](https://github.com/btsmart/splatt3r))
 - [x] COLMAP Sparse reconstruct (same method used in [gaussian-splatting](https://github.com/graphdeco-inria/gaussian-splatting))
 - [x] COLMAP Dense reconstruct (use `patch_match_stereo`, `stereo_fusion`, `poisson_mesher` and `delaunay_mesher` in COLMAP to reconstruct dense point cloud for initialization)
-- [x] Masking of keypoints during COLMAP feature extraction (just put your mask into `mask` folder, e.g. for an image `data/xxx/input/012.jpg`, the mask would be `data/xxx/input_mask/012.jpg.png`)
+- [x] Masking during COLMAP feature extraction and dense fusion. See [File layout](#file-layout).
 - [x] VGGT and VGGT + Colmap Bundle Adjustment according to [`facebookresearch/vggt/demo_colmap.py`](https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py)
 - [x] [VGG-T³](https://github.com/nv-dvl/vgg-ttt), VGG-T³ + COLMAP Bundle Adjustment, and VGG-T³ + COLMAP dense reconstruction
 - [x] Map-Anything and Map-Anything with external pose/depth priors
@@ -92,6 +92,69 @@ cp -r /tmp/map-anything-configs/configs ./
 rm -rf /tmp/map-anything-configs
 ```
 
+## File layout
+
+`<name>.jpg` is the image path relative to the image folder, including its extension and any subdirectory. `images/foo/bar.jpg` pairs with `image_masks/foo/bar.jpg.png`, `depths/foo/bar.jpg.tiff`, and `depth_masks/foo/bar.jpg.tiff`. Lists are collected with `os.walk`. Training reads the written scene as a [gaussian-splatting dataset](https://github.com/yindaheng98/gaussian-splatting#dataset-format).
+
+### Input: `images/`
+
+`dust3r`, `mast3r`, `mapanything`, `mapanything-external`, `vggt`, `vggttt`:
+
+```
+<data>/
+  images/
+    <name>.jpg
+  image_masks/                 # optional
+    <name>.jpg.png
+```
+
+### Input: `input/`
+
+`colmap-sparse`, `colmap-dense`, `vggt-colmap-sparse`, `vggt-colmap-dense`, `vggttt-colmap-sparse`, `vggttt-colmap-dense`, `dust3r-align-colmap-sparse`, `dust3r-align-colmap-dense`:
+
+```
+<data>/
+  input/
+    <name>.jpg
+  feature_mask/                # optional; COLMAP feature extraction only
+    <name>.jpg.png
+  input_mask/                  # optional; undistorted into image_masks/
+    <name>.jpg.png
+```
+
+`feature_mask` and `input_mask` are independent. A missing mask is skipped.
+
+### Output: no depth
+
+`dust3r`, `mast3r`, `colmap-sparse`, `vggt-colmap-sparse`, `vggttt-colmap-sparse`, `dust3r-align-colmap-sparse`:
+
+```
+<data>/
+  images/
+    <name>.jpg
+  image_masks/                 # only when an input mask was provided
+    <name>.jpg.png
+  sparse/0/
+    cameras.bin                # cameras.txt is also accepted when training
+    images.bin
+    points3D.ply               # if missing, points3D.bin then points3D.txt
+```
+
+### Output: depth
+
+`vggt`, `vggttt`, `mapanything`, `mapanything-external`, `colmap-dense`, `vggt-colmap-dense`, `vggttt-colmap-dense`, `dust3r-align-colmap-dense`. Same as above, plus:
+
+```
+<data>/
+  depths/
+    <name>.jpg.tiff
+    <name>.jpg.png             # uint8 preview; the loader uses the tiff when both exist
+  depth_masks/
+    <name>.jpg.tiff
+```
+
+`--with_depth_anything` adds these depth files for any initializer. That depth is inverse depth. The initializers in this section otherwise write regular depth. See [Running](#running).
+
 ## Running
 
 1. Initialize coarse point cloud and jointly train 3DGS & cameras
@@ -111,7 +174,7 @@ python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santo
 
 Depth format note:
 - `Depth-Anything V2` saves inverse depth (`1 / depth`), which matches the default depth supervision used by 3DGS.
-- The native depth saved by `mapanything`, `mapanything-external`, `vggt`, and `vggttt` is regular depth, not inverse depth.
+- The native depth saved by `mapanything`, `mapanything-external`, `vggt`, `vggttt`, and COLMAP dense reconstruction is regular depth, not inverse depth.
 - When training from those native depth maps without `--with_depth_anything`, add `-o depth_ground_truth_is_inversed=False`.
 
 Example:
@@ -139,8 +202,7 @@ The VGG-T³ inference options can be passed with `-o`:
 python -m instantsplat.initialize -d data/my_scene -i vggttt \
   -o num_ttt_steps=2 \
   -o memory_efficient_inference=True \
-  -o use_global_pred=True \
-  -o offload_to_cpu=True
+  -o use_global_pred=True
 ```
 
 COLMAP bundle adjustment and dense reconstruction:
@@ -185,9 +247,13 @@ Use `TrainableCameraDataset` in [yindaheng98/gaussian-splatting](https://github.
 
 ```python
 from instantsplat.initializer import Dust3rInitializer
-image_path_list = [os.path.join(image_folder, file) for file in sorted(os.listdir(image_folder))]
+image_path_list = sorted(
+    os.path.join(dirpath, filename)
+    for dirpath, _, filenames in os.walk(image_folder)
+    for filename in filenames
+)
 initializer = Dust3rInitializer(...).to(args.device) # see instantsplat/initializer/dust3r/dust3r.py for full options
-initialized_point_cloud, initialized_cameras = initializer(image_path_list=image_path_list)
+initialized_point_cloud, initialized_cameras = initializer(image_path_list, destination)
 ```
 
 Create camera dataset from initialized cameras:
