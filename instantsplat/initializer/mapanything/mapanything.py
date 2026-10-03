@@ -5,6 +5,8 @@ from mapanything.models import MapAnything
 from mapanything.utils.colmap_export import closed_form_pose_inverse
 
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
+from instantsplat.initializer.colmap import check_image_paths
+from instantsplat.initializer.dust3r import load_images_to_destination
 from .utils import focal2fov, load_views, recover_original_intrinsics, save_resized_depth
 
 
@@ -42,7 +44,8 @@ def extract_camera(output, original_width, original_height, target_width, target
 
 def extract_and_save_resized_depth(
     output,
-    image_path,
+    folder,
+    image_name,
     original_height,
     original_width,
     save_conf_threshold,
@@ -55,7 +58,8 @@ def extract_and_save_resized_depth(
     mask = output["mask"][0].squeeze(-1).detach().bool() if "mask" in output else None
     conf = output["conf"][0].detach() if "conf" in output else None
     return save_resized_depth(
-        image_path=image_path,
+        folder=folder,
+        image_name=image_name,
         depth=depth,
         mask=mask,
         conf=conf,
@@ -131,7 +135,7 @@ class MapAnythingInitializer(AbstractInitializer):
         self.model = self.model.to(self.device)
         return self
 
-    def __call__(self, image_path_list: List[str]) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
+    def __call__(self, image_path_list: List[str], destination: str) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
         views, original_sizes = load_views(image_path_list, self.device, norm_type="dinov2")
         target_height, target_width = map(int, views[0]["true_shape"][0])
 
@@ -142,7 +146,8 @@ class MapAnythingInitializer(AbstractInitializer):
         all_colors = []
         cameras = []
 
-        for output, image_path, (original_width, original_height) in zip(outputs, image_path_list, original_sizes):
+        image_names = load_images_to_destination(image_path_list, destination)
+        for output, image_name, (original_width, original_height) in zip(outputs, image_names, original_sizes):
             points, colors = extract_point_cloud(output)
             all_points.append(points)
             all_colors.append(colors)
@@ -155,11 +160,13 @@ class MapAnythingInitializer(AbstractInitializer):
                 target_height=target_height,
             )
 
-            saved_depth_path = None
+            image_path, image_mask_path = check_image_paths(destination, image_name)
+            depth_path, depth_mask_path = None, None
             if self.save_depth:
-                saved_depth_path = extract_and_save_resized_depth(
+                depth_path, depth_mask_path = extract_and_save_resized_depth(
                     output=output,
-                    image_path=image_path,
+                    folder=destination,
+                    image_name=image_name,
                     original_height=original_height,
                     original_width=original_width,
                     save_conf_threshold=self.save_conf_threshold,
@@ -174,7 +181,9 @@ class MapAnythingInitializer(AbstractInitializer):
                     R=world2cam[:3, :3].float(),
                     T=world2cam[:3, 3].float() * self.scene_scale,
                     image_path=image_path,
-                    depth_path=saved_depth_path,
+                    image_mask_path=image_mask_path,
+                    depth_path=depth_path,
+                    depth_mask_path=depth_mask_path,
                 )
             )
 

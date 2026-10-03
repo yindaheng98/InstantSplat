@@ -48,14 +48,15 @@ def interpolate_dense_output(tensor: torch.Tensor, height: int, width: int, mode
 
 
 def save_resized_depth(
-    image_path: str,
+    folder: str,
+    image_name,
     depth: torch.Tensor,
     mask: torch.Tensor,
     conf: torch.Tensor,
     original_height: int,
     original_width: int,
     save_conf_threshold: float,
-) -> str:
+):
     original_depth = interpolate_dense_output(depth, original_height, original_width, mode="bilinear")
 
     save_mask = torch.ones_like(original_depth, dtype=original_depth.dtype)
@@ -67,7 +68,7 @@ def save_resized_depth(
         original_conf = interpolate_dense_output(conf, original_height, original_width, mode="bilinear")
         save_mask = save_mask * original_conf.clamp(min=0.0, max=save_conf_threshold) / max(float(save_conf_threshold), 1e-8)
 
-    return save_depth(image_path=image_path, depth=original_depth, mask=save_mask)
+    return save_depth(folder, image_name, original_depth, save_mask)
 
 
 def load_views(image_path_list: List[str], device: torch.device, *args, **kwargs):
