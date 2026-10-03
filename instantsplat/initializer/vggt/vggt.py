@@ -105,11 +105,19 @@ class VGGTInitializer(AbstractInitializer):
         torch.cuda.empty_cache()
         return original_coords, batch, extrinsic, intrinsic, depth_map, depth_conf, points_3d
 
-    def __call__(
-        self, image_path_list: List[str], destination: str
+    def postprocess(
+        self,
+        image_path_list: List[str],
+        destination: str,
+        original_coords,
+        batch,
+        extrinsic,
+        intrinsic,
+        depth_map,
+        depth_conf,
+        points_3d,
     ) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
         device = self.device
-        original_coords, batch, extrinsic, intrinsic, depth_map, depth_conf, points_3d = self.predict(image_path_list)
 
         # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L203-L218
         points_rgb = batch.squeeze(0).cpu().numpy().transpose(0, 2, 3, 1)  # (N, H, W, 3) [0, 1]
@@ -168,3 +176,19 @@ class VGGTInitializer(AbstractInitializer):
         )
 
         return point_cloud, cameras
+
+    def __call__(
+        self, image_path_list: List[str], destination: str
+    ) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
+        original_coords, batch, extrinsic, intrinsic, depth_map, depth_conf, points_3d = self.predict(image_path_list)
+        return self.postprocess(
+            image_path_list,
+            destination,
+            original_coords,
+            batch,
+            extrinsic,
+            intrinsic,
+            depth_map,
+            depth_conf,
+            points_3d,
+        )

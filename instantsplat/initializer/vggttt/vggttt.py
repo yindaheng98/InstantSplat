@@ -118,12 +118,18 @@ class VGGTTTInitializer(AbstractInitializer):
         points_3d = predictions["pts3d"].cpu().numpy()
         return images, extrinsic, intrinsic, depth_map, depth_conf, points_3d
 
-    def __call__(
-        self, image_path_list: List[str], destination: str
+    def postprocess(
+        self,
+        image_path_list: List[str],
+        destination: str,
+        images,
+        extrinsic,
+        intrinsic,
+        depth_map,
+        depth_conf,
+        points_3d,
     ) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
         device = torch.device(self.device)
-        images, extrinsic, intrinsic, depth_map, depth_conf, points_3d = self.predict(image_path_list)
-        torch.cuda.empty_cache()
 
         # From: https://github.com/nv-dvl/vgg-ttt/blob/5b2d02d0598da9544e1dfa3b13a24ba09257a07f/vggttt/demo.py#L401-L402
         points_rgb = images.cpu().numpy().transpose(0, 2, 3, 1)  # (N, H, W, 3) [0, 1]
@@ -185,3 +191,19 @@ class VGGTTTInitializer(AbstractInitializer):
         )
 
         return point_cloud, cameras
+
+    def __call__(
+        self, image_path_list: List[str], destination: str
+    ) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
+        images, extrinsic, intrinsic, depth_map, depth_conf, points_3d = self.predict(image_path_list)
+        torch.cuda.empty_cache()
+        return self.postprocess(
+            image_path_list,
+            destination,
+            images,
+            extrinsic,
+            intrinsic,
+            depth_map,
+            depth_conf,
+            points_3d,
+        )
