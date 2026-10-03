@@ -68,42 +68,23 @@ class VGGTColmapSparseInitializer(ColmapSparseInitializer):
         ])
 
     def sparse_reconstruct(self, folder, image_names):
-        mapper_ok = all(
-            os.path.exists(os.path.join(folder, "distorted", "sparse", "0", f))
-            for f in ("cameras.bin", "images.bin", "points3D.bin")
+        image_path_list = [os.fspath(Path(folder) / "input" / image_name) for image_name in image_names]
+        original_coords = self.vggt_mapper(folder, image_path_list)
+        if self.bundle_adjuster(folder) != 0:
+            raise RuntimeError("Bundle adjustment failed")
+        # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L234-L241
+        rescale_colmap_to_original(
+            os.path.join(folder, "distorted", "sparse", "0"),
+            [str(image_name) for image_name in image_names],
+            original_coords,
+            self.img_load_resolution,
+            shift_point2d_to_original_res=True,
+            shared_camera=False,
         )
-        if not mapper_ok:
-            # Override: replace feature_extractor + matcher + mapper
-            image_path_list = [os.fspath(Path(folder) / "input" / image_name) for image_name in image_names]
-            original_coords = self.vggt_mapper(folder, image_path_list)
-            if self.bundle_adjuster(folder) != 0:
-                raise RuntimeError("Bundle adjustment failed")
-            # From: https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py#L234-L241
-            rescale_colmap_to_original(
-                os.path.join(folder, "distorted", "sparse", "0"),
-                [str(image_name) for image_name in image_names],
-                original_coords,
-                self.img_load_resolution,
-                shift_point2d_to_original_res=True,
-                shared_camera=False,
-            )
-            if self.image_undistorter(folder) != 0:
-                raise RuntimeError("Undistortion failed")
-            if self.mask_undistorter(folder, image_names) != 0:
-                raise RuntimeError("Mask undistortion failed")
-            return
-        undistorter_ok = all(
-            (Path(folder) / "images" / image_name).exists()
-            for image_name in image_names
-        ) and all(
-            os.path.exists(os.path.join(folder, "sparse", f))
-            for f in ("cameras.bin", "images.bin", "points3D.bin")
-        )
-        if not undistorter_ok:
-            if self.image_undistorter(folder) != 0:
-                raise RuntimeError("Undistortion failed")
-            if self.mask_undistorter(folder) != 0:
-                raise RuntimeError("Mask undistortion failed")
+        if self.image_undistorter(folder) != 0:
+            raise RuntimeError("Undistortion failed")
+        if self.mask_undistorter(folder, image_names) != 0:
+            raise RuntimeError("Mask undistortion failed")
 
     def vggt_mapper(self, folder, image_path_list):
         device = self.device
