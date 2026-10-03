@@ -1,25 +1,26 @@
 import copy
 import numpy as np
 import open3d as o3d
+import roma
 from typing import List
 import torch
 from .abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 
 
+def camera_centers(cameras: List[InitializingCamera]) -> torch.Tensor:
+    """World-to-camera (R, T) gives center C = -R^T T."""
+    rotation = torch.stack([camera.R for camera in cameras])
+    translation = torch.stack([camera.T.reshape(3) for camera in cameras])
+    return torch.bmm(-rotation.transpose(1, 2), translation.unsqueeze(-1)).squeeze(-1)
+
+
 def global_registration_by_cameras(reference_points: torch.Tensor, reference_cameras: List[InitializingCamera], cameras: List[InitializingCamera]) -> torch.Tensor:
     reference_cameras = sorted(reference_cameras, key=lambda camera: camera.image_path)
     cameras = sorted(cameras, key=lambda camera: camera.image_path)
-    R_ref = torch.stack([camera.R for camera in reference_cameras])
-    T_ref = torch.stack([camera.T for camera in reference_cameras])
-    R = torch.stack([camera.R for camera in cameras]).to(R_ref.dtype)
-    T = torch.stack([camera.T for camera in cameras]).to(T_ref.dtype)
-    R_tran = torch.bmm(R_ref.transpose(1, 2), R).median(0).values
-    dist_T = (T.unsqueeze(0) - T.unsqueeze(1)).norm(dim=-1, p=2)
-    dist_T_ref = (T_ref.unsqueeze(0) - T_ref.unsqueeze(1)).norm(dim=-1, p=2)
-    scales = dist_T_ref / dist_T
-    scale = scales[~scales.isnan()].median()
-    T_tran = (T_ref - T @ R_tran.T * scale).median(0).values
-    return (reference_points @ R_tran.T.to(reference_points.dtype)) * scale - T_tran
+    source = camera_centers(cameras).to(device=reference_points.device, dtype=reference_points.dtype)
+    target = camera_centers(reference_cameras).to(device=reference_points.device, dtype=reference_points.dtype)
+    rotation, translation, scale = roma.rigid_points_registration(source, target, compute_scaling=True)
+    return scale * reference_points @ rotation.T + translation
 
 
 def registration_by_ICP(reference_points: torch.Tensor, points: torch.Tensor) -> torch.Tensor:
