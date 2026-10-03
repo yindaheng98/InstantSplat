@@ -5,7 +5,7 @@ from dust3r.image_pairs import make_pairs
 from mast3r.cloud_opt.sparse_ga import sparse_global_alignment, SparseGA
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 from instantsplat.initializer.colmap import relative_image_names
-from instantsplat.initializer.colmap.sparse import output_image_paths
+from instantsplat.initializer.colmap.sparse import check_image_paths
 
 from .utils import load_images, focal2fov
 
@@ -86,6 +86,6 @@ class Mast3rInitializer(AbstractInitializer):
                 image_mask_path=image_mask_path,
             )
             for i, (image_path, image_mask_path) in enumerate(
-                output_image_paths(destination, image_name) for image_name in image_names
+                check_image_paths(destination, image_name) for image_name in image_names
             )
         ]

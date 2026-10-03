@@ -6,7 +6,7 @@ from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 from instantsplat.initializer.colmap import relative_image_names
-from instantsplat.initializer.colmap.sparse import output_image_paths
+from instantsplat.initializer.colmap.sparse import check_image_paths
 
 from .utils import load_images, focal2fov, fov2focal
 from .alignment import compute_global_alignment
@@ -90,7 +90,7 @@ class Dust3rInitializer(AbstractInitializer):
                 image_mask_path=image_mask_path,
             )
             for i, (image_path, image_mask_path) in enumerate(
-                output_image_paths(destination, image_name) for image_name in image_names
+                check_image_paths(destination, image_name) for image_name in image_names
             )
         ]
 

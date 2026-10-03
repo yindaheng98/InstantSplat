@@ -14,27 +14,11 @@ from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera
 from .load_cameras import load_colmap_cameras
 
 
-def output_image_paths(destination: str, image_name: Path):
-    image_name = Path(image_name)
-    root = Path(destination)
-    image_path = root / "images" / image_name
-    assert image_path.is_file(), f"Image does not exist: {image_path}"
-    image_mask_path = root / "image_masks" / image_name.with_name(image_name.name + ".png")
-    return str(image_path), str(image_mask_path) if image_mask_path.is_file() else None
-
-
 def relative_image_names(image_path_list):
     """Paths relative to the common directory of every image in the list."""
     paths = [Path(path).resolve() for path in image_path_list]
     prefix = Path(os.path.commonpath(path.parent for path in paths))
     return prefix, [path.relative_to(prefix) for path in paths]
-
-
-def save_image(image_path, destination: str, image_name: Path):
-    image_name = Path(image_name)
-    dst = Path(destination) / "images" / image_name
-    copy2(image_path, dst)
-    return dst
 
 
 def copy2(src, dst):
@@ -45,6 +29,31 @@ def copy2(src, dst):
             return
         dst.unlink()
     shutil.copy2(src, dst)
+
+
+def save_image(image_path, destination: str, image_name: Path):
+    image_name = Path(image_name)
+    dst = Path(destination) / "images" / image_name
+    copy2(image_path, dst)
+    return dst
+
+
+def check_image_paths(destination: str, image_name: Path):
+    image_name = Path(image_name)
+    root = Path(destination)
+    image_path = root / "images" / image_name
+    assert image_path.is_file(), f"Image does not exist: {image_path}"
+    image_mask_path = root / "image_masks" / image_name.with_name(image_name.name + ".png")
+    return str(image_path), str(image_mask_path) if image_mask_path.is_file() else None
+
+
+def check_depth_paths(destination: str, image_name: Path):
+    image_name = Path(image_name)
+    root = Path(destination)
+    name = image_name.with_name(image_name.name + ".tiff")
+    depth_path = root / "depths" / name
+    depth_mask_path = root / "depth_masks" / name
+    return str(depth_path) if depth_path.is_file() else None, str(depth_mask_path) if depth_mask_path.is_file() else None
 
 
 def execute(cmd):
@@ -262,7 +271,10 @@ class ColmapSparseInitializer(AbstractInitializer):
                 image_path=image_path, image_mask_path=image_mask_path,
                 depth_path=depth_path, depth_mask_path=depth_mask_path,
             )
-            for camera in parse_colmap_camera(cam_extrinsics, cam_intrinsics, image_dir, load_mask=False)]
+            for camera in parse_colmap_camera(cam_extrinsics, cam_intrinsics, image_dir, load_mask=False)
+            for image_name in [Path(camera.image_path).relative_to(image_dir)]
+            for image_path, image_mask_path in [check_image_paths(destination, image_name)]
+            for depth_path, depth_mask_path in [check_depth_paths(destination, image_name)]]
 
     def run(self, image_path_list, folder, destination: str):
         image_names = self.put_distorted(image_path_list, folder)
