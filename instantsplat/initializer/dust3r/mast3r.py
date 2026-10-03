@@ -4,9 +4,8 @@ from mast3r.model import AsymmetricMASt3R
 from dust3r.image_pairs import make_pairs
 from mast3r.cloud_opt.sparse_ga import sparse_global_alignment, SparseGA
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
-from instantsplat.initializer.colmap import relative_image_names
-from instantsplat.initializer.colmap.sparse import check_image_paths
-
+from instantsplat.initializer.colmap import check_image_paths
+from .dust3r import load_images_to_destination
 from .utils import load_images, focal2fov
 
 
@@ -72,7 +71,7 @@ class Mast3rInitializer(AbstractInitializer):
         confidence_masks = [(c > args.min_conf_thr) for c in confs]
         intrinsics = get_intrinsics(scene, device=device)
         #######################################################################################################################################
-        _, image_names = relative_image_names(image_path_list)
+        image_names = load_images_to_destination(image_path_list, destination)
         return InitializedPointCloud(
             points=torch.concatenate([p.view(*m.shape, 3)[m] for p, m in zip(pts3d, confidence_masks)])*args.scene_scale,
             colors=torch.concatenate([p[m] for p, m in zip(imgs, confidence_masks)])

@@ -5,11 +5,17 @@ from dust3r.model import AsymmetricCroCo3DStereo
 from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
-from instantsplat.initializer.colmap import relative_image_names
-from instantsplat.initializer.colmap.sparse import check_image_paths
+from instantsplat.initializer.colmap import relative_image_names, check_image_paths, save_image
 
 from .utils import load_images, focal2fov, fov2focal
 from .alignment import compute_global_alignment
+
+
+def load_images_to_destination(image_path_list, destination: str):
+    _, image_names = relative_image_names(image_path_list)
+    for image_path, image_name in zip(image_path_list, image_names):
+        save_image(image_path, destination, image_name)
+    return image_names
 
 
 def preset_cameras(scene, known_cameras: List[InitializingCamera]):
@@ -76,7 +82,7 @@ class Dust3rInitializer(AbstractInitializer):
         confidence_masks = scene.get_masks()
         intrinsics = scene.get_intrinsics()
         #######################################################################################################################################
-        _, image_names = relative_image_names(image_path_list)
+        image_names = load_images_to_destination(image_path_list, destination)
         return InitializedPointCloud(
             points=torch.concatenate([p[m] for p, m in zip(pts3d, confidence_masks)])*args.scene_scale,
             colors=torch.concatenate([p[m] for p, m in zip(imgs, confidence_masks)])
