@@ -9,6 +9,8 @@ from vggt.utils.pose_enc import pose_encoding_to_extri_intri
 from vggt.utils.geometry import unproject_depth_map_to_point_map
 
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
+from instantsplat.initializer.colmap import check_image_paths
+from instantsplat.initializer.dust3r import load_images_to_destination
 
 from .save_depth import save_vggt_depth
 from .utils import focal2fov
@@ -46,12 +48,10 @@ class VGGTInitializer(AbstractInitializer):
         model_url: str = "checkpoints/vggt_1B_commercial.pt",
         img_load_resolution: int = 1024,
         conf_thres_value: float = 5.0,
-        save_depth: bool = True,
         scene_scale: float = 1.0,
     ):
         self.img_load_resolution = img_load_resolution
         self.conf_thres_value = conf_thres_value
-        self.save_depth = save_depth
         self.scene_scale = scene_scale
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -67,7 +67,7 @@ class VGGTInitializer(AbstractInitializer):
         return self
 
     def __call__(
-        self, image_path_list: List[str]
+        self, image_path_list: List[str], destination: str
     ) -> Tuple[InitializedPointCloud, List[InitializingCamera]]:
         device = self.device
 
@@ -116,8 +116,9 @@ class VGGTInitializer(AbstractInitializer):
         conf_mask = np.logical_and(conf_mask, valid_area_mask)
         torch.cuda.empty_cache()
 
+        image_names = load_images_to_destination(image_path_list, destination)
         cameras = []
-        for i in range(len(image_path_list)):
+        for i, image_name in enumerate(image_names):
             orig_w = float(original_coords[i, 4].item())
             orig_h = float(original_coords[i, 5].item())
             resize_ratio = max(orig_w, orig_h) / RESOLUTION
@@ -125,19 +126,19 @@ class VGGTInitializer(AbstractInitializer):
             fx_orig = intrinsic[i][0, 0] * resize_ratio
             fy_orig = intrinsic[i][1, 1] * resize_ratio
 
-            saved_depth_path = None
-            if self.save_depth:
-                saved_depth_path = save_vggt_depth(
-                    image_path=image_path_list[i],
-                    depth=torch.from_numpy(depth_map[i]).squeeze(-1),
-                    conf=torch.from_numpy(depth_conf[i]),
-                    original_coord=original_coords[i],
-                    src_resolution=self.img_load_resolution,
-                    dst_resolution=RESOLUTION,
-                    original_height=int(orig_h),
-                    original_width=int(orig_w),
-                    conf_threshold=self.conf_thres_value,
-                )
+            image_path, image_mask_path = check_image_paths(destination, image_name)
+            depth_path, depth_mask_path = save_vggt_depth(
+                folder=destination,
+                image_name=image_name,
+                depth=torch.from_numpy(depth_map[i]).squeeze(-1),
+                conf=torch.from_numpy(depth_conf[i]),
+                original_coord=original_coords[i],
+                src_resolution=self.img_load_resolution,
+                dst_resolution=RESOLUTION,
+                original_height=int(orig_h),
+                original_width=int(orig_w),
+                conf_threshold=self.conf_thres_value,
+            )
 
             cameras.append(
                 InitializingCamera(
@@ -147,8 +148,10 @@ class VGGTInitializer(AbstractInitializer):
                     FoVy=focal2fov(fy_orig, orig_h),
                     R=torch.from_numpy(extrinsic[i][:3, :3]).float().to(device),
                     T=torch.from_numpy(extrinsic[i][:3, 3]).float().to(device) * self.scene_scale,
-                    image_path=image_path_list[i],
-                    depth_path=saved_depth_path,
+                    image_path=image_path,
+                    image_mask_path=image_mask_path,
+                    depth_path=depth_path,
+                    depth_mask_path=depth_mask_path,
                 )
             )
 

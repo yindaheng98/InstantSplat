@@ -44,7 +44,8 @@ def crop_and_resize_square_output(
 
 
 def save_vggt_depth(
-    image_path: str,
+    folder: str,
+    image_name,
     depth: torch.Tensor,
     conf: torch.Tensor,
     original_coord: torch.Tensor,
@@ -53,7 +54,7 @@ def save_vggt_depth(
     original_height: int,
     original_width: int,
     conf_threshold: float,
-) -> str:
+):
     original_depth = crop_and_resize_square_output(
         depth,
         original_coord,
@@ -73,4 +74,4 @@ def save_vggt_depth(
         mode="bilinear",
     )
     save_mask = normalize_conf_for_save(original_conf, conf_threshold)
-    return save_depth(image_path=image_path, depth=original_depth, mask=save_mask)
+    return save_depth(folder, image_name, original_depth, save_mask)
