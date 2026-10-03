@@ -1,8 +1,8 @@
 from .abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 from .dataset import InitializedCameraDataset, TrainableCameraDataset, TrainableInitializedCameraDataset
 from .dust3r import Dust3rInitializer, Mast3rInitializer, load_images_to_destination, path_prefix_image_to_mask
-from .vggt import VGGTInitializer, VGGTColmapSparseInitializer, VGGTColmapDenseInitializer
-from .vggttt import VGGTTTInitializer, VGGTTTColmapSparseInitializer, VGGTTTColmapDenseInitializer
+from .vggt import VGGTInitializer
+from .vggttt import VGGTTTInitializer
 from .mapanything import MapAnythingInitializer, MapAnythingExternalInitializer
 from .colmap import ColmapSparseInitializer, ColmapDenseInitializer, check_image_paths, relative_image_names, save_image, save_image_mask
 from .depth import DepthInitializerWrapper, DepthAnythingV2InitializerWrapper

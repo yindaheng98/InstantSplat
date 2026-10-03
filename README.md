@@ -16,8 +16,9 @@ Initialization methods:
 - [x] COLMAP Sparse reconstruct (same method used in [gaussian-splatting](https://github.com/graphdeco-inria/gaussian-splatting))
 - [x] COLMAP Dense reconstruct (use `patch_match_stereo`, `stereo_fusion`, `poisson_mesher` and `delaunay_mesher` in COLMAP to reconstruct dense point cloud for initialization)
 - [x] Masking during COLMAP feature extraction and dense fusion. See [File layout](#file-layout).
-- [x] VGGT and VGGT + Colmap Bundle Adjustment according to [`facebookresearch/vggt/demo_colmap.py`](https://github.com/facebookresearch/vggt/blob/44b3afbd1869d8bde4894dd8ea1e293112dd5eba/demo_colmap.py)
-- [x] [VGG-T³](https://github.com/nv-dvl/vgg-ttt), VGG-T³ + COLMAP Bundle Adjustment, and VGG-T³ + COLMAP dense reconstruction
+- [x] VGGT
+- [x] [VGG-T³](https://github.com/nv-dvl/vgg-ttt)
+- [ ] VGGT/VGG-T³ + Colmap Bundle Adjustment with COLMAP needs point tracking implemented on [`AbstractViewPointTracker`](https://github.com/yindaheng98/track-4dgs) from [track-4dgs](https://github.com/yindaheng98/track-4dgs).
 - [x] Map-Anything and Map-Anything with external pose/depth priors
 
 ## Prerequisites
@@ -43,10 +44,11 @@ pip install --upgrade git+https://github.com/jytime/LightGlue.git#egg=lightglue 
 pip install xformers
 ```
 
-(Optional) If you have trouble with [`gaussian-splatting`](https://github.com/yindaheng98/gaussian-splatting), try to install it from source:
+(Optional) If you have trouble with [`gaussian-splatting`](https://github.com/yindaheng98/gaussian-splatting) or [`track-4dgs`](https://github.com/yindaheng98/track-4dgs), try to install it from source:
 ```sh
 pip install wheel setuptools
 pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master --no-build-isolation
+pip install --upgrade https://github.com/yindaheng98/track-4dgs --no-build-isolation
 ```
 
 ## PyPI Install
@@ -110,7 +112,7 @@ rm -rf /tmp/map-anything-configs
 
 ### Input: `input/`
 
-`colmap-sparse`, `colmap-dense`, `vggt-colmap-sparse`, `vggt-colmap-dense`, `vggttt-colmap-sparse`, `vggttt-colmap-dense`, `dust3r-align-colmap-sparse`, `dust3r-align-colmap-dense`:
+`colmap-sparse`, `colmap-dense`, `dust3r-align-colmap-sparse`, `dust3r-align-colmap-dense`:
 
 ```
 <data>/
@@ -126,7 +128,7 @@ rm -rf /tmp/map-anything-configs
 
 ### Output: no depth
 
-`dust3r`, `mast3r`, `colmap-sparse`, `vggt-colmap-sparse`, `vggttt-colmap-sparse`, `dust3r-align-colmap-sparse`:
+`dust3r`, `mast3r`, `colmap-sparse`, `dust3r-align-colmap-sparse`:
 
 ```
 <data>/
@@ -142,7 +144,7 @@ rm -rf /tmp/map-anything-configs
 
 ### Output: depth
 
-`vggt`, `vggttt`, `mapanything`, `mapanything-external`, `colmap-dense`, `vggt-colmap-dense`, `vggttt-colmap-dense`, `dust3r-align-colmap-dense`. Same as above, plus:
+`vggt`, `vggttt`, `mapanything`, `mapanything-external`, `colmap-dense`, `dust3r-align-colmap-dense`. Same as above, plus:
 
 ```
 <data>/
@@ -185,14 +187,10 @@ python -m instantsplat.train -s data/sora/santorini/3_views -d output/sora/santo
 
 ### VGG-T³ initialization
 
-VGG-T³ is available through three initializer names:
-- `vggttt`: directly initializes cameras, a point cloud, and native depth maps. Put images in `<scene>/images`.
-- `vggttt-colmap-sparse`: runs VGG-T³, VGGSfM tracking, and COLMAP bundle adjustment. Put images in `<scene>/input`.
-- `vggttt-colmap-dense`: additionally runs COLMAP dense reconstruction. Put images in `<scene>/input`.
+`vggttt` initializes cameras, a point cloud, and native depth maps. Put images in `<scene>/images`.
 
 The model weights are downloaded automatically from [`nvidia/vgg-ttt`](https://huggingface.co/nvidia/vgg-ttt) on first use. For a source checkout, clone with `--recursive` as shown in [Development Install](#development-install) so that the `submodules/vgg-ttt` submodule is available.
 
-Direct initialization:
 ```shell
 python -m instantsplat.initialize -d data/my_scene -i vggttt
 ```
@@ -203,15 +201,6 @@ python -m instantsplat.initialize -d data/my_scene -i vggttt \
   -o num_ttt_steps=2 \
   -o memory_efficient_inference=True \
   -o use_global_pred=True
-```
-
-COLMAP bundle adjustment and dense reconstruction:
-```shell
-python -m instantsplat.initialize -d data/my_scene -i vggttt-colmap-sparse \
-  -o colmap_executable="'colmap'"
-
-python -m instantsplat.initialize -d data/my_scene -i vggttt-colmap-dense \
-  -o colmap_executable="'colmap'"
 ```
 
 VGG-T³ saves regular depth rather than inverse depth. When training without `--with_depth_anything`, use:

@@ -10,11 +10,7 @@ default_image_folder = {
     "mapanything": "images",
     "mapanything-external": "images",
     "vggt": "images",
-    "vggt-colmap-sparse": "input",
-    "vggt-colmap-dense": "input",
     "vggttt": "images",
-    "vggttt-colmap-sparse": "input",
-    "vggttt-colmap-dense": "input",
     "colmap-sparse": "input",
     "colmap-dense": "input",
     "dust3r-align-colmap-sparse": "input",
@@ -40,16 +36,8 @@ def initialize(initializer, directory, configs, device, scale=1.0, with_depth_an
             constructor = MapAnythingInitializer
         case "mapanything-external":
             constructor = MapAnythingExternalInitializer
-        case "vggt-colmap-sparse":
-            constructor = VGGTColmapSparseInitializer
-        case "vggt-colmap-dense":
-            constructor = VGGTColmapDenseInitializer
         case "vggttt":
             constructor = VGGTTTInitializer
-        case "vggttt-colmap-sparse":
-            constructor = VGGTTTColmapSparseInitializer
-        case "vggttt-colmap-dense":
-            constructor = VGGTTTColmapDenseInitializer
         case "colmap-sparse":
             constructor = ColmapSparseInitializer
         case "colmap-dense":

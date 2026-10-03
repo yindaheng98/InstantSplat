@@ -52,7 +52,7 @@ MAP_ANYTHING_REPO = "git+https://github.com/facebookresearch/map-anything.git@ma
 
 setup(
     name="instantsplat",
-    version='1.17.1',
+    version='1.17.2',
     author='yindaheng98',
     author_email='yindaheng98@gmail.com',
     url='https://github.com/yindaheng98/instantsplat',
@@ -86,6 +86,7 @@ setup(
     },
     install_requires=[
         'gaussian-splatting >= 2.11.0',
+        'track-4dgs >= 0.6.0',
         'scikit-learn',
         # deps for dust3r
         'scipy',
