@@ -91,7 +91,6 @@ class MapAnythingExternalInitializer(AbstractInitializer):
         multiview_conf_depth_abs_thresh: float = 0.02,
         multiview_conf_depth_rel_thresh: float = 0.02,
         ################################################################
-        save_depths: bool = True,
         save_conf_threshold: float = 1.0,
         scene_scale: float = 1.0,
     ):
@@ -108,7 +107,6 @@ class MapAnythingExternalInitializer(AbstractInitializer):
         self.resolution_set = int(defaults["resolution_set"])
         self.use_amp = use_amp
         self.amp_dtype = amp_dtype
-        self.save_depths = save_depths
         self.save_conf_threshold = save_conf_threshold
         self.scene_scale = scene_scale
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -193,16 +191,14 @@ class MapAnythingExternalInitializer(AbstractInitializer):
             )
 
             image_path, image_mask_path = check_image_paths(destination, image_name)
-            depth_path, depth_mask_path = None, None
-            if self.save_depths:
-                depth_path, depth_mask_path = extract_and_save_resized_depth(
-                    output=output,
-                    folder=destination,
-                    image_name=image_name,
-                    original_height=original_height,
-                    original_width=original_width,
-                    save_conf_threshold=self.save_conf_threshold,
-                )
+            depth_path, depth_mask_path = extract_and_save_resized_depth(
+                output=output,
+                folder=destination,
+                image_name=image_name,
+                original_height=original_height,
+                original_width=original_width,
+                save_conf_threshold=self.save_conf_threshold,
+            )
 
             cameras.append(
                 InitializingCamera(
