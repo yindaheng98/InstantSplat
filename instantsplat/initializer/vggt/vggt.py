@@ -10,7 +10,7 @@ from vggt.utils.geometry import unproject_depth_map_to_point_map
 
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 from instantsplat.initializer.colmap import check_image_paths
-from instantsplat.initializer.dust3r import load_images_to_destination
+from instantsplat.initializer.dust3r import load_images_to_destination, path_prefix_image_to_mask
 
 from .save_depth import save_vggt_depth
 from .utils import focal2fov
@@ -49,7 +49,9 @@ class VGGTInitializer(AbstractInitializer):
         img_load_resolution: int = 1024,
         conf_thres_value: float = 5.0,
         scene_scale: float = 1.0,
+        path_prefix_image_to_mask=path_prefix_image_to_mask,
     ):
+        self.path_prefix_image_to_mask = path_prefix_image_to_mask
         self.img_load_resolution = img_load_resolution
         self.conf_thres_value = conf_thres_value
         self.scene_scale = scene_scale
@@ -116,7 +118,7 @@ class VGGTInitializer(AbstractInitializer):
         conf_mask = np.logical_and(conf_mask, valid_area_mask)
         torch.cuda.empty_cache()
 
-        image_names = load_images_to_destination(image_path_list, destination)
+        image_names = load_images_to_destination(image_path_list, destination, self.path_prefix_image_to_mask)
         cameras = []
         for i, image_name in enumerate(image_names):
             orig_w = float(original_coords[i, 4].item())

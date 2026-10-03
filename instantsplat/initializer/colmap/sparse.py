@@ -38,6 +38,16 @@ def save_image(image_path, destination: str, image_name: Path):
     return dst
 
 
+def save_image_mask(image_mask_path, destination: str, image_name: Path):
+    image_mask_path = Path(image_mask_path)
+    if not image_mask_path.is_file():
+        return None
+    image_name = Path(image_name)
+    dst = Path(destination) / "image_masks" / image_name.with_name(image_name.name + ".png")
+    copy2(image_mask_path, dst)
+    return dst
+
+
 def check_image_paths(destination: str, image_name: Path):
     image_name = Path(image_name)
     root = Path(destination)
@@ -246,9 +256,7 @@ class ColmapSparseInitializer(AbstractInitializer):
                     raise RuntimeError("Undistortion incomplete")
             save_image(src, destination, image_name)
             mask_src = Path(folder) / "image_masks" / image_name.with_name(image_name.name + ".png")
-            if not mask_src.exists():
-                continue
-            copy2(mask_src, Path(destination) / "image_masks" / image_name.with_name(image_name.name + ".png"))
+            save_image_mask(mask_src, destination, image_name)
 
     def read_points3D(self, folder):
         points3D = read_points3D_binary(os.path.join(folder, "sparse", "points3D.bin"))

@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List
 import torch
 from dust3r.inference import inference
@@ -5,16 +6,22 @@ from dust3r.model import AsymmetricCroCo3DStereo
 from dust3r.image_pairs import make_pairs
 from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
-from instantsplat.initializer.colmap import relative_image_names, check_image_paths, save_image
+from instantsplat.initializer.colmap import relative_image_names, check_image_paths, save_image, save_image_mask
 
 from .utils import load_images, focal2fov, fov2focal
 from .alignment import compute_global_alignment
 
 
-def load_images_to_destination(image_path_list, destination: str):
-    _, image_names = relative_image_names(image_path_list)
+def path_prefix_image_to_mask(prefix: Path) -> Path:
+    return Path(prefix).parent / "image_masks"
+
+
+def load_images_to_destination(image_path_list, destination: str, path_prefix_image_to_mask=path_prefix_image_to_mask):
+    prefix, image_names = relative_image_names(image_path_list)
+    mask_root = path_prefix_image_to_mask(prefix)
     for image_path, image_name in zip(image_path_list, image_names):
         save_image(image_path, destination, image_name)
+        save_image_mask(Path(mask_root) / image_name.with_name(image_name.name + ".png"), destination, image_name)
     return image_names
 
 
@@ -44,7 +51,9 @@ class Dust3rInitializer(AbstractInitializer):
                  lr: float = 0.01,
                  focal_avg: bool = True,
                  scene_scale: float = 1.0,
-                 resize: int = 512):
+                 resize: int = 512,
+                 path_prefix_image_to_mask=path_prefix_image_to_mask):
+        self.path_prefix_image_to_mask = path_prefix_image_to_mask
         self.batch_size = batch_size
         self.niter = niter
         self.schedule = schedule
@@ -82,7 +91,7 @@ class Dust3rInitializer(AbstractInitializer):
         confidence_masks = scene.get_masks()
         intrinsics = scene.get_intrinsics()
         #######################################################################################################################################
-        image_names = load_images_to_destination(image_path_list, destination)
+        image_names = load_images_to_destination(image_path_list, destination, self.path_prefix_image_to_mask)
         return InitializedPointCloud(
             points=torch.concatenate([p[m] for p, m in zip(pts3d, confidence_masks)])*args.scene_scale,
             colors=torch.concatenate([p[m] for p, m in zip(imgs, confidence_masks)])

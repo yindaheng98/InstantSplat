@@ -12,7 +12,7 @@ from instantsplat.initializer.abc import (
     InitializingCamera,
 )
 from instantsplat.initializer.colmap import check_image_paths
-from instantsplat.initializer.dust3r import load_images_to_destination
+from instantsplat.initializer.dust3r import load_images_to_destination, path_prefix_image_to_mask
 
 from .mapanything import extract_and_save_resized_depth, extract_camera, extract_point_cloud
 from .utils import focal2fov, load_views
@@ -93,6 +93,7 @@ class MapAnythingExternalInitializer(AbstractInitializer):
         ################################################################
         save_conf_threshold: float = 1.0,
         scene_scale: float = 1.0,
+        path_prefix_image_to_mask=path_prefix_image_to_mask,
     ):
         if model_name not in MODEL_CONFIG:
             raise ValueError(
@@ -107,6 +108,7 @@ class MapAnythingExternalInitializer(AbstractInitializer):
         self.resolution_set = int(defaults["resolution_set"])
         self.use_amp = use_amp
         self.amp_dtype = amp_dtype
+        self.path_prefix_image_to_mask = path_prefix_image_to_mask
         self.save_conf_threshold = save_conf_threshold
         self.scene_scale = scene_scale
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -169,7 +171,7 @@ class MapAnythingExternalInitializer(AbstractInitializer):
         all_colors = []
         cameras = []
 
-        image_names = load_images_to_destination(image_path_list, destination)
+        image_names = load_images_to_destination(image_path_list, destination, self.path_prefix_image_to_mask)
         for output, image_name, (original_width, original_height) in zip(
             outputs, image_names, original_sizes
         ):

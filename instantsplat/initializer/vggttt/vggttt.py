@@ -9,7 +9,7 @@ from vggttt.nets.vggt.utils.geometry import closed_form_inverse_se3
 
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 from instantsplat.initializer.colmap import check_image_paths
-from instantsplat.initializer.dust3r import load_images_to_destination
+from instantsplat.initializer.dust3r import load_images_to_destination, path_prefix_image_to_mask
 from instantsplat.initializer.depth.abc import save_depth
 
 from ..vggt.save_depth import normalize_conf_for_save
@@ -67,7 +67,9 @@ class VGGTTTInitializer(AbstractInitializer):
         num_ttt_steps: int | None = 2,
         memory_efficient_inference: bool = True,
         use_global_pred: bool = True,
+        path_prefix_image_to_mask=path_prefix_image_to_mask,
     ):
+        self.path_prefix_image_to_mask = path_prefix_image_to_mask
         self.conf_thres_value = conf_thres_value
         self.scene_scale = scene_scale
         self.num_ttt_steps = num_ttt_steps
@@ -124,7 +126,7 @@ class VGGTTTInitializer(AbstractInitializer):
         conf_mask = depth_conf >= self.conf_thres_value
         torch.cuda.empty_cache()
 
-        image_names = load_images_to_destination(image_path_list, destination)
+        image_names = load_images_to_destination(image_path_list, destination, self.path_prefix_image_to_mask)
         cameras = []
         for i, image_name in enumerate(image_names):
             with Image.open(image_path_list[i]) as image:

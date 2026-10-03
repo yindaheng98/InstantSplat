@@ -6,7 +6,7 @@ from mapanything.utils.colmap_export import closed_form_pose_inverse
 
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 from instantsplat.initializer.colmap import check_image_paths
-from instantsplat.initializer.dust3r import load_images_to_destination
+from instantsplat.initializer.dust3r import load_images_to_destination, path_prefix_image_to_mask
 from .utils import focal2fov, load_views, recover_original_intrinsics, save_resized_depth
 
 
@@ -97,7 +97,9 @@ class MapAnythingInitializer(AbstractInitializer):
         ################################################################
         save_conf_threshold: float = 1.0,
         scene_scale: float = 1.0,
+        path_prefix_image_to_mask=path_prefix_image_to_mask,
     ):
+        self.path_prefix_image_to_mask = path_prefix_image_to_mask
         self.save_conf_threshold = save_conf_threshold
         self.scene_scale = scene_scale
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -144,7 +146,7 @@ class MapAnythingInitializer(AbstractInitializer):
         all_colors = []
         cameras = []
 
-        image_names = load_images_to_destination(image_path_list, destination)
+        image_names = load_images_to_destination(image_path_list, destination, self.path_prefix_image_to_mask)
         for output, image_name, (original_width, original_height) in zip(outputs, image_names, original_sizes):
             points, colors = extract_point_cloud(output)
             all_points.append(points)

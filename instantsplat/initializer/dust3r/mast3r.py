@@ -5,7 +5,7 @@ from dust3r.image_pairs import make_pairs
 from mast3r.cloud_opt.sparse_ga import sparse_global_alignment, SparseGA
 from instantsplat.initializer.abc import AbstractInitializer, InitializingCamera, InitializedPointCloud
 from instantsplat.initializer.colmap import check_image_paths
-from .dust3r import load_images_to_destination
+from .dust3r import load_images_to_destination, path_prefix_image_to_mask
 from .utils import load_images, focal2fov
 
 
@@ -31,7 +31,9 @@ class Mast3rInitializer(AbstractInitializer):
                  matching_conf_thr: float = 5.,
                  scene_scale: float = 1.0,
                  shared_intrinsics: bool = False,
-                 resize: int = 512):
+                 resize: int = 512,
+                 path_prefix_image_to_mask=path_prefix_image_to_mask):
+        self.path_prefix_image_to_mask = path_prefix_image_to_mask
         self.coarse_lr = coarse_lr
         self.coarse_niter = coarse_niter
         self.fine_lr = fine_lr
@@ -71,7 +73,7 @@ class Mast3rInitializer(AbstractInitializer):
         confidence_masks = [(c > args.min_conf_thr) for c in confs]
         intrinsics = get_intrinsics(scene, device=device)
         #######################################################################################################################################
-        image_names = load_images_to_destination(image_path_list, destination)
+        image_names = load_images_to_destination(image_path_list, destination, args.path_prefix_image_to_mask)
         return InitializedPointCloud(
             points=torch.concatenate([p.view(*m.shape, 3)[m] for p, m in zip(pts3d, confidence_masks)])*args.scene_scale,
             colors=torch.concatenate([p[m] for p, m in zip(imgs, confidence_masks)])
