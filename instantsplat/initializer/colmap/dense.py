@@ -148,8 +148,8 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
         if not ok:
             self.poisson2ply(folder).write(os.path.join(folder, "filtered-poisson.ply"))
 
-    def export_depth(self, folder, camera: InitializingCamera):
-        image_name = Path(camera.image_path).relative_to(Path(self.destination) / "images")
+    def export_depth(self, folder, camera: InitializingCamera, destination: str):
+        image_name = Path(camera.image_path).relative_to(Path(destination) / "images")
         bin_path = Path(folder) / "stereo" / "depth_maps" / image_name.with_name(image_name.name + ".geometric.bin")
         if not os.path.exists(bin_path):
             return camera
@@ -162,28 +162,30 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             depth = cv2.resize(depth, (width, height), interpolation=cv2.INTER_LINEAR)
             mask = cv2.resize(mask.astype(np.uint8), (width, height), interpolation=cv2.INTER_NEAREST) > 0
         depth = np.where(mask, depth, 0).astype(np.float32) * self.scene_scale
-        return camera._replace(depth_path=save_depth(
-            camera.image_path,
+        depth_path, depth_mask_path = save_depth(
+            destination,
+            image_name,
             torch.from_numpy(depth),
             torch.from_numpy(mask.astype(np.float32)),
-        ))
+        )
+        return camera._replace(depth_path=depth_path, depth_mask_path=depth_mask_path)
 
-    def read_camera(self, folder):
-        return [self.export_depth(folder, camera) for camera in super().read_camera(folder)]
+    def read_camera(self, folder, destination: str):
+        return [self.export_depth(folder, camera, destination) for camera in super().read_camera(folder, destination)]
 
-    def run(self, image_path_list, tempdir):
-        image_names = super().run(image_path_list, tempdir)
-        self.dense_reconstruct(tempdir, image_names)
+    def run(self, image_path_list, folder, destination: str):
+        image_names = super().run(image_path_list, folder, destination)
+        self.dense_reconstruct(folder, image_names)
         return image_names
 
-    def __call__(self, image_path_list):
+    def __call__(self, image_path_list, destination: str):
         use_file = "fused.ply" if self.use_fused else "filtered-poisson.ply"
         if self.run_at_destination:
-            self.run(image_path_list, self.destination)
-            xyz, rgb = read_ply(os.path.join(self.destination, use_file))
-            return InitializedPointCloud(points=xyz.to(self.device)*self.scene_scale, colors=rgb.to(self.device)/255.0), self.read_camera(self.destination)
+            self.run(image_path_list, destination, destination)
+            xyz, rgb = read_ply(os.path.join(destination, use_file))
+            return InitializedPointCloud(points=xyz.to(self.device)*self.scene_scale, colors=rgb.to(self.device)/255.0), self.read_camera(destination, destination)
         else:
             with tempfile.TemporaryDirectory() as tempdir:
-                self.run(image_path_list, tempdir)
+                self.run(image_path_list, tempdir, destination)
                 xyz, rgb = read_ply(os.path.join(tempdir, use_file))
-                return InitializedPointCloud(points=xyz.to(self.device)*self.scene_scale, colors=rgb.to(self.device)/255.0), self.read_camera(tempdir)
+                return InitializedPointCloud(points=xyz.to(self.device)*self.scene_scale, colors=rgb.to(self.device)/255.0), self.read_camera(tempdir, destination)
