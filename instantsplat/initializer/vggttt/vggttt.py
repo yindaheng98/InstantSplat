@@ -116,6 +116,13 @@ class VGGTTTInitializer(AbstractInitializer):
         depth_map = predictions["depth"].cpu().numpy()
         depth_conf = predictions["conf"].cpu().numpy()
         points_3d = predictions["pts3d"].cpu().numpy()
+        intrinsic = intrinsic.astype("float64")
+        for i, image_path in enumerate(image_path_list):
+            with Image.open(image_path) as image:
+                orig_w, orig_h = image.size
+            resized_height = round(orig_h * (RESOLUTION / orig_w) / PATCH_SIZE) * PATCH_SIZE
+            intrinsic[i, 0, 0] *= float(orig_w) / RESOLUTION
+            intrinsic[i, 1, 1] *= float(orig_h) / resized_height
         return images, extrinsic, intrinsic, depth_map, depth_conf, points_3d
 
     def postprocess(
@@ -153,8 +160,6 @@ class VGGTTTInitializer(AbstractInitializer):
 
             orig_w = float(orig_w)
             orig_h = float(orig_h)
-            fx_orig = intrinsic[i][0, 0] * orig_w / RESOLUTION
-            fy_orig = intrinsic[i][1, 1] * orig_h / resized_height
 
             image_path, image_mask_path = check_image_paths(destination, image_name)
             depth_path, depth_mask_path = save_vggttt_depth(
@@ -174,8 +179,8 @@ class VGGTTTInitializer(AbstractInitializer):
                 InitializingCamera(
                     image_width=int(orig_w),
                     image_height=int(orig_h),
-                    FoVx=focal2fov(fx_orig, orig_w),
-                    FoVy=focal2fov(fy_orig, orig_h),
+                    FoVx=focal2fov(intrinsic[i][0, 0], orig_w),
+                    FoVy=focal2fov(intrinsic[i][1, 1], orig_h),
                     R=torch.from_numpy(extrinsic[i][:3, :3]).float().to(device),
                     T=torch.from_numpy(extrinsic[i][:3, 3]).float().to(device) * self.scene_scale,
                     image_path=image_path,

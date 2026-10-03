@@ -102,6 +102,13 @@ class VGGTInitializer(AbstractInitializer):
         depth_map = depth_map.squeeze(0).cpu().numpy()
         depth_conf = depth_conf.squeeze(0).cpu().numpy()
         points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)  # (N, H, W, 3)
+        intrinsic = intrinsic.astype(np.float64)
+        for i in range(intrinsic.shape[0]):
+            orig_w = float(original_coords[i, 4].item())
+            orig_h = float(original_coords[i, 5].item())
+            resize_ratio = max(orig_w, orig_h) / RESOLUTION
+            intrinsic[i, 0, 0] *= resize_ratio
+            intrinsic[i, 1, 1] *= resize_ratio
         torch.cuda.empty_cache()
         return original_coords, batch, extrinsic, intrinsic, depth_map, depth_conf, points_3d
 
@@ -136,10 +143,6 @@ class VGGTInitializer(AbstractInitializer):
         for i, image_name in enumerate(image_names):
             orig_w = float(original_coords[i, 4].item())
             orig_h = float(original_coords[i, 5].item())
-            resize_ratio = max(orig_w, orig_h) / RESOLUTION
-
-            fx_orig = intrinsic[i][0, 0] * resize_ratio
-            fy_orig = intrinsic[i][1, 1] * resize_ratio
 
             image_path, image_mask_path = check_image_paths(destination, image_name)
             depth_path, depth_mask_path = save_vggt_depth(
@@ -159,8 +162,8 @@ class VGGTInitializer(AbstractInitializer):
                 InitializingCamera(
                     image_width=int(orig_w),
                     image_height=int(orig_h),
-                    FoVx=focal2fov(fx_orig, orig_w),
-                    FoVy=focal2fov(fy_orig, orig_h),
+                    FoVx=focal2fov(intrinsic[i][0, 0], orig_w),
+                    FoVy=focal2fov(intrinsic[i][1, 1], orig_h),
                     R=torch.from_numpy(extrinsic[i][:3, :3]).float().to(device),
                     T=torch.from_numpy(extrinsic[i][:3, 3]).float().to(device) * self.scene_scale,
                     image_path=image_path,
