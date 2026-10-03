@@ -91,7 +91,7 @@ class Dust3rInitializer(AbstractInitializer):
         confidence_masks = scene.get_masks()
         intrinsics = scene.get_intrinsics()
         #######################################################################################################################################
-        image_names = load_images_to_destination(image_path_list, destination, self.path_prefix_image_to_mask)
+        image_names = load_images_to_destination(image_path_list, destination, args.path_prefix_image_to_mask)
         return InitializedPointCloud(
             points=torch.concatenate([p[m] for p, m in zip(pts3d, confidence_masks)])*args.scene_scale,
             colors=torch.concatenate([p[m] for p, m in zip(imgs, confidence_masks)])
