@@ -6,4 +6,11 @@ from .vggttt import VGGTTTInitializer
 from .mapanything import MapAnythingInitializer, MapAnythingExternalInitializer
 from .colmap import ColmapSparseInitializer, ColmapDenseInitializer, check_image_paths, relative_image_names, save_image, save_image_mask
 from .depth import DepthInitializerWrapper, DepthAnythingV2InitializerWrapper
-from .combinations import Dust3rAlign2ColmapSparseInitializer, Dust3rAlign2ColmapDenseInitializer
+from .combinations import (
+    Dust3rAlign2ColmapSparseInitializer,
+    Dust3rAlign2ColmapDenseInitializer,
+    VGGTAlign2ColmapSparseInitializer,
+    VGGTAlign2ColmapDenseInitializer,
+    VGGTTTAlign2ColmapSparseInitializer,
+    VGGTTTAlign2ColmapDenseInitializer,
+)
