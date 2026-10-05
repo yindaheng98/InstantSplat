@@ -56,7 +56,7 @@
             ]
         },
         {
-            "name": "initialize vggt colmap dense",
+            "name": "initialize vggt align to colmap dense",
             "type": "debugpy",
             "request": "launch",
             "module": "instantsplat.initialize",
@@ -65,7 +65,7 @@
                 "-d",
                 "data/sora/santorini/3_views",
                 "-i",
-                "vggt-colmap-dense",
+                "vggt-align-colmap-dense",
                 "-o",
                 "colmap_executable='.\\data\\colmap\\COLMAP.bat'",
                 "-o",
