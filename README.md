@@ -44,11 +44,10 @@ pip install --upgrade git+https://github.com/jytime/LightGlue.git#egg=lightglue 
 pip install xformers
 ```
 
-(Optional) If you have trouble with [`gaussian-splatting`](https://github.com/yindaheng98/gaussian-splatting) or [`track-4dgs`](https://github.com/yindaheng98/track-4dgs), try to install it from source:
+(Optional) If you have trouble with [`gaussian-splatting`](https://github.com/yindaheng98/gaussian-splatting), try to install it from source:
 ```sh
 pip install wheel setuptools
 pip install --upgrade git+https://github.com/yindaheng98/gaussian-splatting.git@master --no-build-isolation
-pip install --upgrade https://github.com/yindaheng98/track-4dgs --no-build-isolation
 ```
 
 ## PyPI Install
