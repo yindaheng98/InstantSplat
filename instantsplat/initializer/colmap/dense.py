@@ -36,6 +36,7 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             poisson2ply_thresh=0.2,
             use_fused=False,
             use_mask=False,
+            geometric=True,
             *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.PatchMatchStereo_max_image_size = PatchMatchStereo_max_image_size
@@ -46,6 +47,7 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
         self.poisson2ply_thresh = poisson2ply_thresh
         self.use_fused = use_fused
         self.use_mask = use_mask
+        self.geometric = geometric
 
     def patch_match_stereo(args, folder):
         cmd = [
@@ -54,7 +56,7 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             "--workspace_format=COLMAP",
             "--PatchMatchStereo.max_image_size", str(args.PatchMatchStereo_max_image_size),
             "--PatchMatchStereo.cache_size", str(args.PatchMatchStereo_cache_size),
-            "--PatchMatchStereo.geom_consistency=true",
+            f"--PatchMatchStereo.geom_consistency={'true' if args.geometric else 'false'}",
         ]
         return execute(cmd)
 
@@ -64,7 +66,7 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             "--workspace_path", folder,
             "--output_path", os.path.join(folder, "fused.ply"),
             "--workspace_format=COLMAP",
-            "--input_type=photometric",
+            f"--input_type={'geometric' if args.geometric else 'photometric'}",
         ]
         if args.use_mask:
             cmd += ["--StereoFusion.mask_path", os.path.join(folder, "image_masks")]
@@ -90,7 +92,7 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
     def delaunay2ply(args, folder):
         return delaunay2ply(
             os.path.join(folder, "meshed-delaunay.ply"),
-            os.path.join(folder, "meshed-poisson.ply"),
+            os.path.join(folder, "fused.ply"),
             batch=args.delaunay2ply_batch,
             reference_batch=args.delaunay2ply_reference_batch)
 
@@ -101,23 +103,20 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             threshold=args.poisson2ply_thresh)
 
     @staticmethod
-    def verify_patch_match_stereo(folder, image_names):
+    def verify_patch_match_stereo(folder, image_names, geometric):
         folder = Path(folder)
+        suffix = ".geometric.bin" if geometric else ".photometric.bin"
         for image_name in image_names:
-            if not (folder / "stereo" / "depth_maps" / image_name.with_name(image_name.name + ".geometric.bin")).exists():
+            if not (folder / "stereo" / "depth_maps" / image_name.with_name(image_name.name + suffix)).exists():
                 return False
-            if not (folder / "stereo" / "depth_maps" / image_name.with_name(image_name.name + ".photometric.bin")).exists():
-                return False
-            if not (folder / "stereo" / "normal_maps" / image_name.with_name(image_name.name + ".geometric.bin")).exists():
-                return False
-            if not (folder / "stereo" / "normal_maps" / image_name.with_name(image_name.name + ".photometric.bin")).exists():
+            if not (folder / "stereo" / "normal_maps" / image_name.with_name(image_name.name + suffix)).exists():
                 return False
         return True
 
     def dense_reconstruct(self, folder, image_names):
         ok = True
 
-        ok = ok and self.verify_patch_match_stereo(folder, image_names)
+        ok = ok and self.verify_patch_match_stereo(folder, image_names, self.geometric)
         if not ok:
             if self.patch_match_stereo(folder) != 0:
                 raise ValueError("Patch match stereo failed")
@@ -150,7 +149,8 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
 
     def export_depth(self, folder, camera: InitializingCamera, destination: str):
         image_name = Path(camera.image_path).relative_to(Path(destination) / "images")
-        bin_path = Path(folder) / "stereo" / "depth_maps" / image_name.with_name(image_name.name + ".geometric.bin")
+        suffix = ".geometric.bin" if self.geometric else ".photometric.bin"
+        bin_path = Path(folder) / "stereo" / "depth_maps" / image_name.with_name(image_name.name + suffix)
         if not os.path.exists(bin_path):
             return camera
         depth = read_colmap_depth_map(bin_path)
