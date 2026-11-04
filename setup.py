@@ -10,7 +10,6 @@
 #
 
 from setuptools import setup, find_packages, find_namespace_packages
-from torch import cuda
 from torch.utils.cpp_extension import CUDAExtension, BuildExtension
 import os
 
@@ -33,16 +32,6 @@ with open("submodules/dust3r/dust3r/dust3r/__init__.py", "w") as f:
 cxx_compiler_flags = []
 nvcc_compiler_flags = []
 
-# compile for all possible CUDA architectures
-all_cuda_archs = cuda.get_gencode_flags().replace('compute=', 'arch=').split()
-# alternatively, you can list cuda archs that you want, eg:
-# all_cuda_archs = [
-#     '-gencode', 'arch=compute_70,code=sm_70',
-#     '-gencode', 'arch=compute_75,code=sm_75',
-#     '-gencode', 'arch=compute_80,code=sm_80',
-#     '-gencode', 'arch=compute_86,code=sm_86'
-# ]
-
 if os.name == 'nt':
     cxx_compiler_flags.append("/wd4624")
     nvcc_compiler_flags.append("-allow-unsupported-compiler")
@@ -52,7 +41,7 @@ MAP_ANYTHING_REPO = "git+https://github.com/facebookresearch/map-anything.git@ma
 
 setup(
     name="instantsplat",
-    version='1.17.6',
+    version='1.17.7',
     author='yindaheng98',
     author_email='yindaheng98@gmail.com',
     url='https://github.com/yindaheng98/instantsplat',
@@ -76,9 +65,7 @@ setup(
                 "submodules/dust3r/croco/models/curope/curope.cpp",
                 "submodules/dust3r/croco/models/curope/kernels.cu",
             ],
-            extra_compile_args=dict(
-                nvcc=nvcc_compiler_flags+['-O3', '--ptxas-options=-v', "--use_fast_math"]+all_cuda_archs,
-                cxx=['-O3'])
+            extra_compile_args={"nvcc": nvcc_compiler_flags, "cxx": cxx_compiler_flags}
         )
     ],
     cmdclass={
