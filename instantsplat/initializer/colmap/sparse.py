@@ -96,8 +96,8 @@ class ColmapSparseInitializer(AbstractInitializer):
         self.feature_mask_dirname = feature_mask_dirname
 
     def to(self, device):
-        self.use_gpu = "0" if device == "cpu" else "1"
-        self.device = device
+        self.device = torch.device(device)
+        self.use_gpu = "0" if self.device.type == "cpu" else "1"
         return self
 
     def put_distorted(self, image_path_list, folder):
