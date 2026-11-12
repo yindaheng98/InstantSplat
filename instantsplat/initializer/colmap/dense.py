@@ -48,8 +48,22 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
         self.use_fused = use_fused
         self.use_mask = use_mask
         self.geometric = geometric
+        self.gpu_index = torch.cuda.current_device() if torch.cuda.is_available() else None
+
+    def to(self, device):
+        super().to(device)
+        if self.device.type != "cuda":
+            self.gpu_index = None
+        elif self.device.index is not None:
+            self.gpu_index = self.device.index
+        return self
 
     def patch_match_stereo(args, folder):
+        if args.gpu_index is None:
+            raise RuntimeError(
+                "COLMAP patch_match_stereo requires a CUDA GPU. "
+                "Dense reconstruction needs --device cuda on a GPU with enough free memory."
+            )
         cmd = [
             args.colmap_executable, "patch_match_stereo",
             "--workspace_path", folder,
@@ -57,6 +71,7 @@ class ColmapDenseInitializer(ColmapSparseInitializer):
             "--PatchMatchStereo.max_image_size", str(args.PatchMatchStereo_max_image_size),
             "--PatchMatchStereo.cache_size", str(args.PatchMatchStereo_cache_size),
             f"--PatchMatchStereo.geom_consistency={'true' if args.geometric else 'false'}",
+            "--PatchMatchStereo.gpu_index", str(args.gpu_index),
         ]
         return execute(cmd)
 
